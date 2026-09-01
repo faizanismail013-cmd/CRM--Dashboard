@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0B2A5E" />
+    <title>SmartPay CRM</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" id="sidebar">
+        <a class="brand" href="#dashboard" aria-label="SmartPay CRM dashboard">
+          <span class="brand-mark"><i></i><i></i><i></i></span>
+          <span><b>smartpay</b><small>CRM</small></span>
+        </a>
+        <nav class="main-nav" aria-label="Main navigation">
+          <button class="nav-link active" data-view="dashboard"><span>▦</span> Overview</button>
+          <button class="nav-link" data-view="companies"><span>▣</span> Companies</button>
+          <button class="nav-link" data-view="pipeline"><span>◫</span> Pipeline <em>12</em></button>
+          <button class="nav-link" data-view="tasks"><span>✓</span> Tasks <em class="alert-count">4</em></button>
+          <button class="nav-link" data-view="reports"><span>◔</span> Reports</button>
+          <p class="nav-label">Workspace</p>
+          <button class="nav-link" data-view="settings"><span>⚙</span> Settings</button>
+        </nav>
+        <div class="workspace-card">
+          <span class="workspace-icon">SP</span>
+          <div><strong>SmartPay India</strong><small>Business workspace</small></div>
+          <button aria-label="Switch workspace">⌄</button>
+        </div>
+        <div class="sidebar-user">
+          <span class="avatar avatar-blue">AS</span>
+          <div><strong>Aarav Sharma</strong><small>Sales Manager</small></div>
+          <button id="userMenuBtn" aria-label="Open user menu">⋮</button>
+        </div>
+      </aside>
+
+      <main class="main-content">
+        <header class="topbar">
+          <button class="mobile-menu" id="mobileMenu" aria-label="Open navigation">☰</button>
+          <div class="search-wrap">
+            <span>⌕</span><input id="globalSearch" type="search" placeholder="Search companies, contacts, deals…" autocomplete="off" />
+            <kbd>⌘ K</kbd>
+            <div class="search-results" id="searchResults"></div>
+          </div>
+          <div class="top-actions">
+            <button class="icon-button notification-button" id="notificationBtn" aria-label="Notifications">♢<b>4</b></button>
+            <button class="button button-primary" data-open-modal="createModal">+ New</button>
+          </div>
+        </header>
+
+        <section class="view active" id="dashboard-view">
+          <div class="page-heading">
+            <div><p class="eyebrow">Monday, 1 September</p><h1>Good morning, Aarav <span>✦</span></h1><p>Here’s how your book of business is moving today.</p></div>
+            <div class="heading-actions"><button class="button button-quiet" id="dateBtn">This month <span>⌄</span></button><button class="button button-secondary" data-open-modal="activityModal">+ Log activity</button></div>
+          </div>
+
+          <div class="metric-grid">
+            <article class="metric-card"><div class="metric-top"><span class="metric-icon blue">◫</span><span class="trend positive">↑ 12.5%</span></div><p>Open pipeline</p><strong id="pipelineTotal">₹34.8L</strong><small>12 deals in progress</small></article>
+            <article class="metric-card"><div class="metric-top"><span class="metric-icon cyan">◌</span><span class="trend positive">↑ 8.2%</span></div><p>Weighted forecast</p><strong id="forecastTotal">₹18.7L</strong><small>Expected this month</small></article>
+            <article class="metric-card"><div class="metric-top"><span class="metric-icon orange">✓</span><span class="trend alert">4 due</span></div><p>Tasks due this week</p><strong id="tasksTotal">07</strong><small>2 overdue · needs attention</small></article>
+            <article class="metric-card"><div class="metric-top"><span class="metric-icon green">◔</span><span class="trend positive">↑ 5.1%</span></div><p>Win rate</p><strong>42.8%</strong><small>vs. 37.7% last month</small></article>
+          </div>
+
+          <div class="dashboard-grid">
+            <article class="panel pipeline-summary-panel">
+              <div class="panel-heading"><div><h2>Pipeline overview</h2><p>Value by stage · September 2026</p></div><button class="text-button" data-view-go="pipeline">View pipeline <span>→</span></button></div>
+              <div class="stage-chart" id="stageChart"></div>
+              <div class="chart-legend"><span><i class="dot blue-dot"></i> Pipeline value</span><span><i class="dot cyan-dot"></i> Weighted forecast</span></div>
+            </article>
+            <article class="panel tasks-panel">
+              <div class="panel-heading"><div><h2>My tasks</h2><p><span class="dot red-dot"></span> 2 overdue</p></div><button class="text-button" data-view-go="tasks">View all <span>→</span></button></div>
+              <div class="task-list compact" id="dashboardTasks"></div>
+            </article>
+            <article class="panel activity-panel">
+              <div class="panel-heading"><div><h2>Recent activity</h2><p>Across your companies</p></div><button class="text-button" data-open-modal="activityModal">+ Log activity</button></div>
+              <div class="activity-feed" id="activityFeed"></div>
+            </article>
+            <article class="panel team-panel">
+              <div class="panel-heading"><div><h2>Team pipeline</h2><p>Manager view · all owners</p></div><button class="text-button" data-view-go="reports">View report <span>→</span></button></div>
+              <div class="team-table" id="teamTable"></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="view" id="companies-view">
+          <div class="page-heading">
+            <div><p class="eyebrow">Accounts</p><h1>Companies</h1><p>Manage merchants, contacts, deals and their relationship history.</p></div>
+            <button class="button button-primary" data-open-modal="companyModal">+ Add company</button>
+          </div>
+          <div class="toolbar panel-lite">
+            <div class="filter-search"><span>⌕</span><input id="companySearch" type="search" placeholder="Search companies" /></div>
+            <select id="statusFilter" aria-label="Filter by status"><option value="all">All statuses</option><option value="lead">Lead</option><option value="active">Active</option><option value="churned">Churned</option></select>
+            <select id="industryFilter" aria-label="Filter by industry"><option value="all">All industries</option><option value="Fintech">Fintech</option><option value="Retail">Retail</option><option value="SaaS">SaaS</option><option value="Healthcare">Healthcare</option></select>
+            <select id="tagFilter" aria-label="Filter by tag"><option value="all">All tags</option><option value="high value">High value</option><option value="at risk">At risk</option><option value="referral">Referral partner</option></select>
+            <button class="button button-quiet" id="clearCompanyFilters">Clear filters</button>
+          </div>
+          <article class="panel table-panel"><div class="table-top"><p id="companyResultCount">8 companies</p><label>Sort by <select id="companySort"><option value="activity">Last activity</option><option value="name">Name</option><option value="created">Created date</option></select></label></div><div class="table-scroll"><table><thead><tr><th>Company</th><th>Industry</th><th>Owner</th><th>Status</th><th>Open deals</th><th>Last activity</th><th></th></tr></thead><tbody id="companyTableBody"></tbody></table></div><div class="table-footer"><span>Showing 1–8 of 8</span><div><button disabled>← Previous</button><button class="page-current">1</button><button disabled>Next →</button></div></div></article>
+        </section>
+
+        <section class="view" id="company-detail-view">
+          <button class="back-link" data-view-go="companies">← Back to companies</button>
+          <div class="company-hero"><div class="company-logo purple-logo">R</div><div><p class="eyebrow">Active account · Owner: Aarav Sharma</p><h1>RazorpayX Partners</h1><p>Fintech · Bengaluru, Karnataka · 201–500 employees</p></div><div class="company-hero-actions"><button class="button button-quiet">Edit company</button><button class="button button-primary" data-open-modal="dealModal">+ New deal</button></div></div>
+          <div class="tabs" role="tablist"><button class="tab active" data-company-tab="overview">Overview</button><button class="tab" data-company-tab="contacts">Contacts <span>3</span></button><button class="tab" data-company-tab="deals">Deals <span>2</span></button><button class="tab" data-company-tab="activity">Activity <span>14</span></button><button class="tab" data-company-tab="company-tasks">Tasks <span>3</span></button></div>
+          <div class="company-tab active" id="overview-tab"><div class="detail-grid"><article class="panel"><div class="panel-heading"><h2>Account details</h2><button class="text-button">Edit</button></div><dl class="details-list"><div><dt>Website</dt><dd><a href="#">razorpay.com</a></dd></div><div><dt>Phone</dt><dd>+91 80 4567 8900</dd></div><div><dt>Source</dt><dd>Referral</dd></div><div><dt>Tags</dt><dd><span class="tag blue-tag">High value</span><span class="tag purple-tag">Strategic</span></dd></div><div><dt>Address</dt><dd>Koramangala, Bengaluru<br />Karnataka 560034</dd></div></dl></article><article class="panel"><div class="panel-heading"><h2>Open deals</h2><button class="text-button" data-company-tab-go="deals">View all →</button></div><div class="mini-deals"><div><span class="stage-mini proposal"></span><p><strong>Payment Gateway Expansion</strong><small>Proposal sent · closes Sep 18</small></p><b>₹8.0L</b></div><div><span class="stage-mini negotiation"></span><p><strong>UPI Autopay Upgrade</strong><small>Negotiation · closes Sep 28</small></p><b>₹4.5L</b></div></div></article></div><article class="panel timeline-short"><div class="panel-heading"><div><h2>Latest activity</h2><p>Every call, email, meeting and note in one timeline.</p></div><button class="text-button" data-company-tab-go="activity">View all →</button></div><div class="activity-feed company-feed"></div></article></div>
+          <div class="company-tab" id="contacts-tab"><div class="section-actions"><div><h2>Contacts</h2><p>People at RazorpayX Partners</p></div><button class="button button-primary" data-open-modal="contactModal">+ Add contact</button></div><article class="panel table-panel"><div class="table-scroll"><table><thead><tr><th>Name</th><th>Title</th><th>Email</th><th>Phone</th><th>Type</th><th></th></tr></thead><tbody id="contactTable"></tbody></table></div></article></div>
+          <div class="company-tab" id="deals-tab"><div class="section-actions"><div><h2>Deals</h2><p>Sales opportunities linked to this account</p></div><button class="button button-primary" data-open-modal="dealModal">+ New deal</button></div><div class="deal-detail-cards" id="companyDeals"></div></div>
+          <div class="company-tab" id="activity-tab"><div class="section-actions"><div><h2>Activity timeline</h2><p>Reverse chronological communication log</p></div><button class="button button-primary" data-open-modal="activityModal">+ Log activity</button></div><article class="panel full-timeline"><div class="activity-feed company-feed" id="fullCompanyActivity"></div></article></div>
+          <div class="company-tab" id="company-tasks-tab"><div class="section-actions"><div><h2>Open tasks</h2><p>Follow-ups attached to this company or its deals</p></div><button class="button button-primary" data-open-modal="taskModal">+ Add task</button></div><article class="panel"><div class="task-list" id="companyTaskList"></div></article></div>
+        </section>
+
+        <section class="view" id="pipeline-view">
+          <div class="page-heading"><div><p class="eyebrow">Sales workspace</p><h1>Pipeline</h1><p>Move deals across stages, then confirm won or lost outcomes.</p></div><button class="button button-primary" data-open-modal="dealModal">+ Create deal</button></div>
+          <div class="pipeline-insights"><div><p>Open pipeline <strong id="pipelineHeadline">₹34.8L</strong></p><span></span><div><p>Weighted forecast <strong id="forecastHeadline">₹18.7L</strong></p></div><span></span><div><p>Deals closing this month <strong>09</strong></p></div></div>
+          <div class="toolbar panel-lite pipeline-toolbar"><select id="ownerFilter"><option value="all">All owners</option><option value="Aarav Sharma">Aarav Sharma</option><option value="Priya Menon">Priya Menon</option><option value="Kunal Shah">Kunal Shah</option></select><select id="pipelineTagFilter"><option value="all">All tags</option><option value="high value">High value</option><option value="at risk">At risk</option></select><select id="closeFilter"><option value="all">Any close month</option><option value="September">September 2026</option><option value="October">October 2026</option></select><span class="drag-note">↕ Drag a deal card to update its stage</span></div>
+          <div class="kanban-board" id="kanbanBoard"></div>
+        </section>
+
+        <section class="view" id="tasks-view">
+          <div class="page-heading"><div><p class="eyebrow">Follow-ups & reminders</p><h1>Tasks</h1><p>Keep every lead, opportunity and renewal moving forward.</p></div><button class="button button-primary" data-open-modal="taskModal">+ Add task</button></div>
+          <div class="task-summary"><button class="summary-choice active" data-task-filter="open"><strong id="openTaskCount">07</strong><span>Open tasks</span></button><button class="summary-choice" data-task-filter="overdue"><strong>02</strong><span>Overdue</span></button><button class="summary-choice" data-task-filter="today"><strong>03</strong><span>Due today</span></button><button class="summary-choice" data-task-filter="done"><strong>18</strong><span>Completed this month</span></button></div>
+          <div class="tasks-layout"><article class="panel task-board"><div class="task-controls"><div class="filter-search"><span>⌕</span><input id="taskSearch" type="search" placeholder="Search tasks" /></div><select id="priorityFilter"><option value="all">All priorities</option><option value="high">High priority</option><option value="medium">Medium priority</option><option value="low">Low priority</option></select></div><div class="task-groups" id="taskGroups"></div></article><aside class="task-side"><article class="panel reminder-card"><span class="reminder-icon">♢</span><h3>Reminder centre</h3><p>You have <b>2 overdue</b> tasks and 3 due today. In-app reminders keep the next action visible.</p><button class="button button-secondary" id="showReminders">View overdue tasks</button></article><article class="panel"><h3>Team tasks</h3><p class="muted-copy">Manager visibility across owners</p><div class="team-task-mini"><span class="avatar avatar-cyan">PM</span><p><strong>Priya Menon</strong><small>3 open · 1 overdue</small></p><b>4</b></div><div class="team-task-mini"><span class="avatar avatar-orange">KS</span><p><strong>Kunal Shah</strong><small>2 open · on track</small></p><b>2</b></div></article></aside></div>
+        </section>
+
+        <section class="view" id="reports-view">
+          <div class="page-heading"><div><p class="eyebrow">Manager reporting</p><h1>Revenue reports</h1><p>Sales performance, win/loss outcomes and forecasts by rep.</p></div><button class="button button-secondary" id="exportReport">⇩ Export CSV</button></div>
+          <div class="report-metrics"><article class="metric-card"><p>Won this month</p><strong>₹11.4L</strong><small><span class="trend positive">↑ 18%</span> vs. August</small></article><article class="metric-card"><p>Lost this month</p><strong>₹4.2L</strong><small>4 closed-lost deals</small></article><article class="metric-card"><p>Average deal size</p><strong>₹3.9L</strong><small>Across 22 closed deals</small></article><article class="metric-card"><p>Avg. sales cycle</p><strong>24 days</strong><small><span class="trend positive">↓ 3 days</span> vs. August</small></article></div>
+          <div class="reports-grid"><article class="panel report-chart"><div class="panel-heading"><div><h2>Won vs. lost</h2><p>Deal value by month (₹ Lakhs)</p></div><button class="button button-quiet" id="chartPeriod">Last 6 months⌄</button></div><div class="bar-chart" id="reportBars"></div><div class="bar-legend"><span><i class="dot blue-dot"></i> Won</span><span><i class="dot gray-dot"></i> Lost</span></div></article><article class="panel rep-performance"><div class="panel-heading"><div><h2>Rep performance</h2><p>Current-month sales activity</p></div><button class="text-button">Full report →</button></div><div id="repTable"></div></article></div><article class="panel funnel-panel"><div class="panel-heading"><div><h2>Pipeline conversion</h2><p>Open deals at each stage</p></div><button class="button button-quiet">September 2026⌄</button></div><div class="conversion-funnel" id="conversionFunnel"></div></article>
+        </section>
+
+        <section class="view" id="settings-view">
+          <div class="page-heading"><div><p class="eyebrow">Workspace administration</p><h1>Settings</h1><p>Manage access, pipeline stages, segmentation and data exports.</p></div></div>
+          <div class="settings-layout"><nav class="settings-nav"><button class="settings-link active" data-settings="users">Users & access</button><button class="settings-link" data-settings="stages">Pipeline stages</button><button class="settings-link" data-settings="tags">Tags</button><button class="settings-link" data-settings="export">Data export</button><button class="settings-link" data-settings="security">Security</button></nav><div class="settings-content"><section class="settings-panel active" id="users-settings"><div class="section-actions"><div><h2>Users & access</h2><p>Roles control what each teammate can view and change.</p></div><button class="button button-primary" data-open-modal="inviteModal">+ Invite user</button></div><article class="panel"><div class="table-scroll"><table><thead><tr><th>Member</th><th>Role</th><th>Scope</th><th>Last active</th><th></th></tr></thead><tbody id="usersTable"></tbody></table></div></article><div class="role-guide"><div><span class="role-icon admin-icon">A</span><p><strong>Admin</strong><small>Full data, users, settings & exports</small></p></div><div><span class="role-icon manager-icon">M</span><p><strong>Manager</strong><small>All records, reassignment & reports</small></p></div><div><span class="role-icon rep-icon">R</span><p><strong>Sales Rep</strong><small>Own assigned business & new leads</small></p></div><div><span class="role-icon viewer-icon">V</span><p><strong>Viewer</strong><small>Read all CRM data, no edits</small></p></div></div></section>
+            <section class="settings-panel" id="stages-settings"><div class="section-actions"><div><h2>Pipeline stages</h2><p>Default probability updates when a deal moves stages. Drag to reorder.</p></div><button class="button button-primary" id="addStage">+ Add stage</button></div><article class="panel stage-settings-list" id="stageSettingsList"></article></section>
+            <section class="settings-panel" id="tags-settings"><div class="section-actions"><div><h2>Tags</h2><p>Segment companies using free-form labels.</p></div><button class="button button-primary" id="addTag">+ Add tag</button></div><article class="panel tag-settings" id="tagSettingsList"></article></section>
+            <section class="settings-panel" id="export-settings"><h2>Data export</h2><p class="settings-intro">Download your CRM data for a backup or external analysis. Exports are available to administrators.</p><div class="export-grid"><article class="panel export-card"><span>▣</span><h3>Companies</h3><p>Accounts, owners, statuses and tags.</p><button class="button button-secondary export-data" data-type="companies">Export CSV</button></article><article class="panel export-card"><span>◎</span><h3>Contacts</h3><p>Contact details and primary status.</p><button class="button button-secondary export-data" data-type="contacts">Export CSV</button></article><article class="panel export-card"><span>◫</span><h3>Deals</h3><p>Values, stages, probabilities and outcomes.</p><button class="button button-secondary export-data" data-type="deals">Export CSV</button></article></div></section>
+            <section class="settings-panel" id="security-settings"><h2>Authentication & security</h2><p class="settings-intro">Invite-only access, secure sessions and server-enforced permissions protect client data.</p><article class="panel security-list"><div><span class="security-check">✓</span><p><strong>Email/password sign-in</strong><small>8+ characters and at least one number required.</small></p><button class="button button-quiet">Configured</button></div><div><span class="security-check">✓</span><p><strong>Google SSO</strong><small>Optional single sign-on for SmartPay teammates.</small></p><button class="button button-secondary">Connect Google</button></div><div><span class="security-check">✓</span><p><strong>Session protection</strong><small>Secure httpOnly cookies and rate-limited login attempts.</small></p><button class="button button-quiet">Enabled</button></div><div><span class="security-check">✓</span><p><strong>Audit trail</strong><small>Deal stages and task completion are timestamped and attributed.</small></p><button class="button button-quiet">Enabled</button></div></article></section>
+          </div></div>
+        </section>
+      </main>
+    </div>
+
+    <div class="modal-layer" id="modalLayer" aria-hidden="true">
+      <div class="modal" id="createModal" role="dialog" aria-modal="true" aria-labelledby="createTitle"><button class="modal-close" data-close-modal aria-label="Close">×</button><p class="eyebrow">Quick create</p><h2 id="createTitle">What would you like to add?</h2><p class="modal-intro">Create records without leaving your current workspace.</p><div class="quick-create"><button data-open-modal="companyModal">▣ <span><b>Company</b><small>Create a merchant account</small></span>→</button><button data-open-modal="dealModal">◫ <span><b>Deal</b><small>Add an opportunity</small></span>→</button><button data-open-modal="taskModal">✓ <span><b>Task</b><small>Schedule a follow-up</small></span>→</button><button data-open-modal="activityModal">◌ <span><b>Activity</b><small>Log a touchpoint</small></span>→</button></div></div>
+      <form class="modal form-modal" id="companyModal" role="dialog" aria-modal="true"><button class="modal-close" data-close-modal aria-label="Close">×</button><p class="eyebrow">New account</p><h2>Add company</h2><div class="form-grid"><label>Company name <input name="companyName" required placeholder="e.g. Orbit Retail" /></label><label>Industry <select name="industry"><option>Retail</option><option>Fintech</option><option>SaaS</option><option>Healthcare</option></select></label><label>Lead source <select name="source"><option>Inbound</option><option>Referral</option><option>Outbound</option><option>Event</option><option>Other</option></select></label><label>Status <select name="status"><option>Lead</option><option>Active</option></select></label></div><p class="field-note">Similar company names are flagged as a warning, never blocked.</p><div class="modal-actions"><button type="button" class="button button-quiet" data-close-modal>Cancel</button><button class="button button-primary">Save company</button></div></form>
+      <form class="modal form-modal" id="contactModal" role="dialog" aria-modal="true"><button class="modal-close" data-close-modal aria-label="Close">×</button><p class="eyebrow">Company contact</p><h2>Add contact</h2><div class="form-grid"><label>First name <input name="firstName" required placeholder="e.g. Ananya" /></label><label>Last name <input name="lastName" required placeholder="e.g. Rao" /></label><label>Job title <input name="contactTitle" required placeholder="e.g. Head of Partnerships" /></label><label>Email <input name="contactEmail" type="email" required placeholder="ananya@company.com" /></label><label>Phone <input name="contactPhone" type="tel" placeholder="+91 98765 43210" /></label><label class="checkbox-field"><input name="isPrimary" type="checkbox" /> Mark as primary contact</label></div><p class="field-note">Email format is validated and duplicate emails are flagged for review.</p><div class="modal-actions"><button type="button" class="button button-quiet" data-close-modal>Cancel</button><button class="button button-primary">Save contact</button></div></form>
+      <form class="modal form-modal" id="dealModal" role="dialog" aria-modal="true"><button class="modal-close" data-close-modal aria-label="Close">×</button><p class="eyebrow">Sales opportunity</p><h2>Create deal</h2><div class="form-grid"><label>Deal title <input name="dealTitle" required placeholder="e.g. Payment gateway rollout" /></label><label>Company <select name="dealCompany"><option>RazorpayX Partners</option><option>Urban Company</option><option>Groww Wealth</option></select></label><label>Value (INR) <input name="dealValue" type="number" required placeholder="500000" /></label><label>Expected close date <input name="dealDate" type="date" required /></label><label>Starting stage <select name="dealStage"><option>New Lead · 10%</option><option>Qualified · 25%</option><option>Proposal Sent · 50%</option></select></label><label>Owner <select name="dealOwner"><option>Aarav Sharma</option><option>Priya Menon</option><option>Kunal Shah</option></select></label></div><div class="modal-actions"><button type="button" class="button button-quiet" data-close-modal>Cancel</button><button class="button button-primary">Create deal</button></div></form>
+      <form class="modal form-modal" id="taskModal" role="dialog" aria-modal="true"><button class="modal-close" data-close-modal aria-label="Close">×</button><p class="eyebrow">Follow-up</p><h2>Add task</h2><div class="form-grid"><label class="span-2">Task title <input name="taskTitle" required placeholder="e.g. Send proposal follow-up" /></label><label>Due date <input name="taskDate" type="date" required /></label><label>Priority <select name="taskPriority"><option value="high">High</option><option value="medium" selected>Medium</option><option value="low">Low</option></select></label><label>Assign to <select name="taskAssignee"><option>Aarav Sharma</option><option>Priya Menon</option><option>Kunal Shah</option></select></label><label>Link to <select name="taskLink"><option>RazorpayX Partners</option><option>Urban Company</option><option>Groww Wealth</option><option>No link</option></select></label></div><div class="modal-actions"><button type="button" class="button button-quiet" data-close-modal>Cancel</button><button class="button button-primary">Create task</button></div></form>
+      <form class="modal form-modal" id="activityModal" role="dialog" aria-modal="true"><button class="modal-close" data-close-modal aria-label="Close">×</button><p class="eyebrow">Communication log</p><h2>Log activity</h2><div class="activity-type-picker"><label><input type="radio" name="activityType" value="call" checked /><span>☎ Call</span></label><label><input type="radio" name="activityType" value="email" /><span>✉ Email</span></label><label><input type="radio" name="activityType" value="meeting" /><span>▣ Meeting</span></label><label><input type="radio" name="activityType" value="note" /><span>▤ Note</span></label></div><div class="form-grid"><label>Company <select name="activityCompany"><option>RazorpayX Partners</option><option>Urban Company</option><option>Groww Wealth</option></select></label><label>Contact / deal <select name="activityContact"><option>Neha Agarwal</option><option>Payment Gateway Expansion</option><option>None</option></select></label><label class="span-2">What happened?<textarea name="activityBody" required placeholder="Add the key details from this conversation…"></textarea></label></div><div class="modal-actions"><button type="button" class="button button-quiet" data-close-modal>Cancel</button><button class="button button-primary">Save activity</button></div></form>
+      <form class="modal form-modal invite-modal" id="inviteModal" role="dialog" aria-modal="true"><button class="modal-close" data-close-modal aria-label="Close">×</button><p class="eyebrow">Workspace access</p><h2>Invite teammate</h2><p class="modal-intro">They will receive a secure link to set a password. Invitations expire after 72 hours.</p><div class="form-grid"><label class="span-2">Work email <input name="inviteEmail" type="email" required placeholder="teammate@smartpay.in" /></label><label class="span-2">Role <select name="inviteRole"><option>Sales Rep / Account Manager</option><option>Sales Manager</option><option>Read-only / Viewer</option><option>Admin</option></select></label></div><div class="modal-actions"><button type="button" class="button button-quiet" data-close-modal>Cancel</button><button class="button button-primary">Send invite</button></div></form>
+      <form class="modal form-modal decision-modal" id="stageModal" role="dialog" aria-modal="true"><button class="modal-close" data-close-modal aria-label="Close">×</button><p class="eyebrow">Confirm outcome</p><h2 id="stageModalTitle">Mark deal as won?</h2><p class="modal-intro" id="stageModalCopy">This will close the deal and record the outcome in the audit trail.</p><label class="lost-reason hidden" id="lostReasonLabel">Lost reason <select id="lostReason"><option>Budget constraints</option><option>Chose competitor</option><option>Timing / no decision</option><option>Product fit</option><option>Other</option></select></label><div class="modal-actions"><button type="button" class="button button-quiet" data-close-modal>Cancel</button><button class="button button-primary" id="confirmStageMove">Confirm</button></div></form>
+    </div>
+    <div class="popover notification-popover" id="notificationPopover"><div class="popover-heading"><h3>Reminders</h3><span>4 unread</span></div><p><b>Overdue</b> · Send revised proposal to Urban Company</p><p><b>Due today</b> · Call Neha at RazorpayX Partners</p><p><b>Due today</b> · Update discovery notes for Groww Wealth</p><button class="text-button" data-view-go="tasks">Open tasks →</button></div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="./app.js"></script>
+  </body>
+</html>
