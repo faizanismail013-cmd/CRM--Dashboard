@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#0B2A5E" />
+    <meta name="description" content="SmartPay CRM — Manage your pipeline, deals, tasks, and auto-generate HR letters. Built with Google OAuth, Neon DB, and Resend." />
     <title>SmartPay CRM</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -11,7 +12,102 @@
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <div class="app-shell">
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- LOGIN PAGE                                                      -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <div class="login-page" id="loginPage">
+      <div class="login-bg">
+        <div class="login-orb orb-1"></div>
+        <div class="login-orb orb-2"></div>
+        <div class="login-orb orb-3"></div>
+        <div class="login-grid-lines"></div>
+      </div>
+
+      <div class="login-container">
+        <div class="login-left">
+          <div class="login-left-content">
+            <div class="login-brand">
+              <span class="brand-mark"><i></i><i></i><i></i></span>
+              <span><b>smartpay</b><small>CRM</small></span>
+            </div>
+            <h1 class="login-headline">Manage your entire <span>sales pipeline</span> in one place</h1>
+            <p class="login-subtext">Track deals, manage contacts, generate HR letters, and grow your revenue — all from a single dashboard.</p>
+            <div class="login-features">
+              <div class="login-feature">
+                <span class="login-feature-icon">◫</span>
+                <div>
+                  <strong>Pipeline Management</strong>
+                  <small>Drag-and-drop deal stages</small>
+                </div>
+              </div>
+              <div class="login-feature">
+                <span class="login-feature-icon">📄</span>
+                <div>
+                  <strong>Auto-Generated Letters</strong>
+                  <small>Offer, appointment & more</small>
+                </div>
+              </div>
+              <div class="login-feature">
+                <span class="login-feature-icon">◔</span>
+                <div>
+                  <strong>Revenue Reports</strong>
+                  <small>Real-time sales analytics</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="login-right">
+          <div class="login-card">
+            <div class="login-card-header">
+              <h2>Welcome back</h2>
+              <p>Sign in to your SmartPay CRM workspace</p>
+            </div>
+
+            <a href="/auth/google" class="google-signin-btn" id="googleSignInBtn">
+              <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
+                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18A10.96 10.96 0 0 0 1 12c0 1.77.42 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+              </svg>
+              <span>Sign in with Google</span>
+            </a>
+
+            <div class="login-divider">
+              <span>or sign in with email</span>
+            </div>
+
+            <form class="login-form" id="loginForm">
+              <label class="login-field">
+                <span>Work email</span>
+                <input type="email" id="loginEmail" placeholder="you@company.com" required autocomplete="email" />
+              </label>
+              <label class="login-field">
+                <span>Password</span>
+                <input type="password" id="loginPassword" placeholder="Enter your password" required autocomplete="current-password" />
+              </label>
+              <button type="submit" class="login-submit-btn">Sign in</button>
+            </form>
+
+            <div class="login-error" id="loginError" style="display:none;">
+              <span>⚠</span> <span id="loginErrorText">Invalid credentials</span>
+            </div>
+
+            <p class="login-footer-text">
+              This is a login-only workspace. Contact your admin for access.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- MAIN APPLICATION SHELL                                          -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <div class="app-shell" id="appShell" style="display:none;">
       <aside class="sidebar" id="sidebar">
         <a class="brand" href="#dashboard" aria-label="SmartPay CRM dashboard">
           <span class="brand-mark"><i></i><i></i><i></i></span>
@@ -23,6 +119,14 @@
           <button class="nav-link" data-view="pipeline"><span>◫</span> Pipeline <em>12</em></button>
           <button class="nav-link" data-view="tasks"><span>✓</span> Tasks <em class="alert-count">4</em></button>
           <button class="nav-link" data-view="reports"><span>◔</span> Reports</button>
+          <p class="nav-label">HR Documents</p>
+          <button class="nav-link" data-view="letters"><span>📄</span> Letters</button>
+          <div class="letters-submenu" id="lettersSubmenu">
+            <button class="nav-sublink" data-letter-type="offer"><span class="sub-dot offer-dot"></span> Offer Letter</button>
+            <button class="nav-sublink" data-letter-type="appointment"><span class="sub-dot appointment-dot"></span> Appointment Letter</button>
+            <button class="nav-sublink" data-letter-type="resignation"><span class="sub-dot resignation-dot"></span> Resignation Letter</button>
+            <button class="nav-sublink" data-letter-type="termination"><span class="sub-dot termination-dot"></span> Termination Letter</button>
+          </div>
           <p class="nav-label">Workspace</p>
           <button class="nav-link" data-view="settings"><span>⚙</span> Settings</button>
         </nav>
@@ -32,9 +136,23 @@
           <button aria-label="Switch workspace">⌄</button>
         </div>
         <div class="sidebar-user">
-          <span class="avatar avatar-blue">AS</span>
-          <div><strong>Aarav Sharma</strong><small>Sales Manager</small></div>
+          <span class="avatar avatar-blue" id="sidebarAvatar">AS</span>
+          <div><strong id="sidebarUserName">Aarav Sharma</strong><small id="sidebarUserRole">Sales Manager</small></div>
           <button id="userMenuBtn" aria-label="Open user menu">⋮</button>
+        </div>
+        <!-- User menu popover -->
+        <div class="user-menu-popover" id="userMenuPopover">
+          <div class="user-menu-header">
+            <span class="avatar avatar-blue" id="menuAvatar">AS</span>
+            <div>
+              <strong id="menuUserName">Aarav Sharma</strong>
+              <small id="menuUserEmail">aarav@smartpay.in</small>
+            </div>
+          </div>
+          <hr />
+          <a href="/api/auth/logout" class="user-menu-item" id="logoutBtn">
+            <span>⎋</span> Sign out
+          </a>
         </div>
       </aside>
 
@@ -54,8 +172,17 @@
 
         <section class="view active" id="dashboard-view">
           <div class="page-heading">
-            <div><p class="eyebrow">Monday, 1 September</p><h1>Good morning, Aarav <span>✦</span></h1><p>Here’s how your book of business is moving today.</p></div>
-            <div class="heading-actions"><button class="button button-quiet" id="dateBtn">This month <span>⌄</span></button><button class="button button-secondary" data-open-modal="activityModal">+ Log activity</button></div>
+            <div><p class="eyebrow">Monday, 1 September</p><h1>Good morning, <span id="dashboardUserName">Aarav</span> <span>✦</span></h1><p>Here's how your book of business is moving today.</p></div>
+            <div class="heading-actions">
+              <select class="button button-quiet" id="dateFilter" style="outline: none;">
+                <option value="this_month">This month</option>
+                <option value="last_month">Last month</option>
+                <option value="this_quarter">This quarter</option>
+                <option value="this_year">This year</option>
+                <option value="all_time">All time</option>
+              </select>
+              <button class="button button-secondary" data-open-modal="activityModal">+ Log activity</button>
+            </div>
           </div>
 
           <div class="metric-grid">
@@ -114,7 +241,7 @@
 
         <section class="view" id="pipeline-view">
           <div class="page-heading"><div><p class="eyebrow">Sales workspace</p><h1>Pipeline</h1><p>Move deals across stages, then confirm won or lost outcomes.</p></div><button class="button button-primary" data-open-modal="dealModal">+ Create deal</button></div>
-          <div class="pipeline-insights"><div><p>Open pipeline <strong id="pipelineHeadline">₹34.8L</strong></p><span></span><div><p>Weighted forecast <strong id="forecastHeadline">₹18.7L</strong></p></div><span></span><div><p>Deals closing this month <strong>09</strong></p></div></div>
+          <div class="pipeline-insights"><div><p>Open pipeline <strong id="pipelineHeadline">₹34.8L</strong></p></div><span></span><div><p>Weighted forecast <strong id="forecastHeadline">₹18.7L</strong></p></div><span></span><div><p>Deals closing this month <strong>09</strong></p></div></div>
           <div class="toolbar panel-lite pipeline-toolbar"><select id="ownerFilter"><option value="all">All owners</option><option value="Aarav Sharma">Aarav Sharma</option><option value="Priya Menon">Priya Menon</option><option value="Kunal Shah">Kunal Shah</option></select><select id="pipelineTagFilter"><option value="all">All tags</option><option value="high value">High value</option><option value="at risk">At risk</option></select><select id="closeFilter"><option value="all">Any close month</option><option value="September">September 2026</option><option value="October">October 2026</option></select><span class="drag-note">↕ Drag a deal card to update its stage</span></div>
           <div class="kanban-board" id="kanbanBoard"></div>
         </section>
@@ -131,6 +258,96 @@
           <div class="reports-grid"><article class="panel report-chart"><div class="panel-heading"><div><h2>Won vs. lost</h2><p>Deal value by month (₹ Lakhs)</p></div><button class="button button-quiet" id="chartPeriod">Last 6 months⌄</button></div><div class="bar-chart" id="reportBars"></div><div class="bar-legend"><span><i class="dot blue-dot"></i> Won</span><span><i class="dot gray-dot"></i> Lost</span></div></article><article class="panel rep-performance"><div class="panel-heading"><div><h2>Rep performance</h2><p>Current-month sales activity</p></div><button class="text-button">Full report →</button></div><div id="repTable"></div></article></div><article class="panel funnel-panel"><div class="panel-heading"><div><h2>Pipeline conversion</h2><p>Open deals at each stage</p></div><button class="button button-quiet">September 2026⌄</button></div><div class="conversion-funnel" id="conversionFunnel"></div></article>
         </section>
 
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <!-- LETTERS VIEW                                                -->
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <section class="view" id="letters-view">
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">HR Documents</p>
+              <h1>Auto-Generate Letters</h1>
+              <p>Create professional HR letters with auto-filled company details. Print or download as PDF.</p>
+            </div>
+          </div>
+
+          <div class="letters-hub">
+            <article class="letter-type-card" data-letter-type="offer">
+              <div class="letter-card-icon offer-icon">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              </div>
+              <h3>Offer Letter</h3>
+              <p>Generate a formal job offer letter with compensation details, joining date, and terms.</p>
+              <span class="letter-card-action">Generate →</span>
+            </article>
+
+            <article class="letter-type-card" data-letter-type="appointment">
+              <div class="letter-card-icon appointment-icon">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 14l2 2 4-4"/></svg>
+              </div>
+              <h3>Appointment Letter</h3>
+              <p>Formal confirmation of employment with role details, department, and reporting structure.</p>
+              <span class="letter-card-action">Generate →</span>
+            </article>
+
+            <article class="letter-type-card" data-letter-type="resignation">
+              <div class="letter-card-icon resignation-icon">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+              </div>
+              <h3>Resignation Acceptance</h3>
+              <p>Acknowledge an employee's resignation with last working day and handover instructions.</p>
+              <span class="letter-card-action">Generate →</span>
+            </article>
+
+            <article class="letter-type-card" data-letter-type="termination">
+              <div class="letter-card-icon termination-icon">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
+              </div>
+              <h3>Termination Letter</h3>
+              <p>Formal notice of employment termination with effective date, reason, and settlement details.</p>
+              <span class="letter-card-action">Generate →</span>
+            </article>
+          </div>
+
+          <!-- Letter Generator Panel (shown when a letter type is selected) -->
+          <div class="letter-generator" id="letterGenerator" style="display:none;">
+            <button class="back-link" id="backToLettersHub">← Back to all letters</button>
+            <div class="letter-gen-layout">
+              <!-- Left: Form -->
+              <div class="letter-form-panel panel">
+                <div class="panel-heading">
+                  <div>
+                    <h2 id="letterFormTitle">Offer Letter</h2>
+                    <p>Fill in the details to auto-generate</p>
+                  </div>
+                </div>
+                <form id="letterForm" class="letter-form">
+                  <div class="form-grid" id="letterFormFields">
+                    <!-- Fields injected by JS based on letter type -->
+                  </div>
+                  <div class="letter-form-actions">
+                    <button type="button" class="button button-quiet" id="letterPreviewBtn">👁 Preview</button>
+                    <button type="button" class="button button-secondary" id="letterDownloadBtn">⇩ Download PDF</button>
+                    <button type="submit" class="button button-primary" id="letterEmailBtn">✉ Send via Email</button>
+                  </div>
+                </form>
+              </div>
+
+              <!-- Right: Live Preview -->
+              <div class="letter-preview-panel">
+                <div class="letter-preview-header">
+                  <h3>Live Preview</h3>
+                  <span class="letter-preview-badge">A4 Format</span>
+                </div>
+                <div class="letter-paper" id="letterPaper">
+                  <div class="letter-paper-content" id="letterPaperContent">
+                    <p class="letter-placeholder-text">Fill in the form to see a live preview of your letter here.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <section class="view" id="settings-view">
           <div class="page-heading"><div><p class="eyebrow">Workspace administration</p><h1>Settings</h1><p>Manage access, pipeline stages, segmentation and data exports.</p></div></div>
           <div class="settings-layout"><nav class="settings-nav"><button class="settings-link active" data-settings="users">Users & access</button><button class="settings-link" data-settings="stages">Pipeline stages</button><button class="settings-link" data-settings="tags">Tags</button><button class="settings-link" data-settings="export">Data export</button><button class="settings-link" data-settings="security">Security</button></nav><div class="settings-content"><section class="settings-panel active" id="users-settings"><div class="section-actions"><div><h2>Users & access</h2><p>Roles control what each teammate can view and change.</p></div><button class="button button-primary" data-open-modal="inviteModal">+ Invite user</button></div><article class="panel"><div class="table-scroll"><table><thead><tr><th>Member</th><th>Role</th><th>Scope</th><th>Last active</th><th></th></tr></thead><tbody id="usersTable"></tbody></table></div></article><div class="role-guide"><div><span class="role-icon admin-icon">A</span><p><strong>Admin</strong><small>Full data, users, settings & exports</small></p></div><div><span class="role-icon manager-icon">M</span><p><strong>Manager</strong><small>All records, reassignment & reports</small></p></div><div><span class="role-icon rep-icon">R</span><p><strong>Sales Rep</strong><small>Own assigned business & new leads</small></p></div><div><span class="role-icon viewer-icon">V</span><p><strong>Viewer</strong><small>Read all CRM data, no edits</small></p></div></div></section>
@@ -143,6 +360,9 @@
       </main>
     </div>
 
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- MODALS                                                          -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
     <div class="modal-layer" id="modalLayer" aria-hidden="true">
       <div class="modal" id="createModal" role="dialog" aria-modal="true" aria-labelledby="createTitle"><button class="modal-close" data-close-modal aria-label="Close">×</button><p class="eyebrow">Quick create</p><h2 id="createTitle">What would you like to add?</h2><p class="modal-intro">Create records without leaving your current workspace.</p><div class="quick-create"><button data-open-modal="companyModal">▣ <span><b>Company</b><small>Create a merchant account</small></span>→</button><button data-open-modal="dealModal">◫ <span><b>Deal</b><small>Add an opportunity</small></span>→</button><button data-open-modal="taskModal">✓ <span><b>Task</b><small>Schedule a follow-up</small></span>→</button><button data-open-modal="activityModal">◌ <span><b>Activity</b><small>Log a touchpoint</small></span>→</button></div></div>
       <form class="modal form-modal" id="companyModal" role="dialog" aria-modal="true"><button class="modal-close" data-close-modal aria-label="Close">×</button><p class="eyebrow">New account</p><h2>Add company</h2><div class="form-grid"><label>Company name <input name="companyName" required placeholder="e.g. Orbit Retail" /></label><label>Industry <select name="industry"><option>Retail</option><option>Fintech</option><option>SaaS</option><option>Healthcare</option></select></label><label>Lead source <select name="source"><option>Inbound</option><option>Referral</option><option>Outbound</option><option>Event</option><option>Other</option></select></label><label>Status <select name="status"><option>Lead</option><option>Active</option></select></label></div><p class="field-note">Similar company names are flagged as a warning, never blocked.</p><div class="modal-actions"><button type="button" class="button button-quiet" data-close-modal>Cancel</button><button class="button button-primary">Save company</button></div></form>
@@ -152,9 +372,28 @@
       <form class="modal form-modal" id="activityModal" role="dialog" aria-modal="true"><button class="modal-close" data-close-modal aria-label="Close">×</button><p class="eyebrow">Communication log</p><h2>Log activity</h2><div class="activity-type-picker"><label><input type="radio" name="activityType" value="call" checked /><span>☎ Call</span></label><label><input type="radio" name="activityType" value="email" /><span>✉ Email</span></label><label><input type="radio" name="activityType" value="meeting" /><span>▣ Meeting</span></label><label><input type="radio" name="activityType" value="note" /><span>▤ Note</span></label></div><div class="form-grid"><label>Company <select name="activityCompany"><option>RazorpayX Partners</option><option>Urban Company</option><option>Groww Wealth</option></select></label><label>Contact / deal <select name="activityContact"><option>Neha Agarwal</option><option>Payment Gateway Expansion</option><option>None</option></select></label><label class="span-2">What happened?<textarea name="activityBody" required placeholder="Add the key details from this conversation…"></textarea></label></div><div class="modal-actions"><button type="button" class="button button-quiet" data-close-modal>Cancel</button><button class="button button-primary">Save activity</button></div></form>
       <form class="modal form-modal invite-modal" id="inviteModal" role="dialog" aria-modal="true"><button class="modal-close" data-close-modal aria-label="Close">×</button><p class="eyebrow">Workspace access</p><h2>Invite teammate</h2><p class="modal-intro">They will receive a secure link to set a password. Invitations expire after 72 hours.</p><div class="form-grid"><label class="span-2">Work email <input name="inviteEmail" type="email" required placeholder="teammate@smartpay.in" /></label><label class="span-2">Role <select name="inviteRole"><option>Sales Rep / Account Manager</option><option>Sales Manager</option><option>Read-only / Viewer</option><option>Admin</option></select></label></div><div class="modal-actions"><button type="button" class="button button-quiet" data-close-modal>Cancel</button><button class="button button-primary">Send invite</button></div></form>
       <form class="modal form-modal decision-modal" id="stageModal" role="dialog" aria-modal="true"><button class="modal-close" data-close-modal aria-label="Close">×</button><p class="eyebrow">Confirm outcome</p><h2 id="stageModalTitle">Mark deal as won?</h2><p class="modal-intro" id="stageModalCopy">This will close the deal and record the outcome in the audit trail.</p><label class="lost-reason hidden" id="lostReasonLabel">Lost reason <select id="lostReason"><option>Budget constraints</option><option>Chose competitor</option><option>Timing / no decision</option><option>Product fit</option><option>Other</option></select></label><div class="modal-actions"><button type="button" class="button button-quiet" data-close-modal>Cancel</button><button class="button button-primary" id="confirmStageMove">Confirm</button></div></form>
+      <!-- Letter Email Modal -->
+      <form class="modal form-modal" id="letterEmailModal" role="dialog" aria-modal="true">
+        <button class="modal-close" data-close-modal aria-label="Close">×</button>
+        <p class="eyebrow">Send Letter</p>
+        <h2>Email this letter</h2>
+        <p class="modal-intro">The letter will be sent as an HTML email to the recipient.</p>
+        <div class="form-grid">
+          <label class="span-2">Recipient email <input name="letterRecipientEmail" type="email" required placeholder="employee@company.com" /></label>
+          <label class="span-2">Subject <input name="letterEmailSubject" type="text" required placeholder="Your Offer Letter — SmartPay India" /></label>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="button button-quiet" data-close-modal>Cancel</button>
+          <button class="button button-primary">Send email</button>
+        </div>
+      </form>
     </div>
     <div class="popover notification-popover" id="notificationPopover"><div class="popover-heading"><h3>Reminders</h3><span>4 unread</span></div><p><b>Overdue</b> · Send revised proposal to Urban Company</p><p><b>Due today</b> · Call Neha at RazorpayX Partners</p><p><b>Due today</b> · Update discovery notes for Groww Wealth</p><button class="text-button" data-view-go="tasks">Open tasks →</button></div>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <!-- Hidden print container for letter PDF -->
+    <div id="printContainer" class="print-only"></div>
+
     <script src="./app.js"></script>
   </body>
 </html>
