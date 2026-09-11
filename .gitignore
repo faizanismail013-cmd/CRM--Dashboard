@@ -1,0 +1,8 @@
+node_modules/
+.env
+.DS_Store
+.vercel
+.local_users.json
+cookies.txt
+scratch/
+

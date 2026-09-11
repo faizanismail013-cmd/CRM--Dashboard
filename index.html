@@ -1,0 +1,1537 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0B2A5E">
+    <meta name="description" content="SmartPay CRM — Manage your pipeline, deals, tasks, and auto-generate HR letters. Built with Google OAuth, Neon DB, and Resend.">
+    <title>SmartPay CRM</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&amp;family=Manrope:wght@600;700;800&amp;display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- LOGIN PAGE                                                      -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <div class="login-page" id="loginPage">
+      <div class="login-bg">
+        <div class="login-orb orb-1"></div>
+        <div class="login-orb orb-2"></div>
+        <div class="login-orb orb-3"></div>
+        <div class="login-grid-lines"></div>
+      </div>
+
+      <div class="login-container">
+        <div class="login-left">
+          <div class="login-left-content">
+            <div class="login-brand">
+              <span class="brand-mark"><i></i><i></i><i></i></span>
+              <span><b>smartpay</b><small>CRM</small></span>
+            </div>
+            <h1 class="login-headline">Manage your entire <span>sales pipeline</span> in one place</h1>
+            <p class="login-subtext">Track deals, manage contacts, generate HR letters, and grow your revenue — all from a single dashboard.</p>
+            <div class="login-features">
+              <div class="login-feature">
+                <span class="login-feature-icon">◫</span>
+                <div>
+                  <strong>Pipeline Management</strong>
+                  <small>Drag-and-drop deal stages</small>
+                </div>
+              </div>
+              <div class="login-feature">
+                <span class="login-feature-icon">📄</span>
+                <div>
+                  <strong>Auto-Generated Letters</strong>
+                  <small>Offer, appointment &amp; more</small>
+                </div>
+              </div>
+              <div class="login-feature">
+                <span class="login-feature-icon">◔</span>
+                <div>
+                  <strong>Revenue Reports</strong>
+                  <small>Real-time sales analytics</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="login-right">
+          <!-- Notification / Alert Banner for Verification or Auth Messages -->
+          <div class="auth-alert" id="authAlert" style="display:none;" role="alert">
+            <span class="auth-alert-icon" id="authAlertIcon">✓</span>
+            <div class="auth-alert-body">
+              <strong id="authAlertTitle">Notice</strong>
+              <p id="authAlertMessage">Message</p>
+            </div>
+            <button type="button" class="auth-alert-close" id="authAlertClose" aria-label="Close notification">×</button>
+          </div>
+
+          <!-- CARD 1: SIGN IN -->
+          <div class="login-card" id="loginCard">
+            <div class="login-card-header">
+              <h2>Welcome back</h2>
+              <p>Sign in to your SmartPay CRM workspace</p>
+            </div>
+
+            <a href="/auth/google" class="google-signin-btn" id="googleSignInBtn">
+              <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
+                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18A10.96 10.96 0 0 0 1 12c0 1.77.42 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+              </svg>
+              <span>Sign in with Google</span>
+            </a>
+
+            <div class="login-divider">
+              <span>or sign in with credentials</span>
+            </div>
+
+            <form class="login-form" id="loginForm" novalidate onsubmit="return false;">
+              <label class="login-field">
+                <span>Username or Email</span>
+                <input type="text" id="loginIdentifier" placeholder="Enter username or email" required autocomplete="username">
+              </label>
+              <div class="login-field">
+                <label for="loginPassword">Password</label>
+                <div class="password-input-wrap">
+                  <input type="password" id="loginPassword" placeholder="Enter your password" required autocomplete="current-password">
+                  <button type="button" class="password-toggle-btn" data-target="loginPassword" aria-label="Toggle password visibility" title="Show/Hide password">
+                    <svg class="eye-open" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    <svg class="eye-closed" style="display:none;" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                  </button>
+                </div>
+              </div>
+
+              <div class="login-row-options">
+                <label class="remember-me-checkbox">
+                  <input type="checkbox" id="loginRememberMe" checked>
+                  <span>Remember me</span>
+                </label>
+                <button type="button" class="text-link forgot-link" id="toForgotBtn">Forgot password?</button>
+              </div>
+
+              <button type="submit" class="login-submit-btn" id="loginSubmitBtn">
+                <span class="btn-text">Sign in</span>
+                <span class="btn-spinner" style="display:none;">⏳</span>
+              </button>
+            </form>
+
+            <div class="login-error" id="loginError" style="display:none;" role="alert" aria-live="polite">
+              <span class="error-icon">⚠</span> <span id="loginErrorText">Invalid credentials</span>
+            </div>
+
+            <div class="auth-switch-footer">
+              Don't have an account? <button type="button" class="text-link strong-link" id="toRegisterBtn">Create account</button>
+            </div>
+          </div>
+
+          <!-- CARD 2: REGISTER -->
+          <div class="login-card" id="registerCard" style="display:none;">
+            <div class="login-card-header">
+              <h2>Create an account</h2>
+              <p>Register for SmartPay CRM workspace</p>
+            </div>
+
+            <form class="login-form" id="registerForm" novalidate onsubmit="return false;">
+              <label class="login-field">
+                <span>Full name</span>
+                <input type="text" id="regName" placeholder="Aarav Sharma" required autocomplete="name">
+              </label>
+              <label class="login-field">
+                <span>Username</span>
+                <input type="text" id="regUsername" placeholder="aarav_sharma" required pattern="[a-zA-Z0-9_.-]{3,30}" autocomplete="username">
+                <small class="field-hint">3–30 letters, numbers, hyphens or underscores</small>
+              </label>
+              <label class="login-field">
+                <span>Work email</span>
+                <input type="email" id="regEmail" placeholder="you@company.com" required autocomplete="email">
+              </label>
+              <div class="login-field">
+                <label for="regPassword">Password</label>
+                <div class="password-input-wrap">
+                  <input type="password" id="regPassword" placeholder="Create a strong password" required autocomplete="new-password">
+                  <button type="button" class="password-toggle-btn" data-target="regPassword" aria-label="Toggle password visibility" title="Show/Hide password">
+                    <svg class="eye-open" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    <svg class="eye-closed" style="display:none;" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                  </button>
+                </div>
+
+                <!-- Live Password Strength Meter -->
+                <div class="password-strength-box" id="regStrengthBox">
+                  <div class="strength-header">
+                    <span class="strength-title">Password security:</span>
+                    <span class="strength-label" id="regStrengthLabel">Too weak</span>
+                  </div>
+                  <div class="strength-bar-track">
+                    <div class="strength-bar-fill" id="regStrengthFill"></div>
+                  </div>
+                </div>
+
+                <!-- Interactive Password Requirement Checklist -->
+                <div class="password-checklist-grid" id="regChecklist">
+                  <div class="checklist-item" id="regRuleLength">
+                    <span class="rule-icon">○</span>
+                    <span class="rule-text">8+ characters</span>
+                  </div>
+                  <div class="checklist-item" id="regRuleUpper">
+                    <span class="rule-icon">○</span>
+                    <span class="rule-text">1 uppercase (A–Z)</span>
+                  </div>
+                  <div class="checklist-item" id="regRuleLower">
+                    <span class="rule-icon">○</span>
+                    <span class="rule-text">1 lowercase (a–z)</span>
+                  </div>
+                  <div class="checklist-item" id="regRuleNumber">
+                    <span class="rule-icon">○</span>
+                    <span class="rule-text">1 number (0–9)</span>
+                  </div>
+                </div>
+              </div>
+
+              <button type="submit" class="login-submit-btn" id="regSubmitBtn">
+                <span class="btn-text">Register &amp; Send Verification</span>
+                <span class="btn-spinner" style="display:none;">⏳</span>
+              </button>
+            </form>
+
+            <div class="login-error" id="regError" style="display:none;" role="alert" aria-live="polite">
+              <span class="error-icon">⚠</span> <span id="regErrorText">Error message</span>
+            </div>
+
+            <div class="auth-switch-footer">
+              Already have an account? <button type="button" class="text-link strong-link" id="regToLoginBtn">Sign in</button>
+            </div>
+          </div>
+
+          <!-- CARD 3: UNVERIFIED ACCOUNT GATE -->
+          <div class="login-card" id="unverifiedCard" style="display:none;">
+            <div class="verification-gate-icon">✉</div>
+            <div class="login-card-header">
+              <h2>Please verify your email address</h2>
+              <p>Access to the CRM dashboard is restricted to verified accounts.</p>
+            </div>
+
+            <div class="unverified-box">
+              <p>A verification link was dispatched to:</p>
+              <div class="unverified-email-badge" id="unverifiedEmailDisplay">user@company.com</div>
+              <p class="unverified-tip">Please check your inbox (including promotions or spam) and click the verification link to activate your access.</p>
+            </div>
+
+            <div class="unverified-actions">
+              <button type="button" class="login-submit-btn instant-verify-btn" id="instantVerifyBtn">
+                <span class="btn-text">⚡ Instant Verify &amp; Enter Dashboard</span>
+                <span class="btn-spinner" style="display:none;">⏳</span>
+              </button>
+              <button type="button" class="button button-quiet full-width" id="resendVerificationBtn">
+                Resend Verification Email
+              </button>
+              <div id="resendStatus" class="resend-status" style="display:none;"></div>
+            </div>
+
+            <div class="auth-switch-footer">
+              <button type="button" class="text-link strong-link" id="unverifiedToLoginBtn">← Back to Sign in</button>
+            </div>
+          </div>
+
+          <!-- CARD 4: FORGOT PASSWORD -->
+          <div class="login-card" id="forgotCard" style="display:none;">
+            <div class="login-card-header">
+              <h2>Forgot your password?</h2>
+              <p>Enter your registered email address and we'll send you a password reset link.</p>
+            </div>
+
+            <form class="login-form" id="forgotForm" novalidate onsubmit="return false;">
+              <label class="login-field">
+                <span>Work email</span>
+                <input type="email" id="forgotEmail" placeholder="you@company.com" required autocomplete="email">
+              </label>
+
+              <button type="submit" class="login-submit-btn" id="forgotSubmitBtn">
+                <span class="btn-text">Send reset link</span>
+                <span class="btn-spinner" style="display:none;">⏳</span>
+              </button>
+            </form>
+
+            <div class="login-error" id="forgotError" style="display:none;" role="alert" aria-live="polite">
+              <span class="error-icon">⚠</span> <span id="forgotErrorText"></span>
+            </div>
+
+            <div class="auth-switch-footer">
+              Remembered your password? <button type="button" class="text-link strong-link" id="forgotToLoginBtn">Sign in</button>
+            </div>
+          </div>
+
+          <!-- CARD 5: RESET PASSWORD -->
+          <div class="login-card" id="resetCard" style="display:none;">
+            <div class="login-card-header">
+              <h2>Create new password</h2>
+              <p>Enter a secure new password for your account.</p>
+            </div>
+
+            <form class="login-form" id="resetForm" novalidate onsubmit="return false;">
+              <input type="hidden" id="resetToken">
+              <div class="login-field">
+                <label for="resetNewPassword">New password</label>
+                <div class="password-input-wrap">
+                  <input type="password" id="resetNewPassword" placeholder="Enter new secure password" required autocomplete="new-password">
+                  <button type="button" class="password-toggle-btn" data-target="resetNewPassword" aria-label="Toggle password visibility" title="Show/Hide password">
+                    <svg class="eye-open" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    <svg class="eye-closed" style="display:none;" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                  </button>
+                </div>
+
+                <!-- Live Password Strength Meter -->
+                <div class="password-strength-box" id="resetStrengthBox">
+                  <div class="strength-header">
+                    <span class="strength-title">Password security:</span>
+                    <span class="strength-label" id="resetStrengthLabel">Too weak</span>
+                  </div>
+                  <div class="strength-bar-track">
+                    <div class="strength-bar-fill" id="resetStrengthFill"></div>
+                  </div>
+                </div>
+
+                <!-- Interactive Password Requirement Checklist -->
+                <div class="password-checklist-grid" id="resetChecklist">
+                  <div class="checklist-item" id="resetRuleLength">
+                    <span class="rule-icon">○</span>
+                    <span class="rule-text">8+ characters</span>
+                  </div>
+                  <div class="checklist-item" id="resetRuleUpper">
+                    <span class="rule-icon">○</span>
+                    <span class="rule-text">1 uppercase (A–Z)</span>
+                  </div>
+                  <div class="checklist-item" id="resetRuleLower">
+                    <span class="rule-icon">○</span>
+                    <span class="rule-text">1 lowercase (a–z)</span>
+                  </div>
+                  <div class="checklist-item" id="resetRuleNumber">
+                    <span class="rule-icon">○</span>
+                    <span class="rule-text">1 number (0–9)</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="login-field">
+                <label for="resetConfirmPassword">Confirm new password</label>
+                <div class="password-input-wrap">
+                  <input type="password" id="resetConfirmPassword" placeholder="Re-enter new password" required autocomplete="new-password">
+                  <button type="button" class="password-toggle-btn" data-target="resetConfirmPassword" aria-label="Toggle password visibility" title="Show/Hide password">
+                    <svg class="eye-open" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    <svg class="eye-closed" style="display:none;" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                  </button>
+                </div>
+              </div>
+
+              <button type="submit" class="login-submit-btn" id="resetSubmitBtn">
+                <span class="btn-text">Set new password</span>
+                <span class="btn-spinner" style="display:none;">⏳</span>
+              </button>
+            </form>
+
+            <div class="login-error" id="resetError" style="display:none;" role="alert" aria-live="polite">
+              <span class="error-icon">⚠</span> <span id="resetErrorText"></span>
+            </div>
+
+            <div class="auth-switch-footer">
+              <button type="button" class="text-link strong-link" id="resetToLoginBtn">← Back to Sign in</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- MAIN APPLICATION SHELL                                          -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <div class="app-shell" id="appShell" style="display:none;">
+      <aside class="sidebar" id="sidebar" aria-label="Sidebar navigation">
+        <a class="brand" href="#dashboard" aria-label="SmartPay CRM dashboard">
+          <span class="brand-mark"><i></i><i></i><i></i></span>
+          <span><b>smartpay</b><small>CRM</small></span>
+        </a>
+        <nav class="main-nav" aria-label="Main navigation">
+          <button type="button" class="nav-link active" data-view="dashboard"><span>▦</span> Overview</button>
+          <button type="button" class="nav-link" data-view="companies"><span>▣</span> Companies</button>
+          <button type="button" class="nav-link" data-view="pipeline"><span>◫</span> Pipeline <em>12</em></button>
+          <button type="button" class="nav-link" data-view="products"><span>◈</span> Products</button>
+          <button type="button" class="nav-link" data-view="quotations"><span>📋</span> Quotations</button>
+          <button type="button" class="nav-link" data-view="purchase_orders"><span>📦</span> Orders (PO)</button>
+          <button type="button" class="nav-link" data-view="invoices"><span>🧾</span> Invoices</button>
+          <button type="button" class="nav-link" data-view="tasks"><span>✓</span> Tasks <em class="alert-count">4</em></button>
+          <button type="button" class="nav-link" data-view="reports"><span>◔</span> Reports</button>
+          <p class="nav-label">Sales Operations</p>
+          <button type="button" class="nav-link" data-view="teams"><span>👥</span> Teams &amp; Hierarchy</button>
+          <button type="button" class="nav-link" data-view="commissions"><span>💰</span> Commissions</button>
+          <button type="button" class="nav-link" data-view="targets"><span>🎯</span> Sales Quotas</button>
+          <p class="nav-label">HR Documents</p>
+          <button type="button" class="nav-link" data-view="letters"><span>📄</span> Letters</button>
+          <div class="letters-submenu" id="lettersSubmenu">
+            <button type="button" class="nav-sublink" data-letter-type="offer"><span class="sub-dot offer-dot"></span> Offer Letter</button>
+            <button type="button" class="nav-sublink" data-letter-type="appointment"><span class="sub-dot appointment-dot"></span> Appointment Letter</button>
+            <button type="button" class="nav-sublink" data-letter-type="experience"><span class="sub-dot experience-dot"></span> Experience Letter</button>
+            <button type="button" class="nav-sublink" data-letter-type="resignation"><span class="sub-dot resignation-dot"></span> Resignation Letter</button>
+            <button type="button" class="nav-sublink" data-letter-type="termination"><span class="sub-dot termination-dot"></span> Termination Letter</button>
+          </div>
+        </nav>
+        <div class="sidebar-user" id="sidebarUser">
+          <div class="sidebar-user-clickable" id="sidebarUserClickable" data-view-go="profile" title="View Profile">
+            <span class="avatar avatar-blue" id="sidebarAvatar">AS</span>
+            <div class="sidebar-user-details" id="sidebarUserDetails">
+              <strong id="sidebarUserName">Aarav Sharma</strong>
+              <small id="sidebarUserRole">Sales Manager</small>
+            </div>
+          </div>
+          <button type="button" id="userMenuBtn" aria-label="Open user menu" title="User options">⋮</button>
+        </div>
+        <!-- User menu popover -->
+        <div class="user-menu-popover" id="userMenuPopover">
+          <div class="user-menu-header clickable" id="userMenuHeader" data-view-go="profile" title="View Profile">
+            <span class="avatar avatar-blue" id="menuAvatar">AS</span>
+            <div class="user-menu-meta">
+              <strong id="menuUserName">Aarav Sharma</strong>
+              <small id="menuUserEmail">aarav@smartpay.in</small>
+              <span class="user-menu-role" id="menuUserRole">Sales Manager</span>
+            </div>
+          </div>
+          <hr>
+          <div class="user-menu-actions">
+            <button type="button" class="user-menu-item" id="menuProfileBtn" data-view-go="profile">
+              <span class="menu-icon">👤</span> My Profile
+            </button>
+            <button type="button" class="user-menu-item" id="menuSettingsBtn">
+              <span class="menu-icon">⚙</span> Settings
+            </button>
+            <button type="button" class="user-menu-item user-menu-logout" id="logoutBtn">
+              <span class="menu-icon">⎋</span> Log out
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      <main class="main-content">
+        <header class="topbar">
+          <button type="button" class="mobile-menu" id="mobileMenu" aria-label="Open navigation">☰</button>
+          <div class="search-wrap">
+            <span>⌕</span><input id="globalSearch" type="search" placeholder="Search companies, contacts, deals…" autocomplete="off">
+            <kbd>⌘ K</kbd>
+            <div class="search-results" id="searchResults"></div>
+          </div>
+          <div class="top-actions">
+            <button type="button" class="icon-button notification-button" id="notificationBtn" aria-label="Notifications"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><b>4</b></button>
+            <button type="button" class="button button-primary" data-open-modal="createModal">+ New</button>
+          </div>
+        </header>
+
+        <section class="view active" id="dashboard-view">
+          <div class="page-heading">
+            <div><p class="eyebrow" id="dashboardDate">MONDAY, 1 SEPTEMBER</p><h1><span id="dashboardGreetingPrefix">Good morning,</span> <span id="dashboardUserName" class="clickable-username" data-view-go="profile" title="View your profile">Aarav</span> <span>✨</span></h1><p>Here's how your book of business is moving today.</p></div>
+            <div class="heading-actions">
+              <select class="button button-quiet" id="dateFilter">
+                <option value="this_month">This month</option>
+                <option value="last_month">Last month</option>
+                <option value="this_quarter">This quarter</option>
+                <option value="this_year">This year</option>
+                <option value="all_time">All time</option>
+              </select>
+              <button type="button" class="button button-secondary" data-open-modal="activityModal">+ Log activity</button>
+            </div>
+          </div>
+
+          <!-- Zone 1: Executive KPI Bar -->
+          <div class="metric-grid metric-grid-8">
+            <article class="metric-card"><div class="metric-top"><span class="metric-icon blue">◫</span><span class="trend positive">↑ 12.5%</span></div><p>Open pipeline</p><strong id="pipelineTotal">₹34.8L</strong><small id="pipelineDealCount">12 deals in progress</small></article>
+            <article class="metric-card"><div class="metric-top"><span class="metric-icon cyan">◌</span><span class="trend positive">↑ 8.2%</span></div><p>Weighted forecast</p><strong id="forecastTotal">₹18.7L</strong><small>Expected this month</small></article>
+            <article class="metric-card"><div class="metric-top"><span class="metric-icon orange">✓</span><span class="trend alert" id="tasksDueBadge">4 due</span></div><p>Tasks due this week</p><strong id="tasksTotal">07</strong><small id="tasksSubtext">2 overdue · needs attention</small></article>
+            <article class="metric-card"><div class="metric-top"><span class="metric-icon green">◔</span><span class="trend positive">↑ 5.1%</span></div><p>Win rate</p><strong id="winRateValue">42.8%</strong><small id="winRateSubtext">vs. 37.7% last month</small></article>
+            <article class="metric-card metric-card-revenue"><div class="metric-top"><span class="metric-icon emerald">₹</span></div><p>Revenue this month</p><strong id="revenueThisMonth">₹0</strong><small id="revenueMonthDeals">0 deals won</small></article>
+            <article class="metric-card metric-card-revenue"><div class="metric-top"><span class="metric-icon purple">◇</span></div><p>Revenue this quarter</p><strong id="revenueThisQuarter">₹0</strong><small id="revenueQuarterDeals">Q3 2026</small></article>
+            <article class="metric-card metric-card-renewal"><div class="metric-top"><span class="metric-icon teal">↻</span></div><p>Renewal revenue</p><strong id="renewalRevenue">₹0</strong><small id="renewalDeals">0 renewals</small></article>
+            <article class="metric-card metric-card-leads"><div class="metric-top"><span class="metric-icon amber">★</span></div><p>New leads</p><strong id="newLeadCount">0</strong><small>Inbound today</small></article>
+          </div>
+
+          <!-- Zone 2: Target vs Achievement -->
+          <div class="target-achievement-panel" id="targetAchievementPanel">
+            <div class="target-header">
+              <div class="target-info">
+                <h3>Monthly Target vs Achievement</h3>
+                <p id="targetSubtext">September 2026 · ₹20L target</p>
+              </div>
+              <div class="target-badges">
+                <span class="target-pacing-pill" id="targetPacingPill">On track</span>
+                <span class="target-percent" id="targetPercent">0%</span>
+              </div>
+            </div>
+            <div class="target-progress-wrap">
+              <div class="target-progress-bar">
+                <div class="target-progress-fill" id="targetProgressFill" style="width: 0%"></div>
+                <div class="target-progress-pacing" id="targetProgressPacing" style="left: 0%"></div>
+              </div>
+              <div class="target-labels">
+                <span>₹0</span>
+                <span id="targetMidLabel">₹10L</span>
+                <span id="targetEndLabel">₹20L</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Zone 3: Action Command Center -->
+          <div class="action-center-grid">
+            <!-- Follow-ups -->
+            <article class="panel action-card followups-card">
+              <div class="panel-heading"><div><h2>Follow-ups</h2><p><span class="dot red-dot"></span> <span id="overdueCountBadge">0</span> overdue · <span id="todayCountBadge">0</span> today</p></div></div>
+              <div class="action-tabs">
+                <button type="button" class="action-tab active" data-followup-tab="overdue">🔴 Overdue</button>
+                <button type="button" class="action-tab" data-followup-tab="today">🟡 Today</button>
+              </div>
+              <div class="action-task-list" id="dashboardFollowups"></div>
+            </article>
+            <!-- Deals closing this week -->
+            <article class="panel action-card deals-closing-card">
+              <div class="panel-heading"><div><h2>Deals Closing Soon</h2><p>High-value opportunities this month</p></div></div>
+              <div class="action-deal-list" id="dashboardDealsClosing"></div>
+            </article>
+            <!-- New Leads -->
+            <article class="panel action-card new-leads-card">
+              <div class="panel-heading"><div><h2>New Leads</h2><p>Recent inbound opportunities</p></div><button type="button" class="button button-primary button-sm" data-open-modal="companyModal">+ Add Lead</button></div>
+              <div class="action-lead-list" id="dashboardNewLeads"></div>
+            </article>
+          </div>
+
+          <!-- Zone 4: Intelligence & Performance Grid -->
+          <div class="intel-grid">
+            <!-- Sales Leaderboard -->
+            <article class="panel intel-card leaderboard-card">
+              <div class="panel-heading"><div><h2>Sales Leaderboard</h2><p>Rep performance this month</p></div><button type="button" class="text-button" data-view-go="reports">Full report →</button></div>
+              <div class="leaderboard-table" id="dashboardLeaderboard"></div>
+            </article>
+            <!-- Conversion Funnel -->
+            <article class="panel intel-card funnel-card">
+              <div class="panel-heading"><div><h2>Conversion Funnel</h2><p>Stage-by-stage progression</p></div></div>
+              <div class="funnel-visual" id="dashboardFunnel"></div>
+            </article>
+            <!-- Lost-Deal Analysis -->
+            <article class="panel intel-card lost-card">
+              <div class="panel-heading"><div><h2>Lost-Deal Analysis</h2><p>Revenue lost by reason</p></div></div>
+              <div class="lost-analysis" id="dashboardLostAnalysis"></div>
+            </article>
+            <!-- Pipeline Overview -->
+            <article class="panel intel-card pipeline-overview-card">
+              <div class="panel-heading"><div><h2>Pipeline Overview</h2><p>Value by stage</p></div><button type="button" class="text-button" data-view-go="pipeline">View pipeline →</button></div>
+              <div class="stage-chart" id="stageChart"></div>
+              <div class="chart-legend"><span><i class="dot blue-dot"></i> Pipeline value</span><span><i class="dot cyan-dot"></i> Weighted forecast</span></div>
+            </article>
+          </div>
+
+          <!-- Existing panels: Recent Activity & Team -->
+          <div class="dashboard-grid dashboard-grid-bottom">
+            <article class="panel activity-panel">
+              <div class="panel-heading"><div><h2>Recent activity</h2><p>Across your companies</p></div><button type="button" class="text-button" data-open-modal="activityModal">+ Log activity</button></div>
+              <div class="activity-feed" id="activityFeed"></div>
+            </article>
+            <article class="panel team-panel">
+              <div class="panel-heading"><div><h2>Team pipeline</h2><p>Manager view · all owners</p></div><button type="button" class="text-button" data-view-go="reports">View report <span>→</span></button></div>
+              <div class="team-table" id="teamTable"></div>
+            </article>
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <!-- PRODUCTS VIEW                                               -->
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <section class="view" id="products-view">
+          <div class="page-heading">
+            <div><p class="eyebrow">Product Catalog</p><h1>Products & Services</h1><p>Manage your product offerings, pricing, and SKUs for quotations.</p></div>
+            <button type="button" class="button button-primary" data-open-modal="productModal">+ Add Product</button>
+          </div>
+          <div class="toolbar panel-lite">
+            <div class="filter-search"><span>⌕</span><input id="productSearch" type="search" placeholder="Search products by name, SKU, or category"></div>
+            <select id="productCategoryFilter" aria-label="Filter by category">
+              <option value="all">All categories</option>
+              <option value="Gateway">Gateway</option>
+              <option value="Integration">Integration</option>
+              <option value="API">API</option>
+              <option value="Onboarding">Onboarding</option>
+              <option value="Payout">Payout</option>
+              <option value="Support">Support</option>
+              <option value="Security">Security</option>
+            </select>
+          </div>
+          <article class="panel table-panel">
+            <div class="table-top"><p id="productResultCount">8 products</p></div>
+            <div class="table-scroll">
+              <table>
+                <thead><tr><th>Product</th><th>SKU</th><th>Category</th><th>Unit Price</th><th>Status</th><th></th></tr></thead>
+                <tbody id="productTableBody"></tbody>
+              </table>
+            </div>
+          </article>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <!-- QUOTATIONS VIEW                                             -->
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <section class="view" id="quotations-view">
+          <div class="page-heading">
+            <div><p class="eyebrow">Sales Documents</p><h1>Quotations</h1><p>Create, send, and track quotations with line items and automatic calculations.</p></div>
+            <button type="button" class="button button-primary" data-open-modal="quotationModal">+ New Quotation</button>
+          </div>
+          <div class="toolbar panel-lite">
+            <div class="filter-search"><span>⌕</span><input id="quotationSearch" type="search" placeholder="Search quotations"></div>
+            <select id="quotationStatusFilter" aria-label="Filter by status">
+              <option value="all">All statuses</option>
+              <option value="draft">Draft</option>
+              <option value="sent">Sent</option>
+              <option value="accepted">Accepted</option>
+              <option value="rejected">Rejected</option>
+              <option value="expired">Expired</option>
+            </select>
+          </div>
+          <article class="panel table-panel">
+            <div class="table-top"><p id="quotationResultCount">0 quotations</p></div>
+            <div class="table-scroll">
+              <table>
+                <thead><tr><th>Quotation #</th><th>Company</th><th>Deal</th><th>Total</th><th>Status</th><th>Valid Until</th><th></th></tr></thead>
+                <tbody id="quotationTableBody"></tbody>
+              </table>
+            </div>
+          </article>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <!-- PURCHASE ORDERS VIEW                                        -->
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <section class="view" id="purchase_orders-view">
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">Procurement &amp; Orders</p>
+              <h1>Purchase Orders</h1>
+              <p>Track client POs, verify contractual amounts, and generate invoices with 1-click.</p>
+            </div>
+            <button type="button" class="button button-primary" data-open-modal="poModal">+ Log PO</button>
+          </div>
+          <div class="toolbar panel-lite">
+            <div class="filter-search"><span>⌕</span><input id="poSearch" type="search" placeholder="Search POs..."></div>
+            <select id="poStatusFilter" aria-label="Filter by PO status">
+              <option value="all">All statuses</option>
+              <option value="received">Received</option>
+              <option value="verified">Verified</option>
+              <option value="invoiced">Invoiced</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+            <select id="poCompanyFilter" aria-label="Filter by company">
+              <option value="all">All companies</option>
+            </select>
+          </div>
+          <article class="panel table-panel">
+            <div class="table-top"><p id="poResultCount">0 purchase orders</p></div>
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>PO Number</th>
+                    <th>Company</th>
+                    <th>Linked Quotation</th>
+                    <th>Deal</th>
+                    <th>PO Amount</th>
+                    <th>Issue Date</th>
+                    <th>Status</th>
+                    <th>Invoice</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="poTableBody"></tbody>
+              </table>
+            </div>
+          </article>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <!-- INVOICES VIEW                                               -->
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <section class="view" id="invoices-view">
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">Billing &amp; Revenue</p>
+              <h1>Invoices &amp; Payments</h1>
+              <p>Manage tax invoices, record customer payments, and track receivables in real time.</p>
+            </div>
+            <button type="button" class="button button-primary" data-open-modal="invoiceModal">+ Create Invoice</button>
+          </div>
+
+          <!-- Financial Receivables KPI Summary -->
+          <div class="invoice-kpis-grid">
+            <article class="metric-card">
+              <p>Total Invoiced</p>
+              <strong id="invKpiTotal">₹0</strong>
+              <small id="invKpiTotalCount">0 invoices generated</small>
+            </article>
+            <article class="metric-card">
+              <p>Total Collected</p>
+              <strong id="invKpiCollected" style="color: #10b981;">₹0</strong>
+              <small id="invKpiCollectionRate">0% collection rate</small>
+            </article>
+            <article class="metric-card">
+              <p>Outstanding Balance</p>
+              <strong id="invKpiOutstanding" style="color: #f59e0b;">₹0</strong>
+              <small>Pending client settlements</small>
+            </article>
+            <article class="metric-card">
+              <p>Overdue Amount</p>
+              <strong id="invKpiOverdue" style="color: #ef4444;">₹0</strong>
+              <small id="invKpiOverdueCount">0 overdue invoices</small>
+            </article>
+          </div>
+
+          <div class="toolbar panel-lite">
+            <div class="filter-search"><span>⌕</span><input id="invoiceSearch" type="search" placeholder="Search invoices..."></div>
+            <select id="invoiceStatusFilter" aria-label="Filter by invoice status">
+              <option value="all">All statuses</option>
+              <option value="paid">Paid</option>
+              <option value="partial">Partial</option>
+              <option value="sent">Sent</option>
+              <option value="overdue">Overdue</option>
+              <option value="draft">Draft</option>
+            </select>
+            <select id="invoiceCompanyFilter" aria-label="Filter by company">
+              <option value="all">All companies</option>
+            </select>
+          </div>
+          <article class="panel table-panel">
+            <div class="table-top"><p id="invoiceResultCount">0 invoices</p></div>
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Invoice #</th>
+                    <th>Company</th>
+                    <th>Issue Date</th>
+                    <th>Due Date</th>
+                    <th>Total</th>
+                    <th>Paid</th>
+                    <th>Balance</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="invoiceTableBody"></tbody>
+              </table>
+            </div>
+          </article>
+        </section>
+
+        <section class="view" id="companies-view">
+          <div class="page-heading">
+            <div><p class="eyebrow">Accounts</p><h1>Companies</h1><p>Manage merchants, contacts, deals and their relationship history.</p></div>
+            <button type="button" class="button button-primary" data-open-modal="companyModal">+ Add company</button>
+          </div>
+          <div class="toolbar panel-lite">
+            <div class="filter-search"><span>⌕</span><input id="companySearch" type="search" placeholder="Search companies"></div>
+            <select id="statusFilter" aria-label="Filter by status"><option value="all">All statuses</option><option value="lead">Lead</option><option value="active">Active</option><option value="churned">Churned</option></select>
+            <select id="industryFilter" aria-label="Filter by industry"><option value="all">All industries</option><option value="Fintech">Fintech</option><option value="Retail">Retail</option><option value="SaaS">SaaS</option><option value="Healthcare">Healthcare</option></select>
+            <select id="tagFilter" aria-label="Filter by tag"><option value="all">All tags</option><option value="high value">High value</option><option value="at risk">At risk</option><option value="referral">Referral partner</option></select>
+            <button type="button" class="button button-quiet" id="clearCompanyFilters">Clear filters</button>
+          </div>
+          <article class="panel table-panel"><div class="table-top"><p id="companyResultCount">8 companies</p><label>Sort by <select id="companySort"><option value="activity">Last activity</option><option value="name">Name</option><option value="created">Created date</option></select></label></div><div class="table-scroll"><table><thead><tr><th>Company</th><th>Industry</th><th>Owner</th><th>Status</th><th>Open deals</th><th>Last activity</th><th></th></tr></thead><tbody id="companyTableBody"></tbody></table></div><div class="table-footer"><span>Showing 1–8 of 8</span><div><button type="button" disabled>← Previous</button><button type="button" class="page-current">1</button><button type="button" disabled>Next →</button></div></div></article>
+        </section>
+
+        <section class="view" id="company-detail-view">
+          <button type="button" class="back-link" data-view-go="companies">← Back to companies</button>
+          <div class="company-hero"><div class="company-logo purple-logo">R</div><div><p class="eyebrow">Active account · Owner: Aarav Sharma</p><h1>RazorpayX Partners</h1><p>Fintech · Bengaluru, Karnataka · 201–500 employees</p></div><div class="company-hero-actions"><button type="button" class="button button-quiet">Edit company</button><button type="button" class="button button-primary" data-open-modal="dealModal">+ New deal</button></div></div>
+          <div class="tabs" role="tablist"><button type="button" class="tab active" data-company-tab="overview">Overview</button><button type="button" class="tab" data-company-tab="contacts">Contacts <span>3</span></button><button type="button" class="tab" data-company-tab="deals">Deals <span>2</span></button><button type="button" class="tab" data-company-tab="activity">Activity <span>14</span></button><button type="button" class="tab" data-company-tab="company-tasks">Tasks <span>3</span></button></div>
+          <div class="company-tab active" id="overview-tab"><div class="detail-grid"><article class="panel"><div class="panel-heading"><h2>Account details</h2><button type="button" class="text-button">Edit</button></div><dl class="details-list"><div><dt>Website</dt><dd><a href="#">razorpay.com</a></dd></div><div><dt>Phone</dt><dd>+91 80 4567 8900</dd></div><div><dt>Source</dt><dd>Referral</dd></div><div><dt>Tags</dt><dd><span class="tag blue-tag">High value</span><span class="tag purple-tag">Strategic</span></dd></div><div><dt>Address</dt><dd>Koramangala, Bengaluru<br>Karnataka 560034</dd></div></dl></article><article class="panel"><div class="panel-heading"><h2>Open deals</h2><button type="button" class="text-button" data-company-tab-go="deals">View all →</button></div><div class="mini-deals"><div><span class="stage-mini proposal"></span><p><strong>Payment Gateway Expansion</strong><small>Proposal sent · closes Sep 18</small></p><b>₹8.0L</b></div><div><span class="stage-mini negotiation"></span><p><strong>UPI Autopay Upgrade</strong><small>Negotiation · closes Sep 28</small></p><b>₹4.5L</b></div></div></article></div><article class="panel timeline-short"><div class="panel-heading"><div><h2>Latest activity</h2><p>Every call, email, meeting and note in one timeline.</p></div><button type="button" class="text-button" data-company-tab-go="activity">View all →</button></div><div class="activity-feed company-feed"></div></article></div>
+          <div class="company-tab" id="contacts-tab"><div class="section-actions"><div><h2>Contacts</h2><p>People at RazorpayX Partners</p></div><button type="button" class="button button-primary" data-open-modal="contactModal">+ Add contact</button></div><article class="panel table-panel"><div class="table-scroll"><table><thead><tr><th>Name</th><th>Title</th><th>Email</th><th>Phone</th><th>Type</th><th></th></tr></thead><tbody id="contactTable"></tbody></table></div></article></div>
+          <div class="company-tab" id="deals-tab"><div class="section-actions"><div><h2>Deals</h2><p>Sales opportunities linked to this account</p></div><button type="button" class="button button-primary" data-open-modal="dealModal">+ New deal</button></div><div class="deal-detail-cards" id="companyDeals"></div></div>
+          <div class="company-tab" id="activity-tab"><div class="section-actions"><div><h2>Activity timeline</h2><p>Reverse chronological communication log</p></div><button type="button" class="button button-primary" data-open-modal="activityModal">+ Log activity</button></div><article class="panel full-timeline"><div class="activity-feed company-feed" id="fullCompanyActivity"></div></article></div>
+          <div class="company-tab" id="company-tasks-tab"><div class="section-actions"><div><h2>Open tasks</h2><p>Follow-ups attached to this company or its deals</p></div><button type="button" class="button button-primary" data-open-modal="taskModal">+ Add task</button></div><article class="panel"><div class="task-list" id="companyTaskList"></div></article></div>
+        </section>
+
+        <section class="view" id="pipeline-view">
+          <div class="page-heading"><div><p class="eyebrow">Sales workspace</p><h1>Pipeline</h1><p>Move deals across stages, then confirm won or lost outcomes.</p></div><button type="button" class="button button-primary" data-open-modal="dealModal">+ Create deal</button></div>
+          <div class="pipeline-insights"><div><p>Open pipeline <strong id="pipelineHeadline">₹34.8L</strong></p></div><span></span><div><p>Weighted forecast <strong id="forecastHeadline">₹18.7L</strong></p></div><span></span><div><p>Deals closing this month <strong>09</strong></p></div></div>
+          <div class="toolbar panel-lite pipeline-toolbar"><select id="ownerFilter"><option value="all">All owners</option><option value="Aarav Sharma">Aarav Sharma</option><option value="Priya Menon">Priya Menon</option><option value="Kunal Shah">Kunal Shah</option></select><select id="pipelineTagFilter"><option value="all">All tags</option><option value="high value">High value</option><option value="at risk">At risk</option></select><select id="closeFilter"><option value="all">Any close month</option><option value="September">September 2026</option><option value="October">October 2026</option></select><span class="drag-note">↕ Drag a deal card to update its stage</span></div>
+          <div class="kanban-board" id="kanbanBoard"></div>
+        </section>
+
+        <section class="view" id="tasks-view">
+          <div class="page-heading"><div><p class="eyebrow">Follow-ups &amp; reminders</p><h1>Tasks</h1><p>Keep every lead, opportunity and renewal moving forward.</p></div><button type="button" class="button button-primary" data-open-modal="taskModal">+ Add task</button></div>
+          <div class="task-summary"><button type="button" class="summary-choice active" data-task-filter="open"><strong id="openTaskCount">07</strong><span>Open tasks</span></button><button type="button" class="summary-choice" data-task-filter="overdue"><strong>02</strong><span>Overdue</span></button><button type="button" class="summary-choice" data-task-filter="today"><strong>03</strong><span>Due today</span></button><button type="button" class="summary-choice" data-task-filter="done"><strong>18</strong><span>Completed this month</span></button></div>
+          <div class="tasks-layout"><article class="panel task-board"><div class="task-controls"><div class="filter-search"><span>⌕</span><input id="taskSearch" type="search" placeholder="Search tasks"></div><select id="priorityFilter"><option value="all">All priorities</option><option value="high">High priority</option><option value="medium">Medium priority</option><option value="low">Low priority</option></select></div><div class="task-groups" id="taskGroups"></div></article><aside class="task-side" aria-label="Task reminders"><article class="panel reminder-card"><span class="reminder-icon">♢</span><h2>Reminder centre</h2><p>You have <b>2 overdue</b> tasks and 3 due today. In-app reminders keep the next action visible.</p><button type="button" class="button button-secondary" id="showReminders">View overdue tasks</button></article><article class="panel"><h2>Team tasks</h2><p class="muted-copy">Manager visibility across owners</p><div class="team-task-mini"><span class="avatar avatar-cyan">PM</span><p><strong>Priya Menon</strong><small>3 open · 1 overdue</small></p><b>4</b></div><div class="team-task-mini"><span class="avatar avatar-orange">KS</span><p><strong>Kunal Shah</strong><small>2 open · on track</small></p><b>2</b></div></article></aside></div>
+        </section>
+
+        <section class="view" id="reports-view">
+          <div class="page-heading"><div><p class="eyebrow">Manager reporting</p><h1>Revenue reports</h1><p>Sales performance, win/loss outcomes and forecasts by rep.</p></div><button type="button" class="button button-secondary" id="exportReport">⇩ Export CSV</button></div>
+          <div class="report-metrics"><article class="metric-card"><p>Won this month</p><strong>₹11.4L</strong><small><span class="trend positive">↑ 18%</span> vs. August</small></article><article class="metric-card"><p>Lost this month</p><strong>₹4.2L</strong><small>4 closed-lost deals</small></article><article class="metric-card"><p>Average deal size</p><strong>₹3.9L</strong><small>Across 22 closed deals</small></article><article class="metric-card"><p>Avg. sales cycle</p><strong>24 days</strong><small><span class="trend positive">↓ 3 days</span> vs. August</small></article></div>
+          <div class="reports-grid"><article class="panel report-chart"><div class="panel-heading"><div><h2>Won vs. lost</h2><p>Deal value by month (₹ Lakhs)</p></div><button type="button" class="button button-quiet" id="chartPeriod">Last 6 months⌄</button></div><div class="bar-chart" id="reportBars"></div><div class="bar-legend"><span><i class="dot blue-dot"></i> Won</span><span><i class="dot gray-dot"></i> Lost</span></div></article><article class="panel rep-performance"><div class="panel-heading"><div><h2>Rep performance</h2><p>Current-month sales activity</p></div><button type="button" class="text-button">Full report →</button></div><div id="repTable"></div></article></div><article class="panel funnel-panel"><div class="panel-heading"><div><h2>Pipeline conversion</h2><p>Open deals at each stage</p></div><button type="button" class="button button-quiet">September 2026⌄</button></div><div class="conversion-funnel" id="conversionFunnel"></div></article>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <!-- LETTERS VIEW                                                -->
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <section class="view" id="letters-view">
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">HR Documents</p>
+              <h1>Auto-Generate Letters</h1>
+              <p>Create professional HR letters with auto-filled company details. Print or download as PDF.</p>
+            </div>
+          </div>
+
+          <div class="letters-hub">
+            <article class="letter-type-card" data-letter-type="offer">
+              <div class="letter-card-icon offer-icon">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              </div>
+              <h2>Offer Letter</h2>
+              <p>Generate a formal job offer letter with compensation details, joining date, and terms.</p>
+              <span class="letter-card-action">Generate →</span>
+            </article>
+
+            <article class="letter-type-card" data-letter-type="appointment">
+              <div class="letter-card-icon appointment-icon">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 14l2 2 4-4"/></svg>
+              </div>
+              <h2>Appointment Letter</h2>
+              <p>Formal confirmation of employment with role details, department, and reporting structure.</p>
+              <span class="letter-card-action">Generate →</span>
+            </article>
+
+            <article class="letter-type-card" data-letter-type="experience">
+              <div class="letter-card-icon experience-icon">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+              </div>
+              <h2>Experience Letter</h2>
+              <p>Issue an official service and experience certificate with relieving details and conduct summary.</p>
+              <span class="letter-card-action">Generate →</span>
+            </article>
+
+            <article class="letter-type-card" data-letter-type="resignation">
+              <div class="letter-card-icon resignation-icon">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+              </div>
+              <h2>Resignation Acceptance</h2>
+              <p>Acknowledge an employee's resignation with last working day and handover instructions.</p>
+              <span class="letter-card-action">Generate →</span>
+            </article>
+
+            <article class="letter-type-card" data-letter-type="termination">
+              <div class="letter-card-icon termination-icon">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
+              </div>
+              <h2>Termination Letter</h2>
+              <p>Formal notice of employment termination with effective date, reason, and settlement details.</p>
+              <span class="letter-card-action">Generate →</span>
+            </article>
+          </div>
+
+          <!-- Letter Generator Panel (shown when a letter type is selected) -->
+          <div class="letter-generator" id="letterGenerator" style="display:none;">
+            <button type="button" class="back-link" id="backToLettersHub">← Back to all letters</button>
+            <div class="letter-gen-layout">
+              <!-- Left: Form -->
+              <div class="letter-form-panel panel">
+                <div class="panel-heading">
+                  <div>
+                    <h2 id="letterFormTitle">Offer Letter</h2>
+                    <p>Fill in the details to auto-generate</p>
+                  </div>
+                </div>
+                <form id="letterForm" class="letter-form">
+                  <div class="form-grid" id="letterFormFields">
+                    <!-- Fields injected by JS based on letter type -->
+                  </div>
+                  <div class="letter-form-actions">
+                    <button type="button" class="button button-quiet" id="letterPreviewBtn">👁 Preview</button>
+                    <button type="button" class="button button-secondary" id="letterDownloadBtn">⇩ Download PDF</button>
+                    <button type="submit" class="button button-primary" id="letterEmailBtn">✉ Send via Email</button>
+                  </div>
+                </form>
+              </div>
+
+              <!-- Right: Live Preview -->
+              <div class="letter-preview-panel">
+                <div class="letter-preview-header">
+                  <h3>Live Preview</h3>
+                  <span class="letter-preview-badge">A4 Format</span>
+                </div>
+                <div class="letter-paper" id="letterPaper">
+                  <div class="letter-paper-content" id="letterPaperContent">
+                    <p class="letter-placeholder-text">Fill in the form to see a live preview of your letter here.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sent Letters & Delivery Status History -->
+          <div class="panel letters-history-panel" id="lettersHistoryPanel">
+            <div class="panel-heading">
+              <div>
+                <h2>Sent Letters &amp; Status</h2>
+                <p>Real-time delivery audit trail for generated offer and HR letters with PDF attachments</p>
+              </div>
+              <div class="panel-actions">
+                <button type="button" class="button button-quiet" id="refreshLettersBtn">↻ Refresh</button>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table class="data-table" id="lettersHistoryTable">
+                <thead>
+                  <tr>
+                    <th>Recipient / Employee</th>
+                    <th>Document Type</th>
+                    <th>Recipient Email</th>
+                    <th>Subject</th>
+                    <th>Date &amp; Time</th>
+                    <th>Delivery Status</th>
+                  </tr>
+                </thead>
+                <tbody id="lettersHistoryTableBody">
+                  <tr>
+                    <td colspan="6" class="table-empty">No letters sent yet. Select a letter type above to create and email one.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- TEAMS & HIERARCHY VIEW                                         -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <section class="view" id="teams-view">
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">Organization &amp; Roles</p>
+              <h1>Teams &amp; Sales Hierarchy</h1>
+              <p>Visualize reporting lines, team performance, and managerial structure.</p>
+            </div>
+            <div class="heading-actions">
+              <button type="button" class="button button-primary" data-open-modal="teamModal">+ Add Team</button>
+            </div>
+          </div>
+
+          <!-- Hierarchy Visualizer Card -->
+          <article class="panel hierarchy-panel">
+            <div class="panel-heading">
+              <div>
+                <h2>Interactive Sales Org Chart</h2>
+                <p>Visual reporting tree across executive leads, team managers, and account reps</p>
+              </div>
+            </div>
+            <div class="org-tree-container" id="orgTreeContainer">
+              <!-- Rendered dynamically by app.js -->
+            </div>
+          </article>
+
+          <!-- Teams Grid -->
+          <div class="teams-grid-heading" style="margin-top: 2rem; margin-bottom: 1rem;">
+            <h2>Sales Squads &amp; Teams</h2>
+          </div>
+          <div class="teams-grid" id="teamsGrid">
+            <!-- Rendered dynamically by app.js -->
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- COMMISSIONS VIEW                                                -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <section class="view" id="commissions-view">
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">Sales Compensation</p>
+              <h1>Commission Engine &amp; Payouts</h1>
+              <p>Automated commission calculation, performance accelerators, and payout ledger.</p>
+            </div>
+            <div class="heading-actions">
+              <button type="button" class="button button-secondary" data-open-modal="commissionRuleModal">⚙ Tier Rules</button>
+              <button type="button" class="button button-primary" id="recalculateCommissionsBtn">⚡ Recalculate Commissions</button>
+            </div>
+          </div>
+
+          <!-- KPI Summary Bar -->
+          <div class="metric-grid metric-grid-4" style="margin-bottom: 1.5rem;">
+            <article class="metric-card">
+              <div class="metric-top"><span class="metric-icon blue">💰</span></div>
+              <p>Total Commissions Earned</p>
+              <strong id="commTotalEarned">₹0</strong>
+              <small id="commTotalCount">0 records</small>
+            </article>
+            <article class="metric-card">
+              <div class="metric-top"><span class="metric-icon orange">⏳</span></div>
+              <p>Pending Approval</p>
+              <strong id="commPendingApproval">₹0</strong>
+              <small>Awaiting manager sign-off</small>
+            </article>
+            <article class="metric-card">
+              <div class="metric-top"><span class="metric-icon cyan">✓</span></div>
+              <p>Approved &amp; Ready</p>
+              <strong id="commApproved">₹0</strong>
+              <small>Approved for payroll</small>
+            </article>
+            <article class="metric-card">
+              <div class="metric-top"><span class="metric-icon green">★</span></div>
+              <p>Paid Out</p>
+              <strong id="commPaid">₹0</strong>
+              <small>Settled &amp; paid to reps</small>
+            </article>
+          </div>
+
+          <!-- Tier Rules Summary Banner -->
+          <div class="panel commission-rules-banner" id="commissionRulesBanner" style="margin-bottom: 1.5rem; padding: 1.25rem;">
+            <div class="banner-title" style="margin-bottom: 0.75rem;">
+              <strong>Active Commission Tier Plan:</strong>
+            </div>
+            <div class="tier-pills" id="tierPillsContainer" style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+              <span class="tier-pill tier-base">Base Tier: 5% payout (&lt;100% target)</span>
+              <span class="tier-pill tier-accelerator">Accelerator: 8% payout + ₹25,000 bonus (100%–150% target)</span>
+              <span class="tier-pill tier-president">President's Club: 10% payout + ₹100,000 bonus (&gt;150% target)</span>
+            </div>
+          </div>
+
+          <!-- Ledger Table Panel -->
+          <article class="panel">
+            <div class="panel-heading flex-between" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+              <div>
+                <h2>Commission Payout Ledger</h2>
+                <p>Transaction records generated automatically on won deals</p>
+              </div>
+              <div class="table-actions">
+                <select class="button button-quiet" id="commissionStatusFilter">
+                  <option value="all">All Statuses</option>
+                  <option value="earned">Earned (Pending)</option>
+                  <option value="approved">Approved</option>
+                  <option value="paid">Paid</option>
+                </select>
+              </div>
+            </div>
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Sales Rep</th>
+                    <th>Deal / Company</th>
+                    <th>Closed Date</th>
+                    <th>Deal Value</th>
+                    <th>Commission Rate</th>
+                    <th>Earned Comm.</th>
+                    <th>Bonus</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="commissionsTableBody">
+                  <!-- Rendered dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </article>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- TARGETS & QUOTAS VIEW                                          -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <section class="view" id="targets-view">
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">Target Management</p>
+              <h1>Sales Quotas &amp; Attainment Matrix</h1>
+              <p>Set targets, track pacing, and analyze rep performance against quota goals.</p>
+            </div>
+            <div class="heading-actions">
+              <button type="button" class="button button-primary" data-open-modal="targetModal">+ Assign Sales Target</button>
+            </div>
+          </div>
+
+          <!-- Attainment Overview Hero Card -->
+          <article class="panel attainment-hero-card" style="margin-bottom: 1.5rem; padding: 1.5rem;">
+            <div class="hero-att-grid">
+              <div class="hero-att-main">
+                <p class="hero-label" style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); margin-bottom: 0.5rem;">Company-Wide Quota Attainment (September 2026)</p>
+                <div class="hero-big-number" style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                  <span id="heroTargetAttainmentPct" style="font-size: 2.25rem; font-weight: 800; font-family: 'Manrope', sans-serif;">0%</span>
+                  <span class="target-pacing-pill" id="heroPacingPill">On Track</span>
+                </div>
+                <div class="target-progress-bar hero-bar" style="margin-bottom: 1rem;">
+                  <div class="target-progress-fill" id="heroTargetFill" style="width: 0%;"></div>
+                  <div class="target-progress-pacing" id="heroTargetPacingMarker" style="left: 0%;" title="Month Pacing Target"></div>
+                </div>
+                <div class="hero-att-sub" style="display: flex; gap: 2rem; font-size: 0.9rem; color: var(--text-secondary);">
+                  <span>Achieved: <strong id="heroAchievedTotal" style="color: var(--text-primary);">₹0</strong></span>
+                  <span>Total Target Quota: <strong id="heroQuotaTotal" style="color: var(--text-primary);">₹0</strong></span>
+                  <span>Gap to Target: <strong id="heroGapTotal" style="color: var(--text-primary);">₹0</strong></span>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <!-- Attainment Matrix Table -->
+          <article class="panel">
+            <div class="panel-heading">
+              <div>
+                <h2>Rep &amp; Team Attainment Matrix</h2>
+                <p>Individual quota progress, attainment percentages, and pacing indicators</p>
+              </div>
+            </div>
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Teammate / Rep</th>
+                    <th>Team</th>
+                    <th>Period</th>
+                    <th>Target Quota</th>
+                    <th>Revenue Achieved</th>
+                    <th>Attainment %</th>
+                    <th>Pacing Status</th>
+                    <th>Gap to Target</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="targetsTableBody">
+                  <!-- Rendered dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </article>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- USER PROFILE VIEW                                               -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <section class="view" id="profile-view">
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">Account &amp; Identity</p>
+              <h1>User Profile</h1>
+              <p>Manage your account settings, personal details and team role.</p>
+            </div>
+            <div class="heading-actions">
+              <button type="button" class="button button-primary" id="openEditProfileBtn" data-open-modal="editProfileModal">
+                <span>✎</span> Edit Profile
+              </button>
+            </div>
+          </div>
+
+          <!-- Profile Hero Card -->
+          <div class="profile-hero-card">
+            <div class="profile-hero-banner"></div>
+            <div class="profile-hero-body">
+              <div class="profile-avatar-wrap">
+                <div class="profile-avatar-large" id="profileAvatarLarge">AS</div>
+                <span class="profile-status-dot" title="Account Active"></span>
+              </div>
+              <div class="profile-hero-info">
+                <div class="profile-hero-title-row">
+                  <h2 id="profileHeroName">User Name</h2>
+                  <span class="profile-badge verified-badge" id="profileHeroVerified">✓ Verified</span>
+                </div>
+                <p class="profile-hero-email" id="profileHeroEmail">user@smartpay.in</p>
+                <div class="profile-hero-tags">
+                  <span class="profile-chip role-chip" id="profileHeroRole">Sales Rep</span>
+                  <span class="profile-chip dept-chip" id="profileHeroDept">Sales</span>
+                  <span class="profile-chip date-chip" id="profileHeroJoined">Member since Sept 2026</span>
+                </div>
+              </div>
+              <div class="profile-hero-actions">
+                <button type="button" class="button button-secondary" id="heroEditBtn" data-open-modal="editProfileModal">
+                  Edit Details
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Profile Details Grid -->
+          <div class="profile-grid">
+            <!-- Card 1: Personal & Contact Information -->
+            <article class="panel profile-card">
+              <div class="panel-heading">
+                <div>
+                  <h2>Personal Information</h2>
+                  <p>Your public profile identity and primary communications</p>
+                </div>
+              </div>
+              <div class="profile-field-list">
+                <div class="profile-field-item">
+                  <span class="field-label">Full Name</span>
+                  <strong class="field-value" id="profileDetailName">—</strong>
+                </div>
+                <div class="profile-field-item">
+                  <span class="field-label">Username</span>
+                  <strong class="field-value" id="profileDetailUsername">—</strong>
+                </div>
+                <div class="profile-field-item">
+                  <span class="field-label">Email Address</span>
+                  <div class="field-value-with-badge">
+                    <strong class="field-value" id="profileDetailEmail">—</strong>
+                    <span class="status-pill status-active" id="profileDetailEmailStatus">Verified</span>
+                  </div>
+                </div>
+                <div class="profile-field-item">
+                  <span class="field-label">Phone Number</span>
+                  <strong class="field-value" id="profileDetailPhone">—</strong>
+                </div>
+                <div class="profile-field-item">
+                  <span class="field-label">Department / Team</span>
+                  <strong class="field-value" id="profileDetailDept">—</strong>
+                </div>
+                <div class="profile-field-item">
+                  <span class="field-label">Assigned Role</span>
+                  <div class="field-value-with-badge">
+                    <strong class="field-value" id="profileDetailRole">—</strong>
+                    <span class="role-scope-badge" id="profileDetailRoleScope">Workspace Member</span>
+                  </div>
+                </div>
+              </div>
+            </article>
+
+            <!-- Card 2: Account Security & Workspace Details -->
+            <article class="panel profile-card">
+              <div class="panel-heading">
+                <div>
+                  <h2>Account &amp; Security</h2>
+                  <p>Authentication credentials, session status and member history</p>
+                </div>
+              </div>
+              <div class="profile-field-list">
+                <div class="profile-field-item">
+                  <span class="field-label">User ID</span>
+                  <strong class="field-value monospace" id="profileDetailId">UID-#1</strong>
+                </div>
+                <div class="profile-field-item">
+                  <span class="field-label">Member Since</span>
+                  <strong class="field-value" id="profileDetailCreated">—</strong>
+                </div>
+                <div class="profile-field-item">
+                  <span class="field-label">Authentication Provider</span>
+                  <div class="field-value-with-badge">
+                    <strong class="field-value" id="profileDetailProvider">Email &amp; Password</strong>
+                    <span class="status-pill status-secure">Argon2id Hash</span>
+                  </div>
+                </div>
+                <div class="profile-field-item">
+                  <span class="field-label">Session Protection</span>
+                  <div class="field-value-with-badge">
+                    <strong class="field-value">Encrypted httpOnly Cookie</strong>
+                    <span class="status-pill status-active">Active</span>
+                  </div>
+                </div>
+                <div class="profile-field-item">
+                  <span class="field-label">Workspace Access</span>
+                  <strong class="field-value">SmartPay India Hub</strong>
+                </div>
+              </div>
+
+              <div class="profile-security-actions">
+                <button type="button" class="button button-quiet" data-view-go="settings">
+                  ⚙ Manage Workspace Settings
+                </button>
+                <button type="button" class="button button-quiet profile-logout-btn" id="profileLogoutBtn">
+                  ⎋ Sign Out
+                </button>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="view" id="settings-view">
+          <div class="page-heading"><div><p class="eyebrow">Workspace administration</p><h1>Settings</h1><p>Manage access, pipeline stages, segmentation and data exports.</p></div></div>
+          <div class="settings-layout"><nav class="settings-nav" aria-label="Settings navigation"><button type="button" class="settings-link active" data-settings="users">Users &amp; access</button><button type="button" class="settings-link" data-settings="stages">Pipeline stages</button><button type="button" class="settings-link" data-settings="tags">Tags</button><button type="button" class="settings-link" data-settings="export">Data export</button><button type="button" class="settings-link" data-settings="security">Security</button></nav><div class="settings-content"><section class="settings-panel active" id="users-settings"><div class="section-actions"><div><h2>Users &amp; access</h2><p>Roles control what each teammate can view and change.</p></div><button type="button" class="button button-primary" data-open-modal="inviteModal">+ Invite user</button></div><article class="panel"><div class="table-scroll"><table><thead><tr><th>Member</th><th>Role</th><th>Scope</th><th>Last active</th><th></th></tr></thead><tbody id="usersTable"></tbody></table></div></article><div class="role-guide"><div><span class="role-icon admin-icon">A</span><p><strong>Admin</strong><small>Full data, users, settings &amp; exports</small></p></div><div><span class="role-icon manager-icon">M</span><p><strong>Manager</strong><small>All records, reassignment &amp; reports</small></p></div><div><span class="role-icon rep-icon">R</span><p><strong>Sales Rep</strong><small>Own assigned business &amp; new leads</small></p></div><div><span class="role-icon viewer-icon">V</span><p><strong>Viewer</strong><small>Read all CRM data, no edits</small></p></div></div></section>
+            <section class="settings-panel" id="stages-settings"><div class="section-actions"><div><h2>Pipeline stages</h2><p>Default probability updates when a deal moves stages. Drag to reorder.</p></div><button type="button" class="button button-primary" id="addStage">+ Add stage</button></div><article class="panel stage-settings-list" id="stageSettingsList"></article></section>
+            <section class="settings-panel" id="tags-settings"><div class="section-actions"><div><h2>Tags</h2><p>Segment companies using free-form labels.</p></div><button type="button" class="button button-primary" id="addTag">+ Add tag</button></div><article class="panel tag-settings" id="tagSettingsList"></article></section>
+            <section class="settings-panel" id="export-settings"><h2>Data export</h2><p class="settings-intro">Download your CRM data for a backup or external analysis. Exports are available to administrators.</p><div class="export-grid"><article class="panel export-card"><span>▣</span><h3>Companies</h3><p>Accounts, owners, statuses and tags.</p><button type="button" class="button button-secondary export-data" data-type="companies">Export CSV</button></article><article class="panel export-card"><span>◎</span><h3>Contacts</h3><p>Contact details and primary status.</p><button type="button" class="button button-secondary export-data" data-type="contacts">Export CSV</button></article><article class="panel export-card"><span>◫</span><h3>Deals</h3><p>Values, stages, probabilities and outcomes.</p><button type="button" class="button button-secondary export-data" data-type="deals">Export CSV</button></article></div></section>
+            <section class="settings-panel" id="security-settings"><h2>Authentication &amp; security</h2><p class="settings-intro">Invite-only access, secure sessions and server-enforced permissions protect client data.</p><article class="panel security-list"><div><span class="security-check">✓</span><p><strong>Email/password sign-in</strong><small>8+ characters and at least one number required.</small></p><button type="button" class="button button-quiet">Configured</button></div><div><span class="security-check">✓</span><p><strong>Google SSO</strong><small>Optional single sign-on for SmartPay teammates.</small></p><button type="button" class="button button-secondary">Connect Google</button></div><div><span class="security-check">✓</span><p><strong>Session protection</strong><small>Secure httpOnly cookies and rate-limited login attempts.</small></p><button type="button" class="button button-quiet">Enabled</button></div><div><span class="security-check">✓</span><p><strong>Audit trail</strong><small>Deal stages and task completion are timestamped and attributed.</small></p><button type="button" class="button button-quiet">Enabled</button></div></article></section>
+          </div></div>
+        </section>
+      </main>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- MODALS                                                          -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <div class="modal-layer" id="modalLayer">
+      <div class="modal" id="createModal" role="dialog" aria-modal="true" aria-labelledby="createTitle"><button type="button" class="modal-close" data-close-modal aria-label="Close">×</button><p class="eyebrow">Quick create</p><h2 id="createTitle">What would you like to add?</h2><p class="modal-intro">Create records without leaving your current workspace.</p><div class="quick-create"><button type="button" data-open-modal="companyModal">▣ <span><b>Company</b><small>Create a merchant account</small></span>→</button><button type="button" data-open-modal="dealModal">◫ <span><b>Deal</b><small>Add an opportunity</small></span>→</button><button type="button" data-open-modal="quotationModal">📋 <span><b>Quotation</b><small>Draft pricing quote</small></span>→</button><button type="button" data-open-modal="invoiceModal">🧾 <span><b>Invoice</b><small>Generate tax invoice</small></span>→</button><button type="button" data-open-modal="poModal">📦 <span><b>Purchase Order</b><small>Log client PO</small></span>→</button><button type="button" data-open-modal="taskModal">✓ <span><b>Task</b><small>Schedule a follow-up</small></span>→</button><button type="button" data-open-modal="activityModal">◌ <span><b>Activity</b><small>Log a touchpoint</small></span>→</button></div></div>
+      <form class="modal form-modal" id="companyModal"><button type="button" class="modal-close" data-close-modal aria-label="Close">×</button><p class="eyebrow">New account</p><h2>Add company</h2><div class="form-grid"><label>Company name <input type="text" name="companyName" required placeholder="e.g. Orbit Retail"></label><label>Industry <select name="industry"><option>Retail</option><option>Fintech</option><option>SaaS</option><option>Healthcare</option></select></label><label>Lead source <select name="source"><option>Inbound</option><option>Referral</option><option>Outbound</option><option>Event</option><option>Other</option></select></label><label>Status <select name="status"><option>Lead</option><option>Active</option></select></label></div><p class="field-note">Similar company names are flagged as a warning, never blocked.</p><div class="modal-actions"><button type="button" class="button button-quiet" data-close-modal>Cancel</button><button type="submit" class="button button-primary">Save company</button></div></form>
+      <form class="modal form-modal" id="contactModal"><button type="button" class="modal-close" data-close-modal aria-label="Close">×</button><p class="eyebrow">Company contact</p><h2>Add contact</h2><div class="form-grid"><label>First name <input type="text" name="firstName" required placeholder="e.g. Ananya"></label><label>Last name <input type="text" name="lastName" required placeholder="e.g. Rao"></label><label>Company <select name="contactCompany" id="contactCompanySelect"><option value="">Select company...</option></select></label><label>Job title <input type="text" name="contactTitle" required placeholder="e.g. Head of Partnerships"></label><label>Email <input name="contactEmail" type="email" required placeholder="ananya@company.com"></label><label>Phone <input name="contactPhone" type="tel" placeholder="+91 98765 43210"></label><label class="checkbox-field span-2"><input name="isPrimary" type="checkbox"> Mark as primary contact</label></div><p class="field-note">Email format is validated and duplicate emails are flagged for review.</p><div class="modal-actions"><button type="button" class="button button-quiet" data-close-modal>Cancel</button><button type="submit" class="button button-primary">Save contact</button></div></form>
+      <form class="modal form-modal" id="dealModal"><button type="button" class="modal-close" data-close-modal aria-label="Close">×</button><p class="eyebrow">Sales opportunity</p><h2>Create deal</h2><div class="form-grid"><label>Deal title <input type="text" name="dealTitle" required placeholder="e.g. Payment gateway rollout"></label><label>Company <select name="dealCompany"><option>RazorpayX Partners</option><option>Urban Company</option><option>Groww Wealth</option></select></label><label>Value (INR) <input name="dealValue" type="number" required placeholder="500000"></label><label>Expected close date <input name="dealDate" type="date" required></label><label>Starting stage <select name="dealStage"><option>New Lead · 10%</option><option>Qualified · 25%</option><option>Proposal Sent · 50%</option></select></label><label>Owner <select name="dealOwner"><option>Aarav Sharma</option><option>Priya Menon</option><option>Kunal Shah</option></select></label></div><div class="modal-actions"><button type="button" class="button button-quiet" data-close-modal>Cancel</button><button type="submit" class="button button-primary">Create deal</button></div></form>
+      <form class="modal form-modal" id="taskModal"><button type="button" class="modal-close" data-close-modal aria-label="Close">×</button><p class="eyebrow">Follow-up</p><h2>Add task</h2><div class="form-grid"><label class="span-2">Task title <input type="text" name="taskTitle" required placeholder="e.g. Send proposal follow-up"></label><label>Due date <input name="taskDate" type="date" required></label><label>Priority <select name="taskPriority"><option value="high">High</option><option value="medium" selected>Medium</option><option value="low">Low</option></select></label><label>Assign to <select name="taskAssignee"><option>Aarav Sharma</option><option>Priya Menon</option><option>Kunal Shah</option></select></label><label>Link to <select name="taskLink"><option>RazorpayX Partners</option><option>Urban Company</option><option>Groww Wealth</option><option>No link</option></select></label></div><div class="modal-actions"><button type="button" class="button button-quiet" data-close-modal>Cancel</button><button type="submit" class="button button-primary">Create task</button></div></form>
+      <form class="modal form-modal" id="activityModal"><button type="button" class="modal-close" data-close-modal aria-label="Close">×</button><p class="eyebrow">Communication log</p><h2>Log activity</h2><div class="activity-type-picker"><label><input type="radio" name="activityType" value="call" checked><span>☎ Call</span></label><label><input type="radio" name="activityType" value="email"><span>✉ Email</span></label><label><input type="radio" name="activityType" value="meeting"><span>▣ Meeting</span></label><label><input type="radio" name="activityType" value="note"><span>▤ Note</span></label></div><div class="form-grid"><label>Company <select name="activityCompany"><option>RazorpayX Partners</option><option>Urban Company</option><option>Groww Wealth</option></select></label><label>Contact / deal <select name="activityContact"><option>Neha Agarwal</option><option>Payment Gateway Expansion</option><option>None</option></select></label><label class="span-2">What happened?<textarea name="activityBody" required placeholder="Add the key details from this conversation…"></textarea></label></div><div class="modal-actions"><button type="button" class="button button-quiet" data-close-modal>Cancel</button><button type="submit" class="button button-primary">Save activity</button></div></form>
+      <form class="modal form-modal invite-modal" id="inviteModal"><button type="button" class="modal-close" data-close-modal aria-label="Close">×</button><p class="eyebrow">Workspace access</p><h2>Invite teammate</h2><p class="modal-intro">They will receive a secure link to set a password. Invitations expire after 72 hours.</p><div class="form-grid"><label class="span-2">Work email <input name="inviteEmail" type="email" required placeholder="teammate@smartpay.in"></label><label class="span-2">Role <select name="inviteRole"><option>Sales Rep / Account Manager</option><option>Sales Manager</option><option>Read-only / Viewer</option><option>Admin</option></select></label></div><div class="modal-actions"><button type="button" class="button button-quiet" data-close-modal>Cancel</button><button type="submit" class="button button-primary">Send invite</button></div></form>
+      <form class="modal form-modal decision-modal" id="stageModal"><button type="button" class="modal-close" data-close-modal aria-label="Close">×</button><p class="eyebrow">Confirm outcome</p><h2 id="stageModalTitle">Mark deal as won?</h2><p class="modal-intro" id="stageModalCopy">This will close the deal and record the outcome in the audit trail.</p><label class="lost-reason hidden" id="lostReasonLabel">Lost reason <select id="lostReason"><option>Budget constraints</option><option>Chose competitor</option><option>Timing / no decision</option><option>Product fit</option><option>Other</option></select></label><div class="modal-actions"><button type="button" class="button button-quiet" data-close-modal>Cancel</button><button type="submit" class="button button-primary" id="confirmStageMove">Confirm</button></div></form>
+      <!-- Letter Email Modal -->
+      <form class="modal form-modal" id="letterEmailModal">
+        <button type="button" class="modal-close" data-close-modal aria-label="Close">×</button>
+        <p class="eyebrow">Production Email Dispatch</p>
+        <h2 id="letterEmailModalTitle">Email this letter</h2>
+        <p class="modal-intro">The backend will generate an official A4 PDF document and securely attach it to this email.</p>
+        <div class="modal-attachment-notice">
+          <span class="attachment-icon">📎</span>
+          <div>
+            <strong id="modalAttachmentName">Offer_Letter.pdf</strong>
+            <small>Official PDF attachment generated securely via backend</small>
+          </div>
+        </div>
+        <div class="form-grid">
+          <label class="span-2">Recipient email <input name="letterRecipientEmail" id="letterRecipientEmail" type="email" required placeholder="candidate@example.com" autocomplete="email"></label>
+          <label class="span-2">Subject <input name="letterEmailSubject" id="letterEmailSubject" type="text" required placeholder="Your Offer Letter — SmartPay India"></label>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="button button-quiet" data-close-modal>Cancel</button>
+          <button type="submit" class="button button-primary" id="letterEmailSubmitBtn">
+            <span class="btn-spinner hidden" id="letterEmailSpinner"></span>
+            <span id="letterEmailSubmitText">✉ Send Letter &amp; PDF</span>
+          </button>
+        </div>
+      </form>
+      <!-- Edit Profile Modal -->
+      <form class="modal form-modal" id="editProfileModal" aria-labelledby="editProfileTitle">
+        <button type="button" class="modal-close" data-close-modal aria-label="Close">×</button>
+        <p class="eyebrow">Account Settings</p>
+        <h2 id="editProfileTitle">Edit Profile</h2>
+        <p class="modal-intro">Update your name, contact phone, department and profile avatar.</p>
+        <div class="form-grid">
+          <label class="span-2">Full Name <input type="text" id="editProfileName" name="name" required placeholder="e.g. Faizan Ismail" autocomplete="name"></label>
+          <label>Phone Number <input type="tel" id="editProfilePhone" name="phone" placeholder="e.g. +91 98765 43210" autocomplete="tel"></label>
+          <label>Department / Team <input type="text" id="editProfileDept" name="department" placeholder="e.g. Sales, Partnerships"></label>
+          <label class="span-2">Profile Picture URL <input type="url" id="editProfileAvatar" name="avatar" placeholder="https://images.unsplash.com/... or image link"></label>
+        </div>
+        <p class="field-note">Avatar image URL will be displayed in the top bar, sidebar, and profile card. Leave blank to use stylized initials.</p>
+        <div class="modal-actions">
+          <button type="button" class="button button-quiet" data-close-modal>Cancel</button>
+          <button type="submit" class="button button-primary" id="saveProfileBtn">Save Changes</button>
+        </div>
+      </form>
+      <!-- Product Modal -->
+      <form class="modal form-modal" id="productModal">
+        <button type="button" class="modal-close" data-close-modal aria-label="Close">×</button>
+        <p class="eyebrow">Product Catalog</p>
+        <h2 id="productModalTitle">Add Product</h2>
+        <div class="form-grid">
+          <label class="span-2">Product Name <input type="text" name="productName" id="productName" required placeholder="e.g. Payment Gateway License"></label>
+          <label>SKU <input type="text" name="productSku" id="productSku" placeholder="e.g. SP-PG-001"></label>
+          <label>Category <select name="productCategory" id="productCategory"><option value="Gateway">Gateway</option><option value="Integration">Integration</option><option value="API">API</option><option value="Onboarding">Onboarding</option><option value="Payout">Payout</option><option value="Support">Support</option><option value="Security">Security</option></select></label>
+          <label>Unit Price (₹) <input type="number" name="productPrice" id="productPrice" required placeholder="250000"></label>
+          <label>Currency <select name="productCurrency" id="productCurrency"><option value="INR">INR (₹)</option><option value="USD">USD ($)</option></select></label>
+          <label class="span-2">Description <textarea name="productDescription" id="productDescription" placeholder="Brief product description"></textarea></label>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="button button-quiet" data-close-modal>Cancel</button>
+          <button type="submit" class="button button-primary">Save Product</button>
+        </div>
+      </form>
+      <!-- Quotation Modal -->
+      <form class="modal form-modal modal-wide" id="quotationModal">
+        <button type="button" class="modal-close" data-close-modal aria-label="Close">×</button>
+        <p class="eyebrow">Sales Document</p>
+        <h2>Create Quotation</h2>
+        <div class="form-grid">
+          <label>Company <select name="qtnCompany" id="qtnCompany" required></select></label>
+          <label>Contact <select name="qtnContact" id="qtnContact"></select></label>
+          <label>Linked Deal <select name="qtnDeal" id="qtnDeal"><option value="">None</option></select></label>
+          <label>Valid Until <input type="date" name="qtnValidUntil" id="qtnValidUntil"></label>
+          <label>Discount % <input type="number" name="qtnDiscount" id="qtnDiscount" value="0" min="0" max="100" step="0.5"></label>
+          <label>Tax % (GST) <input type="number" name="qtnTax" id="qtnTax" value="18" min="0" max="100" step="0.5"></label>
+        </div>
+        <div class="quotation-items-section">
+          <div class="section-actions"><div><h3>Line Items</h3></div><button type="button" class="button button-secondary button-sm" id="addLineItemBtn">+ Add Item</button></div>
+          <div class="table-scroll"><table class="line-items-table">
+            <thead><tr><th>Product</th><th>Description</th><th>Qty</th><th>Unit Price</th><th>Discount %</th><th>Line Total</th><th></th></tr></thead>
+            <tbody id="lineItemsBody"></tbody>
+          </table></div>
+          <div class="quotation-totals">
+            <div><span>Subtotal</span><strong id="qtnSubtotal">₹0</strong></div>
+            <div><span>Discount</span><strong id="qtnDiscountAmount">- ₹0</strong></div>
+            <div><span>Tax (GST)</span><strong id="qtnTaxAmount">+ ₹0</strong></div>
+            <div class="total-row"><span>Total</span><strong id="qtnTotal">₹0</strong></div>
+          </div>
+        </div>
+        <div class="form-grid"><label class="span-2">Notes <textarea name="qtnNotes" id="qtnNotes" placeholder="Additional notes for the quotation"></textarea></label></div>
+        <div class="modal-actions">
+          <button type="button" class="button button-quiet" data-close-modal>Cancel</button>
+          <button type="submit" class="button button-primary">Create Quotation</button>
+        </div>
+      </form>
+
+      <!-- Invoice Modal -->
+      <form class="modal form-modal modal-wide" id="invoiceModal">
+        <button type="button" class="modal-close" data-close-modal aria-label="Close">×</button>
+        <p class="eyebrow">Tax Invoice</p>
+        <h2 id="invoiceModalTitle">Create Invoice</h2>
+        <div class="form-grid">
+          <label>Company <select name="invCompany" id="invCompany" required></select></label>
+          <label>Contact <select name="invContact" id="invContact"></select></label>
+          <label>Linked Deal <select name="invDeal" id="invDeal"><option value="">None</option></select></label>
+          <label>Linked PO <select name="invPo" id="invPo"><option value="">None</option></select></label>
+          <label>Issue Date <input type="date" name="invIssueDate" id="invIssueDate" required></label>
+          <label>Due Date <input type="date" name="invDueDate" id="invDueDate" required></label>
+          <label>Discount % <input type="number" name="invDiscount" id="invDiscount" value="0" min="0" max="100" step="0.5"></label>
+          <label>Tax % (GST) <input type="number" name="invTax" id="invTax" value="18" min="0" max="100" step="0.5"></label>
+        </div>
+        <div class="quotation-items-section">
+          <div class="section-actions">
+            <div><h3>Invoice Line Items</h3></div>
+            <button type="button" class="button button-secondary button-sm" id="addInvLineItemBtn">+ Add Item</button>
+          </div>
+          <div class="table-scroll">
+            <table class="line-items-table">
+              <thead><tr><th>Product</th><th>Description</th><th>Qty</th><th>Unit Price</th><th>Discount %</th><th>Line Total</th><th></th></tr></thead>
+              <tbody id="invLineItemsBody"></tbody>
+            </table>
+          </div>
+          <div class="quotation-totals">
+            <div><span>Subtotal</span><strong id="invSubtotal">₹0</strong></div>
+            <div><span>Discount</span><strong id="invDiscountAmount">- ₹0</strong></div>
+            <div><span>GST (18%)</span><strong id="invTaxAmount">+ ₹0</strong></div>
+            <div class="total-row"><span>Total Due</span><strong id="invTotal">₹0</strong></div>
+          </div>
+        </div>
+        <div class="form-grid">
+          <label class="span-2">Payment Terms <input type="text" name="invTerms" id="invTerms" value="Net 15 days from issue date"></label>
+          <label class="span-2">Notes <textarea name="invNotes" id="invNotes" placeholder="Client notes or wire transfer instructions"></textarea></label>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="button button-quiet" data-close-modal>Cancel</button>
+          <button type="submit" class="button button-primary">Save Invoice</button>
+        </div>
+      </form>
+
+      <!-- Record Payment Modal -->
+      <form class="modal form-modal" id="paymentModal">
+        <button type="button" class="modal-close" data-close-modal aria-label="Close">×</button>
+        <p class="eyebrow">Payment Collection</p>
+        <h2>Record Payment</h2>
+        <p class="modal-intro" id="paymentModalSubtitle">Settlement for invoice</p>
+        <input type="hidden" id="payInvoiceId" name="invoiceId">
+        <div class="payment-summary-card" id="paymentSummaryCard">
+          <div class="summary-row"><span>Invoice Total:</span><strong id="payInvoiceTotal">₹0</strong></div>
+          <div class="summary-row"><span>Previously Paid:</span><strong id="payInvoicePaid" style="color: #10b981;">₹0</strong></div>
+          <div class="summary-row balance-row"><span>Balance Due:</span><strong id="payInvoiceBalance" style="color: #ef4444;">₹0</strong></div>
+        </div>
+        <div class="form-grid">
+          <label>Payment Amount (₹) <input type="number" id="payAmount" name="amount" required min="1" step="any" placeholder="e.g. 500000"></label>
+          <label>Payment Date <input type="date" id="payDate" name="paymentDate" required></label>
+          <label>Payment Method
+            <select id="payMethod" name="paymentMethod">
+              <option value="bank_transfer">Bank Transfer (NEFT / RTGS)</option>
+              <option value="upi">UPI</option>
+              <option value="card">Credit / Debit Card</option>
+              <option value="cheque">Cheque</option>
+            </select>
+          </label>
+          <label>Reference / UTR # <input type="text" id="payRef" name="referenceNumber" placeholder="e.g. NEFT/HDFC/202609041234"></label>
+          <label class="span-2">Notes <textarea id="payNotes" name="notes" placeholder="e.g. Advance tranche received"></textarea></label>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="button button-quiet" data-close-modal>Cancel</button>
+          <button type="submit" class="button button-primary">Save Payment</button>
+        </div>
+      </form>
+
+      <!-- Purchase Order Modal -->
+      <form class="modal form-modal" id="poModal">
+        <button type="button" class="modal-close" data-close-modal aria-label="Close">×</button>
+        <p class="eyebrow">Client Order</p>
+        <h2 id="poModalTitle">Log Purchase Order</h2>
+        <div class="form-grid">
+          <label>PO Number <input type="text" id="poNumber" name="poNumber" placeholder="e.g. PO-RZP-2026-004"></label>
+          <label>Company <select id="poCompany" name="poCompany" required></select></label>
+          <label>Linked Quotation <select id="poQuotation" name="poQuotation"><option value="">None</option></select></label>
+          <label>Linked Deal <select id="poDeal" name="poDeal"><option value="">None</option></select></label>
+          <label>PO Amount (₹) <input type="number" id="poAmount" name="amount" required min="1" placeholder="e.g. 500000"></label>
+          <label>Status
+            <select id="poStatus" name="status">
+              <option value="received">Received</option>
+              <option value="verified">Verified</option>
+              <option value="invoiced">Invoiced</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </label>
+          <label>Issue Date <input type="date" id="poIssueDate" name="issueDate" required></label>
+          <label>Delivery / Fulfillment Date <input type="date" id="poDeliveryDate" name="deliveryDate"></label>
+          <label class="span-2">Notes <textarea id="poNotes" name="notes" placeholder="Contractual terms or special delivery notes"></textarea></label>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="button button-quiet" data-close-modal>Cancel</button>
+          <button type="submit" class="button button-primary">Save Purchase Order</button>
+        </div>
+      </form>
+
+      <!-- Team Modal -->
+      <form class="modal form-modal" id="teamModal">
+        <button type="button" class="modal-close" data-close-modal aria-label="Close">×</button>
+        <p class="eyebrow">Sales Squad</p>
+        <h2 id="teamModalTitle">Create Team</h2>
+        <div class="form-grid">
+          <label class="span-2">Team Name <input type="text" id="teamName" name="name" required placeholder="e.g. Enterprise Fintech"></label>
+          <label>Department <input type="text" id="teamDepartment" name="department" value="Sales" placeholder="e.g. Sales"></label>
+          <label>Manager / Team Lead <select id="teamManagerSelect" name="manager_id"><option value="">Select Manager...</option></select></label>
+          <label class="span-2">Description <textarea id="teamDescription" name="description" placeholder="Focus area or squad target description"></textarea></label>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="button button-quiet" data-close-modal>Cancel</button>
+          <button type="submit" class="button button-primary">Save Team</button>
+        </div>
+      </form>
+
+      <!-- Target Modal -->
+      <form class="modal form-modal" id="targetModal">
+        <button type="button" class="modal-close" data-close-modal aria-label="Close">×</button>
+        <p class="eyebrow">Sales Quota</p>
+        <h2 id="targetModalTitle">Assign Sales Target</h2>
+        <div class="form-grid">
+          <label class="span-2">Teammate / Rep <select id="targetUserSelect" name="user_id" required><option value="">Select Rep...</option></select></label>
+          <label>Target Period
+            <select id="targetPeriod" name="period">
+              <option value="month">Monthly</option>
+              <option value="quarter">Quarterly</option>
+              <option value="year">Annual</option>
+            </select>
+          </label>
+          <label>Target Quota (₹) <input type="number" id="targetQuota" name="target_quota" required min="10000" step="5000" placeholder="e.g. 2000000"></label>
+          <label>Period Identifier <input type="text" id="targetPeriodIdentifier" name="period_identifier" placeholder="e.g. 2026-09 or Q3-2026"></label>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="button button-quiet" data-close-modal>Cancel</button>
+          <button type="submit" class="button button-primary">Save Quota Target</button>
+        </div>
+      </form>
+
+      <!-- Commission Tier Rule Modal -->
+      <form class="modal form-modal" id="commissionRuleModal">
+        <button type="button" class="modal-close" data-close-modal aria-label="Close">×</button>
+        <p class="eyebrow">Commission Tier Structure</p>
+        <h2>Configure Tier Rules</h2>
+        <div class="form-grid">
+          <label class="span-2">Rule Name <input type="text" id="ruleName" name="name" required placeholder="e.g. Standard Accelerator"></label>
+          <label>Role Scope
+            <select id="ruleRole" name="role">
+              <option value="all">All Roles</option>
+              <option value="Sales Rep">Sales Rep</option>
+              <option value="Sales Manager">Sales Manager</option>
+            </select>
+          </label>
+          <label>Min Attainment % <input type="number" id="ruleMinAttainment" name="min_attainment_pct" value="0" min="0" step="1"></label>
+          <label>Max Attainment % <input type="number" id="ruleMaxAttainment" name="max_attainment_pct" placeholder="Leave empty for infinity"></label>
+          <label>Commission Rate % <input type="number" id="ruleCommRate" name="commission_rate" required value="5" min="0" max="100" step="0.5"></label>
+          <label>Bonus Amount (₹) <input type="number" id="ruleBonus" name="bonus_amount" value="0" min="0"></label>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="button button-quiet" data-close-modal>Cancel</button>
+          <button type="submit" class="button button-primary">Save Tier Rule</button>
+        </div>
+      </form>
+    </div>
+    <div class="popover notification-popover" id="notificationPopover"><div class="popover-heading"><h3>Reminders</h3><span>4 unread</span></div><p><b>Overdue</b> · Send revised proposal to Urban Company</p><p><b>Due today</b> · Call Neha at RazorpayX Partners</p><p><b>Due today</b> · Update discovery notes for Groww Wealth</p><button type="button" class="text-button" data-view-go="tasks">Open tasks →</button></div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <!-- Hidden print container for letter PDF -->
+    <div id="printContainer" class="print-only"></div>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

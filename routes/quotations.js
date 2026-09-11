@@ -1,0 +1,263 @@
+/**
+ * SmartPay CRM — Quotations Routes
+ * CRUD for quotations with line items, PDF generation, and email sending
+ */
+
+const express = require('express');
+const router = express.Router();
+const { requireAuth, rbacFilter } = require('../middleware/auth');
+const crmStore = require('../crm-store');
+
+// Helper: Generate unique quotation number
+function generateQuotationNumber() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const seq = String(Math.floor(Math.random() * 9000) + 1000);
+  return `QTN-${year}-${seq}`;
+}
+
+// Helper: Recalculate totals
+function calculateTotals(items, discountPercent = 0, taxPercent = 18) {
+  const subtotal = items.reduce((sum, item) => {
+    const lineTotal = (item.quantity || 1) * (item.unit_price || 0);
+    const lineDiscount = lineTotal * ((item.discount_percent || 0) / 100);
+    return sum + (lineTotal - lineDiscount);
+  }, 0);
+
+  const discountAmount = subtotal * (discountPercent / 100);
+  const afterDiscount = subtotal - discountAmount;
+  const taxAmount = afterDiscount * (taxPercent / 100);
+  const total = Math.round(afterDiscount + taxAmount);
+
+  return { subtotal: Math.round(subtotal), total };
+}
+
+// ─── List Quotations ────────────────────────────────────────────────
+
+router.get('/', requireAuth, async (req, res, next) => {
+  try {
+    const { page = 1, limit = 25, status = '', company_id = '' } = req.query;
+    const filters = {};
+    if (status && status !== 'all') filters.status = status;
+    if (company_id && company_id !== 'all') filters.company_id = Number(company_id);
+
+    const result = await crmStore.listPaginated('quotations', {
+      page: Number(page),
+      limit: Number(limit),
+      filters,
+      sort: 'id',
+      order: 'desc'
+    });
+
+    // Enrich with company / contact names from snapshot
+    const snapshot = await crmStore.snapshot();
+    result.data = result.data.map(q => {
+      const company = snapshot.companies.find(c => c.id === q.company_id);
+      const contact = snapshot.contacts.find(c => c.id === q.contact_id);
+      const deal = snapshot.deals.find(d => d.id === q.deal_id);
+      return {
+        ...q,
+        company_name: company?.name || '—',
+        contact_name: contact?.name || '—',
+        deal_title: deal?.title || '—'
+      };
+    });
+
+    res.json(result);
+  } catch (error) { next(error); }
+});
+
+// ─── Get Single Quotation with Line Items ───────────────────────────
+
+router.get('/:id', requireAuth, async (req, res, next) => {
+  try {
+    const quotation = await crmStore.findById('quotations', req.params.id);
+    if (!quotation) return res.status(404).json({ error: 'Quotation not found' });
+
+    // Get line items
+    const allItems = await crmStore.list('quotation_items');
+    const items = allItems.filter(i => Number(i.quotation_id) === Number(req.params.id));
+
+    // Enrich
+    const snapshot = await crmStore.snapshot();
+    const company = snapshot.companies.find(c => c.id === quotation.company_id);
+    const contact = snapshot.contacts.find(c => c.id === quotation.contact_id);
+    const deal = snapshot.deals.find(d => d.id === quotation.deal_id);
+
+    res.json({
+      ...quotation,
+      company_name: company?.name || '—',
+      contact_name: contact?.name || '—',
+      contact_email: contact?.email || '',
+      deal_title: deal?.title || '—',
+      items
+    });
+  } catch (error) { next(error); }
+});
+
+// ─── Create Quotation with Line Items ───────────────────────────────
+
+router.post('/', requireAuth, async (req, res, next) => {
+  try {
+    const {
+      deal_id, company_id, contact_id, status = 'draft',
+      valid_until, discount_percent = 0, tax_percent = 18,
+      notes, terms, items = []
+    } = req.body;
+
+    if (!company_id) return res.status(400).json({ error: 'Company is required' });
+    if (!items.length) return res.status(400).json({ error: 'At least one line item is required' });
+
+    const userId = req.user?.id || null;
+    const quotation_number = generateQuotationNumber();
+
+    // Calculate totals
+    const { subtotal, total } = calculateTotals(items, Number(discount_percent), Number(tax_percent));
+
+    const quotation = await crmStore.create('quotations', {
+      quotation_number,
+      deal_id: deal_id ? Number(deal_id) : null,
+      company_id: Number(company_id),
+      contact_id: contact_id ? Number(contact_id) : null,
+      status,
+      valid_until: valid_until || null,
+      subtotal,
+      discount_percent: Number(discount_percent),
+      tax_percent: Number(tax_percent),
+      total,
+      notes: notes || null,
+      terms: terms || 'Net 30 days from acceptance',
+      user_id: userId
+    });
+
+    // Create line items
+    const savedItems = [];
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      const lineTotal = (item.quantity || 1) * (item.unit_price || 0);
+      const lineDiscount = lineTotal * ((item.discount_percent || 0) / 100);
+
+      const saved = await crmStore.create('quotation_items', {
+        quotation_id: quotation.id,
+        product_id: item.product_id || null,
+        description: item.description || '',
+        quantity: Number(item.quantity) || 1,
+        unit_price: Number(item.unit_price) || 0,
+        discount_percent: Number(item.discount_percent) || 0,
+        total: Math.round(lineTotal - lineDiscount),
+        sort_order: i + 1
+      });
+      savedItems.push(saved);
+    }
+
+    // Log activity
+    await crmStore.create('activities', {
+      type: 'quotation',
+      icon: '📋',
+      text: `<strong>Quotation ${quotation_number} created</strong> · ₹${(total / 100000).toFixed(1)}L`,
+      time: 'Just now',
+      user_id: userId
+    });
+
+    res.status(201).json({ ...quotation, items: savedItems });
+  } catch (error) { next(error); }
+});
+
+// ─── Update Quotation ───────────────────────────────────────────────
+
+router.put('/:id', requireAuth, async (req, res, next) => {
+  try {
+    const existing = await crmStore.findById('quotations', req.params.id);
+    if (!existing) return res.status(404).json({ error: 'Quotation not found' });
+
+    const allowed = ['deal_id', 'company_id', 'contact_id', 'status', 'valid_until',
+                     'discount_percent', 'tax_percent', 'notes', 'terms'];
+    const updates = {};
+    for (const key of allowed) {
+      if (req.body[key] !== undefined) {
+        updates[key] = req.body[key];
+      }
+    }
+
+    // If items are provided, recalculate and re-save
+    if (req.body.items && Array.isArray(req.body.items)) {
+      const items = req.body.items;
+      const dp = Number(updates.discount_percent ?? existing.discount_percent ?? 0);
+      const tp = Number(updates.tax_percent ?? existing.tax_percent ?? 18);
+      const { subtotal, total } = calculateTotals(items, dp, tp);
+      updates.subtotal = subtotal;
+      updates.total = total;
+
+      // Delete old items and insert new
+      const allItems = await crmStore.list('quotation_items');
+      const oldItems = allItems.filter(i => Number(i.quotation_id) === Number(req.params.id));
+      for (const old of oldItems) {
+        await crmStore.remove('quotation_items', old.id);
+      }
+
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        const lineTotal = (item.quantity || 1) * (item.unit_price || 0);
+        const lineDiscount = lineTotal * ((item.discount_percent || 0) / 100);
+        await crmStore.create('quotation_items', {
+          quotation_id: Number(req.params.id),
+          product_id: item.product_id || null,
+          description: item.description || '',
+          quantity: Number(item.quantity) || 1,
+          unit_price: Number(item.unit_price) || 0,
+          discount_percent: Number(item.discount_percent) || 0,
+          total: Math.round(lineTotal - lineDiscount),
+          sort_order: i + 1
+        });
+      }
+    }
+
+    const quotation = await crmStore.update('quotations', req.params.id, updates);
+    res.json(quotation);
+  } catch (error) { next(error); }
+});
+
+// ─── Update Quotation Status ────────────────────────────────────────
+
+router.put('/:id/status', requireAuth, async (req, res, next) => {
+  try {
+    const { status } = req.body;
+    const validStatuses = ['draft', 'sent', 'accepted', 'rejected', 'expired'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ error: `Invalid status. Must be: ${validStatuses.join(', ')}` });
+    }
+
+    const quotation = await crmStore.update('quotations', req.params.id, { status });
+    if (!quotation) return res.status(404).json({ error: 'Quotation not found' });
+
+    const userId = req.user?.id || null;
+    await crmStore.create('activities', {
+      type: 'quotation',
+      icon: '📋',
+      text: `<strong>Quotation ${quotation.quotation_number}</strong> marked as <strong>${status}</strong>`,
+      time: 'Just now',
+      user_id: userId
+    });
+
+    res.json(quotation);
+  } catch (error) { next(error); }
+});
+
+// ─── Delete Quotation ───────────────────────────────────────────────
+
+router.delete('/:id', requireAuth, async (req, res, next) => {
+  try {
+    // Delete line items first
+    const allItems = await crmStore.list('quotation_items');
+    const items = allItems.filter(i => Number(i.quotation_id) === Number(req.params.id));
+    for (const item of items) {
+      await crmStore.remove('quotation_items', item.id);
+    }
+
+    const deleted = await crmStore.remove('quotations', req.params.id);
+    if (!deleted) return res.status(404).json({ error: 'Quotation not found' });
+    res.json({ success: true, message: 'Quotation deleted' });
+  } catch (error) { next(error); }
+});
+
+module.exports = router;
