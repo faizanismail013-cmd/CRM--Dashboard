@@ -106,8 +106,28 @@ async function initDB() {
       name VARCHAR(255) NOT NULL, initial VARCHAR(10), logo VARCHAR(50), industry VARCHAR(100),
       owner VARCHAR(100), status VARCHAR(50), activity VARCHAR(100), created BIGINT,
       tags JSONB DEFAULT '[]'::jsonb, source VARCHAR(100),
+      customer_id VARCHAR(50), public_token VARCHAR(64), gst_number VARCHAR(50), pan_number VARCHAR(50),
+      website VARCHAR(255), phone VARCHAR(50), alternate_phone VARCHAR(50), alternate_email VARCHAR(255),
+      billing_address TEXT, shipping_address TEXT, city VARCHAR(100), state VARCHAR(100), country VARCHAR(100), pin_code VARCHAR(20),
+      customer_status VARCHAR(50) DEFAULT 'Active Customer', customer_type VARCHAR(50) DEFAULT 'Enterprise',
       created_at TIMESTAMP DEFAULT NOW(), updated_at TIMESTAMP DEFAULT NOW()
     )`;
+    await sql`ALTER TABLE companies ADD COLUMN IF NOT EXISTS customer_id VARCHAR(50)`;
+    await sql`ALTER TABLE companies ADD COLUMN IF NOT EXISTS public_token VARCHAR(64)`;
+    await sql`ALTER TABLE companies ADD COLUMN IF NOT EXISTS gst_number VARCHAR(50)`;
+    await sql`ALTER TABLE companies ADD COLUMN IF NOT EXISTS pan_number VARCHAR(50)`;
+    await sql`ALTER TABLE companies ADD COLUMN IF NOT EXISTS website VARCHAR(255)`;
+    await sql`ALTER TABLE companies ADD COLUMN IF NOT EXISTS phone VARCHAR(50)`;
+    await sql`ALTER TABLE companies ADD COLUMN IF NOT EXISTS alternate_phone VARCHAR(50)`;
+    await sql`ALTER TABLE companies ADD COLUMN IF NOT EXISTS alternate_email VARCHAR(255)`;
+    await sql`ALTER TABLE companies ADD COLUMN IF NOT EXISTS billing_address TEXT`;
+    await sql`ALTER TABLE companies ADD COLUMN IF NOT EXISTS shipping_address TEXT`;
+    await sql`ALTER TABLE companies ADD COLUMN IF NOT EXISTS city VARCHAR(100)`;
+    await sql`ALTER TABLE companies ADD COLUMN IF NOT EXISTS state VARCHAR(100)`;
+    await sql`ALTER TABLE companies ADD COLUMN IF NOT EXISTS country VARCHAR(100)`;
+    await sql`ALTER TABLE companies ADD COLUMN IF NOT EXISTS pin_code VARCHAR(20)`;
+    await sql`ALTER TABLE companies ADD COLUMN IF NOT EXISTS customer_status VARCHAR(50) DEFAULT 'Active Customer'`;
+    await sql`ALTER TABLE companies ADD COLUMN IF NOT EXISTS customer_type VARCHAR(50) DEFAULT 'Enterprise'`;
 
     await sql`CREATE TABLE IF NOT EXISTS deals (
       id SERIAL PRIMARY KEY, user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
@@ -127,8 +147,12 @@ async function initDB() {
       id SERIAL PRIMARY KEY, user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
       name VARCHAR(255) NOT NULL, initials VARCHAR(10), title VARCHAR(100),
       email VARCHAR(255), phone VARCHAR(50), primary_contact BOOLEAN DEFAULT false,
+      contact_role VARCHAR(50) DEFAULT 'Primary Contact', department VARCHAR(100), is_archived BOOLEAN DEFAULT false,
       created_at TIMESTAMP DEFAULT NOW(), updated_at TIMESTAMP DEFAULT NOW()
     )`;
+    await sql`ALTER TABLE contacts ADD COLUMN IF NOT EXISTS contact_role VARCHAR(50) DEFAULT 'Primary Contact'`;
+    await sql`ALTER TABLE contacts ADD COLUMN IF NOT EXISTS department VARCHAR(100)`;
+    await sql`ALTER TABLE contacts ADD COLUMN IF NOT EXISTS is_archived BOOLEAN DEFAULT false`;
 
     await sql`CREATE TABLE IF NOT EXISTS activities (
       id SERIAL PRIMARY KEY, user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
@@ -180,19 +204,25 @@ async function initDB() {
       name VARCHAR(255) NOT NULL,
       sku VARCHAR(100),
       description TEXT,
+      cost_price INTEGER DEFAULT 0,
       unit_price INTEGER DEFAULT 0,
       currency VARCHAR(10) DEFAULT 'INR',
       category VARCHAR(100),
+      vendor VARCHAR(100),
       is_active BOOLEAN DEFAULT TRUE,
       created_at TIMESTAMP DEFAULT NOW(),
       updated_at TIMESTAMP DEFAULT NOW()
     )`;
+    await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS cost_price INTEGER DEFAULT 0`;
+    await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS vendor VARCHAR(100)`;
 
     // ─── Quotations ─────────────────────────────────────────────────
     await sql`CREATE TABLE IF NOT EXISTS quotations (
       id SERIAL PRIMARY KEY,
       user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
       quotation_number VARCHAR(50),
+      public_token VARCHAR(64),
+      version INTEGER DEFAULT 1,
       deal_id INTEGER,
       company_id INTEGER,
       contact_id INTEGER,
@@ -204,8 +234,26 @@ async function initDB() {
       total INTEGER DEFAULT 0,
       notes TEXT,
       terms TEXT,
+      rejection_reason TEXT,
       created_at TIMESTAMP DEFAULT NOW(),
       updated_at TIMESTAMP DEFAULT NOW()
+    )`;
+    await sql`ALTER TABLE quotations ADD COLUMN IF NOT EXISTS public_token VARCHAR(64)`;
+    await sql`ALTER TABLE quotations ADD COLUMN IF NOT EXISTS version INTEGER DEFAULT 1`;
+    await sql`ALTER TABLE quotations ADD COLUMN IF NOT EXISTS rejection_reason TEXT`;
+
+    // ─── Quotation Versions History ─────────────────────────────────
+    await sql`CREATE TABLE IF NOT EXISTS quotation_versions (
+      id SERIAL PRIMARY KEY,
+      quotation_id INTEGER REFERENCES quotations(id) ON DELETE CASCADE,
+      version INTEGER NOT NULL,
+      subtotal INTEGER DEFAULT 0,
+      discount_amount INTEGER DEFAULT 0,
+      tax_amount INTEGER DEFAULT 0,
+      total INTEGER DEFAULT 0,
+      items_json JSONB,
+      created_by VARCHAR(255),
+      created_at TIMESTAMP DEFAULT NOW()
     )`;
 
     // ─── Quotation Line Items ───────────────────────────────────────
@@ -234,9 +282,11 @@ async function initDB() {
       issue_date DATE,
       delivery_date DATE,
       notes TEXT,
+      rejection_reason TEXT,
       created_at TIMESTAMP DEFAULT NOW(),
       updated_at TIMESTAMP DEFAULT NOW()
     )`;
+    await sql`ALTER TABLE purchase_orders ADD COLUMN IF NOT EXISTS rejection_reason TEXT`;
 
     // ─── Invoices ───────────────────────────────────────────────────
     await sql`CREATE TABLE IF NOT EXISTS invoices (
@@ -337,6 +387,125 @@ async function initDB() {
       period_name VARCHAR(50) NOT NULL,
       target_amount INTEGER NOT NULL,
       created_at TIMESTAMP DEFAULT NOW()
+    )`;
+
+    // ─── Leads Management ──────────────────────────────────────────
+    await sql`CREATE TABLE IF NOT EXISTS leads (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(255) NOT NULL,
+      company VARCHAR(255),
+      contact_name VARCHAR(255),
+      email VARCHAR(255),
+      phone VARCHAR(50),
+      source VARCHAR(100) DEFAULT 'Inbound',
+      industry VARCHAR(100) DEFAULT 'General',
+      owner VARCHAR(100) DEFAULT 'Aarav Sharma',
+      lead_score INTEGER DEFAULT 50,
+      status VARCHAR(50) DEFAULT 'New',
+      expected_value INTEGER DEFAULT 0,
+      next_followup DATE,
+      notes TEXT,
+      converted_company_id INTEGER REFERENCES companies(id) ON DELETE SET NULL,
+      converted_contact_id INTEGER REFERENCES contacts(id) ON DELETE SET NULL,
+      converted_deal_id INTEGER REFERENCES deals(id) ON DELETE SET NULL,
+      created_at TIMESTAMP DEFAULT NOW(),
+      updated_at TIMESTAMP DEFAULT NOW()
+    )`;
+
+    // ─── Renewals Management ────────────────────────────────────────
+    await sql`CREATE TABLE IF NOT EXISTS renewals (
+      id SERIAL PRIMARY KEY,
+      company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE,
+      product_id INTEGER REFERENCES products(id) ON DELETE SET NULL,
+      contract_start DATE,
+      contract_end DATE,
+      renewal_date DATE NOT NULL,
+      value INTEGER DEFAULT 0,
+      owner VARCHAR(100) DEFAULT 'Aarav Sharma',
+      status VARCHAR(50) DEFAULT 'Upcoming',
+      notes TEXT,
+      created_at TIMESTAMP DEFAULT NOW(),
+      updated_at TIMESTAMP DEFAULT NOW()
+    )`;
+
+    // ─── Communication Hub ─────────────────────────────────────────
+    await sql`CREATE TABLE IF NOT EXISTS communications (
+      id SERIAL PRIMARY KEY,
+      type VARCHAR(50) DEFAULT 'email',
+      recipient VARCHAR(255),
+      cc VARCHAR(255),
+      bcc VARCHAR(255),
+      subject VARCHAR(255),
+      body_html TEXT,
+      status VARCHAR(50) DEFAULT 'sent',
+      entity_type VARCHAR(50),
+      entity_id INTEGER,
+      user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+      error_message TEXT,
+      created_at TIMESTAMP DEFAULT NOW()
+    )`;
+
+    // ─── Email Templates ───────────────────────────────────────────
+    await sql`CREATE TABLE IF NOT EXISTS email_templates (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(100) NOT NULL UNIQUE,
+      subject VARCHAR(255) NOT NULL,
+      category VARCHAR(50) DEFAULT 'general',
+      body_html TEXT NOT NULL,
+      variables TEXT,
+      is_active BOOLEAN DEFAULT TRUE,
+      created_at TIMESTAMP DEFAULT NOW()
+    )`;
+
+    // ─── Automation Engine ─────────────────────────────────────────
+    await sql`CREATE TABLE IF NOT EXISTS automations (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(150) NOT NULL,
+      event VARCHAR(100) NOT NULL,
+      condition_json TEXT,
+      action_json TEXT NOT NULL,
+      is_active BOOLEAN DEFAULT TRUE,
+      created_at TIMESTAMP DEFAULT NOW()
+    )`;
+
+    await sql`CREATE TABLE IF NOT EXISTS automation_logs (
+      id SERIAL PRIMARY KEY,
+      automation_id INTEGER REFERENCES automations(id) ON DELETE CASCADE,
+      event VARCHAR(100),
+      status VARCHAR(50) DEFAULT 'success',
+      payload_json TEXT,
+      error_message TEXT,
+      executed_at TIMESTAMP DEFAULT NOW()
+    )`;
+
+    // ─── Documents Repository ──────────────────────────────────────
+    await sql`CREATE TABLE IF NOT EXISTS documents (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(255) NOT NULL,
+      type VARCHAR(50) DEFAULT 'other',
+      entity_type VARCHAR(50),
+      entity_id INTEGER,
+      file_path TEXT,
+      file_size INTEGER DEFAULT 0,
+      version INTEGER DEFAULT 1,
+      uploaded_by VARCHAR(100) DEFAULT 'Aarav Sharma',
+      created_at TIMESTAMP DEFAULT NOW()
+    )`;
+
+    // ─── Approval Workflows ────────────────────────────────────────
+    await sql`CREATE TABLE IF NOT EXISTS approvals (
+      id SERIAL PRIMARY KEY,
+      type VARCHAR(100) NOT NULL,
+      entity_type VARCHAR(50),
+      entity_id INTEGER,
+      requester_name VARCHAR(100) DEFAULT 'Aarav Sharma',
+      approver_name VARCHAR(100) DEFAULT 'Manager',
+      status VARCHAR(50) DEFAULT 'Pending',
+      old_value TEXT,
+      new_value TEXT,
+      comments TEXT,
+      created_at TIMESTAMP DEFAULT NOW(),
+      updated_at TIMESTAMP DEFAULT NOW()
     )`;
 
     // Add new columns to existing CRM tables if they were created before this enhancement

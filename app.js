@@ -404,6 +404,41 @@ document.getElementById('unverifiedToLoginBtn')?.addEventListener('click', () =>
 document.getElementById('resetToLoginBtn')?.addEventListener('click', () => { hideAuthAlert(); showAuthCard('loginCard'); });
 document.getElementById('authAlertClose')?.addEventListener('click', hideAuthAlert);
 
+// Quick Demo Login Button Handler
+document.getElementById('quickDemoLoginBtn')?.addEventListener('click', async function() {
+  const btn = this;
+  btn.disabled = true;
+  const originalText = btn.textContent;
+  btn.textContent = '⚡ Signing in as Aarav...';
+
+  try {
+    let data;
+    try {
+      data = await apiRequest('/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ identifier: 'demoadmin', password: 'Password123' })
+      });
+    } catch (e) {
+      data = await apiRequest('/api/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: 'Aarav Sharma',
+          username: 'demoadmin',
+          email: 'aarav@smartpay.in',
+          password: 'Password123'
+        })
+      });
+    }
+    currentUser = data.user;
+    showDashboard();
+  } catch (err) {
+    showAuthAlert('error', 'Demo Login Error', err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalText;
+  }
+});
+
 // Instant Verification Button Handler
 const instantVerifyBtn = document.getElementById('instantVerifyBtn');
 if (instantVerifyBtn) {
@@ -980,7 +1015,7 @@ const state = {
 
 async function loadCRMData() {
   try {
-    const [crmRes, prodRes, qtnRes, invRes, poRes, analRes, teamsRes, hierRes, commRes, commSumRes, commRulesRes, targetsRes, attRes] = await Promise.allSettled([
+    const [crmRes, prodRes, qtnRes, invRes, poRes, analRes, teamsRes, hierRes, commRes, commSumRes, commRulesRes, targetsRes, attRes, leadsRes, renewalsRes, autoRes, docsRes, apprRes, tplRes, notifRes] = await Promise.allSettled([
       apiRequest('/api/crm'),
       apiRequest('/api/products?limit=100'),
       apiRequest('/api/quotations?limit=100'),
@@ -993,50 +1028,95 @@ async function loadCRMData() {
       apiRequest('/api/commissions/summary'),
       apiRequest('/api/commissions/rules'),
       apiRequest('/api/targets'),
-      apiRequest('/api/targets/attainment')
+      apiRequest('/api/targets/attainment'),
+      apiRequest('/api/leads?limit=100'),
+      apiRequest('/api/renewals'),
+      apiRequest('/api/automations'),
+      apiRequest('/api/documents'),
+      apiRequest('/api/approvals'),
+      apiRequest('/api/templates'),
+      apiRequest('/api/notifications')
     ]);
 
     if (crmRes.status === 'fulfilled' && crmRes.value) {
       const data = crmRes.value;
-      ['companies', 'deals', 'tasks', 'contacts', 'activities', 'letters', 'stages'].forEach(key => {
+      ['companies', 'deals', 'tasks', 'contacts', 'activities', 'letters', 'stages', 'leads', 'renewals', 'communications', 'email_templates', 'automations', 'documents', 'approvals'].forEach(key => {
         if (Array.isArray(data[key])) state[key] = data[key];
       });
     }
     if (prodRes.status === 'fulfilled' && prodRes.value) {
-      state.products = prodRes.value.data || prodRes.value || state.products;
+      const val = prodRes.value.data || prodRes.value;
+      if (Array.isArray(val)) state.products = val;
     }
     if (qtnRes.status === 'fulfilled' && qtnRes.value) {
-      state.quotations = qtnRes.value.data || qtnRes.value || state.quotations;
+      const val = qtnRes.value.data || qtnRes.value;
+      if (Array.isArray(val)) state.quotations = val;
     }
     if (invRes.status === 'fulfilled' && invRes.value) {
-      state.invoices = invRes.value.data || invRes.value || state.invoices;
+      const val = invRes.value.data || invRes.value;
+      if (Array.isArray(val)) state.invoices = val;
     }
     if (poRes.status === 'fulfilled' && poRes.value) {
-      state.purchase_orders = poRes.value.data || poRes.value || state.purchase_orders;
+      const val = poRes.value.data || poRes.value;
+      if (Array.isArray(val)) state.purchase_orders = val;
     }
     if (analRes.status === 'fulfilled' && analRes.value) {
       state.analytics = analRes.value;
     }
     if (teamsRes.status === 'fulfilled' && teamsRes.value) {
-      state.teams = teamsRes.value.data || teamsRes.value || state.teams;
+      const val = teamsRes.value.data || teamsRes.value;
+      if (Array.isArray(val)) state.teams = val;
     }
     if (hierRes.status === 'fulfilled' && hierRes.value) {
-      state.hierarchy = hierRes.value.data || hierRes.value || state.hierarchy;
+      const val = hierRes.value.data || hierRes.value;
+      if (Array.isArray(val)) state.hierarchy = val;
     }
     if (commRes.status === 'fulfilled' && commRes.value) {
-      state.commissions = commRes.value.data || commRes.value || state.commissions;
+      const val = commRes.value.data || commRes.value;
+      if (Array.isArray(val)) state.commissions = val;
     }
     if (commSumRes.status === 'fulfilled' && commSumRes.value) {
       state.commSummary = commSumRes.value.data || commSumRes.value || state.commSummary;
     }
     if (commRulesRes.status === 'fulfilled' && commRulesRes.value) {
-      state.commissionRules = commRulesRes.value.data || commRulesRes.value || state.commissionRules;
+      const val = commRulesRes.value.data || commRulesRes.value;
+      if (Array.isArray(val)) state.commissionRules = val;
     }
     if (targetsRes.status === 'fulfilled' && targetsRes.value) {
-      state.targets = targetsRes.value.data || targetsRes.value || state.targets;
+      const val = targetsRes.value.data || targetsRes.value;
+      if (Array.isArray(val)) state.targets = val;
     }
     if (attRes.status === 'fulfilled' && attRes.value) {
       state.targetAttainment = attRes.value.data || attRes.value || state.targetAttainment;
+    }
+    if (leadsRes.status === 'fulfilled' && leadsRes.value) {
+      const val = leadsRes.value.data || leadsRes.value;
+      if (Array.isArray(val)) state.leads = val;
+    }
+    if (renewalsRes.status === 'fulfilled' && renewalsRes.value) {
+      const val = renewalsRes.value.data || renewalsRes.value;
+      if (Array.isArray(val)) state.renewals = val;
+    }
+    if (autoRes.status === 'fulfilled' && autoRes.value) {
+      const val = autoRes.value.data || autoRes.value;
+      if (Array.isArray(val)) state.automations = val;
+    }
+    if (docsRes.status === 'fulfilled' && docsRes.value) {
+      const val = docsRes.value.data || docsRes.value;
+      if (Array.isArray(val)) state.documents = val;
+    }
+    if (apprRes.status === 'fulfilled' && apprRes.value) {
+      const val = apprRes.value.data || apprRes.value;
+      if (Array.isArray(val)) state.approvals = val;
+    }
+    if (tplRes.status === 'fulfilled' && tplRes.value) {
+      const val = tplRes.value.data || tplRes.value;
+      if (Array.isArray(val)) state.email_templates = val;
+    }
+    if (notifRes.status === 'fulfilled' && notifRes.value) {
+      const val = notifRes.value.data || notifRes.value;
+      if (Array.isArray(val)) state.notifications = val;
+      renderNotifications();
     }
   } catch (error) {
     console.warn('CRM API unavailable:', error.message);
@@ -1105,14 +1185,17 @@ const displayDate = value => value ? new Date(`${value}T00:00:00`).toLocaleDateS
 // ─── VIEW MANAGEMENT ───────────────────────────────────────────────
 
 function openView(view) {
-  state.activeView = view;
-  document.querySelectorAll('.view').forEach(node => node.classList.toggle('active', node.id === `${view}-view`));
-  document.querySelectorAll('.nav-link[data-view]').forEach(node => node.classList.toggle('active', node.dataset.view === view));
+  const targetView = (view === 'companies') ? 'customers' : view;
+  state.activeView = targetView;
+  if (typeof updateIkNowContext === 'function') updateIkNowContext(targetView);
+  document.querySelectorAll('.view').forEach(node => node.classList.toggle('active', node.id === `${targetView}-view`));
+  document.querySelectorAll('.nav-link[data-view]').forEach(node => node.classList.toggle('active', node.dataset.view === view || node.dataset.view === targetView));
   if (el('sidebar')) el('sidebar').classList.remove('open');
   window.scrollTo({ top: 0, behavior: 'smooth' });
 
-  // Update URL hash for direct navigation & browser history
-  if (view === 'profile') {
+  if (targetView === 'customers') {
+    renderCustomers();
+  } else if (targetView === 'profile') {
     if (window.location.hash !== '#profile') {
       window.history.pushState(null, '', '#profile');
     }
@@ -1123,7 +1206,7 @@ function openView(view) {
 
   // Toggle letters submenu
   const submenu = el('lettersSubmenu');
-  if (view === 'letters') {
+  if (targetView === 'letters') {
     if (submenu) submenu.classList.add('visible');
     if (el('letterGenerator')) el('letterGenerator').style.display = 'none';
     const hub = document.querySelector('.letters-hub');
@@ -1133,16 +1216,22 @@ function openView(view) {
     if (submenu) submenu.classList.remove('visible');
   }
 
-  if (view === 'products') {
+  if (targetView === 'products') {
     renderProducts();
-  } else if (view === 'quotations') {
+  } else if (targetView === 'quotations') {
     renderQuotations();
-  } else if (view === 'invoices') {
+  } else if (targetView === 'invoices') {
     renderInvoices();
-  } else if (view === 'purchase_orders') {
+  } else if (targetView === 'purchase_orders') {
     renderPurchaseOrders();
-  } else if (view === 'dashboard') {
+  } else if (targetView === 'dashboard') {
     renderEnhancedDashboard();
+  } else if (targetView === 'notifications') {
+    renderNotifications();
+  } else if (targetView === 'automations') {
+    renderAutomations();
+  } else if (targetView === 'approvals') {
+    renderApprovals();
   }
 }
 
@@ -1182,7 +1271,7 @@ function taskRow(task, full = false) {
 
 function renderTasks() {
   const personal = state.tasks.filter(t => t.assignee === 'Aarav Sharma' && !t.done).slice(0, 4);
-  el('dashboardTasks').innerHTML = personal.map(t => taskRow(t)).join('');
+  if (el('dashboardTasks')) el('dashboardTasks').innerHTML = personal.map(t => taskRow(t)).join('');
   const searchable = (el('taskSearch')?.value || '').toLowerCase();
   const priority = el('priorityFilter')?.value || 'all';
   const filtered = state.tasks.filter(t => {
@@ -1210,13 +1299,95 @@ function renderTeam() {
   el('teamTable').innerHTML = `<div class="team-row"><span>Owner</span><span>Open deals</span><span>Forecast</span><span>Tasks</span></div>${team.map(r => `<div class="team-row"><div class="team-member"><span class="avatar ${r.cls}">${r.avatar}</span>${r.name}</div><b>${r.open}</b><b>${r.forecast}</b><b>${r.tasks}</b></div>`).join('')}`;
 }
 
+function renderCustomers() {
+  const search = (el('companySearch')?.value || '').toLowerCase().trim();
+  const status = el('statusFilter')?.value || 'all';
+  const cType = el('customerTypeFilter')?.value || 'all';
+  const industry = el('industryFilter')?.value || 'all';
+  const tag = el('tagFilter')?.value || 'all';
+  const sort = el('companySort')?.value || 'activity';
+
+  let customers = (state.companies || []).filter(c => {
+    const matchesStatus = (status === 'all' || (c.status || '').toLowerCase() === status.toLowerCase());
+    const matchesType = (cType === 'all' || c.customer_type === cType);
+    const matchesIndustry = (industry === 'all' || c.industry === industry);
+    const matchesTag = (tag === 'all' || (c.tags && c.tags.includes(tag)));
+    
+    const code = (c.customer_code || `CUS-2026-${String(c.id).padStart(4, '0')}`).toLowerCase();
+    const gstin = (c.gst_number || '').toLowerCase();
+    const email = (c.email || '').toLowerCase();
+    const phone = (c.phone || '').toLowerCase();
+    const name = (c.name || '').toLowerCase();
+
+    const matchesSearch = !search || name.includes(search) || code.includes(search) || gstin.includes(search) || email.includes(search) || phone.includes(search);
+
+    return matchesStatus && matchesType && matchesIndustry && matchesTag && matchesSearch;
+  });
+
+  // Calculate derived values for sorting
+  customers.forEach(c => {
+    const cDeals = (state.deals || []).filter(d => (d.company === c.name || d.company_id === c.id) && d.stage === 'Won');
+    c.derivedTotalValue = cDeals.reduce((sum, d) => sum + (Number(d.value) || 0), 0);
+  });
+
+  if (sort === 'name') {
+    customers.sort((a, b) => a.name.localeCompare(b.name));
+  } else if (sort === 'created') {
+    customers.sort((a, b) => (b.id || 0) - (a.id || 0));
+  } else if (sort === 'value') {
+    customers.sort((a, b) => b.derivedTotalValue - a.derivedTotalValue);
+  } else {
+    customers.sort((a, b) => (b.id || 0) - (a.id || 0));
+  }
+
+  if (el('companyResultCount')) {
+    el('companyResultCount').textContent = `${customers.length} ${customers.length === 1 ? 'customer' : 'customers'}`;
+  }
+
+  if (el('customerTablePaginationText')) {
+    el('customerTablePaginationText').textContent = `Showing 1–${customers.length} of ${customers.length} records`;
+  }
+
+  const tbody = el('companyTableBody');
+  if (tbody) {
+    tbody.innerHTML = customers.map(c => {
+      const code = c.customer_code || `CUS-2026-${String(c.id).padStart(4, '0')}`;
+      const gstinPan = c.gst_number || c.pan_number || '—';
+      const typeStr = c.customer_type || 'Enterprise';
+      const logoCls = c.logo || 'purple-logo';
+      const initialChar = c.initial || (c.name ? c.name[0] : 'C');
+      const statusStr = (c.status || 'active').toLowerCase();
+      const statusClass = statusStr === 'active' ? 'status-active' : statusStr === 'lead' ? 'status-draft' : 'status-churned';
+
+      return `
+        <tr>
+          <td>
+            <button type="button" class="company-cell company-open" data-company-id="${c.id}" data-company-name="${escapeHTML(c.name)}">
+              <span class="company-logo ${logoCls}">${initialChar}</span>
+              <span>
+                <b>${escapeHTML(c.name)}</b>
+                <small style="display:block;color:var(--muted);font-size:11px;">${escapeHTML(code)} · ${escapeHTML(c.city || 'India')}</small>
+              </span>
+            </button>
+          </td>
+          <td><code style="font-size:0.8rem;">${escapeHTML(gstinPan)}</code></td>
+          <td>${escapeHTML(c.industry || 'Fintech')}</td>
+          <td><span class="tag-subtle">${escapeHTML(typeStr)}</span></td>
+          <td>${escapeHTML(c.owner || 'Aarav Sharma')}</td>
+          <td><span class="status-pill ${statusClass}">${statusStr[0].toUpperCase() + statusStr.slice(1)}</span></td>
+          <td><b>${money(c.derivedTotalValue)}</b></td>
+          <td><small>${c.activity || 'Recently'}</small></td>
+          <td>
+            <button type="button" class="button button-quiet button-sm edit-customer-btn" data-customer-id="${c.id}" title="Edit Customer Details">✎ Edit</button>
+          </td>
+        </tr>
+      `;
+    }).join('') || '<tr><td colspan="9" class="empty-cell" style="text-align:center;padding:2rem;">No customers match these filters.</td></tr>';
+  }
+}
+
 function renderCompanies() {
-  const search = (el('companySearch')?.value || '').toLowerCase();
-  const status = el('statusFilter')?.value || 'all', industry = el('industryFilter')?.value || 'all', tag = el('tagFilter')?.value || 'all', sort = el('companySort')?.value || 'activity';
-  let companies = state.companies.filter(c => (status === 'all' || c.status === status) && (industry === 'all' || c.industry === industry) && (tag === 'all' || c.tags.includes(tag)) && c.name.toLowerCase().includes(search));
-  companies.sort((a,b) => sort === 'name' ? a.name.localeCompare(b.name) : sort === 'created' ? b.created - a.created : a.created - b.created);
-  el('companyResultCount').textContent = `${companies.length} ${companies.length === 1 ? 'company' : 'companies'}`;
-  el('companyTableBody').innerHTML = companies.map(c => `<tr><td><button class="company-cell company-open" data-company-id="${c.id}"><span class="company-logo ${c.logo}">${c.initial}</span><span>${c.name}<small>${c.tags.map(t => t === 'high value' ? 'High value' : t).join(' · ') || 'No tags'}</small></span></button></td><td>${c.industry}</td><td>${c.owner}</td><td><span class="status ${c.status}">${c.status[0].toUpperCase()+c.status.slice(1)}</span></td><td>${c.deals}</td><td>${c.activity}</td><td><button class="row-action" aria-label="More actions for ${c.name}">⋮</button></td></tr>`).join('') || '<tr><td colspan="7" class="empty-cell">No companies match these filters.</td></tr>';
+  renderCustomers();
 }
 
 function dealAvatar(owner) { const map = {'Aarav Sharma':['AS','avatar-blue'],'Priya Menon':['PM','avatar-cyan'],'Kunal Shah':['KS','avatar-orange']}; return map[owner] || [initials(owner),'avatar-blue']; }
@@ -1283,7 +1454,330 @@ function renderContacts() {
 }
 
 function renderCompanyDeals() {
-  el('companyDeals').innerHTML = state.deals.filter(d => d.company === 'RazorpayX Partners').map(d => `<article class="panel deal-card-detail"><div class="deal-meta"><span><span class="status lead">${d.stage}</span></span><span>Closes ${d.due}</span></div><h3>${d.title}</h3><div class="deal-detail-values"><p>Deal value<b>${money(d.value)}</b></p><p>Probability<b>${d.probability}%</b></p><p>Forecast<b>${money(d.value * d.probability / 100)}</b></p></div></article>`).join('');
+  renderCompany360();
+}
+
+function renderCompany360(companyName = 'RazorpayX Partners') {
+  const company = state.companies.find(c => c.name === companyName) || state.companies[0] || { name: companyName, id: 1 };
+  const cName = company.name;
+
+  // 1. Deals
+  const companyDeals = state.deals.filter(d => d.company === cName || d.company_id === company.id);
+  if (el('companyDeals')) {
+    el('companyDeals').innerHTML = companyDeals.map(d => `<article class="panel deal-card-detail"><div class="deal-meta"><span><span class="status lead">${d.stage}</span></span><span>Closes ${d.due}</span></div><h3>${d.title}</h3><div class="deal-detail-values"><p>Deal value<b>${money(d.value)}</b></p><p>Probability<b>${d.probability}%</b></p><p>Forecast<b>${money(d.value * d.probability / 100)}</b></p></div></article>`).join('') || '<p class="empty-state">No deals linked to this account.</p>';
+  }
+
+  // 2. Quotations
+  const companyQuotes = (state.quotations || []).filter(q => q.company_name === cName || q.company_id === company.id);
+  if (el('companyQuotationsTable')) {
+    el('companyQuotationsTable').innerHTML = companyQuotes.map(q => `
+      <tr>
+        <td><strong>${escapeHTML(q.quotation_number)}</strong></td>
+        <td><b>₹${((Number(q.total) || 0) / 100000).toFixed(1)}L</b></td>
+        <td><span class="status-pill status-${(q.status || 'draft').toLowerCase()}">${escapeHTML(q.status || 'Draft')}</span></td>
+        <td>${q.valid_until || '—'}</td>
+      </tr>
+    `).join('') || '<tr><td colspan="4" class="empty-state">No quotations created for this account.</td></tr>';
+  }
+
+  // 3. Purchase Orders
+  const companyPo = (state.purchase_orders || []).filter(p => p.company_name === cName || p.company_id === company.id);
+  if (el('companyPoTable')) {
+    el('companyPoTable').innerHTML = companyPo.map(p => `
+      <tr>
+        <td><strong>${escapeHTML(p.po_number || 'PO-001')}</strong></td>
+        <td><b>₹${((Number(p.amount) || 0) / 100000).toFixed(1)}L</b></td>
+        <td><span class="status-pill status-${(p.status || 'received').toLowerCase()}">${escapeHTML(p.status || 'Received')}</span></td>
+        <td>${p.issue_date || '—'}</td>
+      </tr>
+    `).join('') || '<tr><td colspan="4" class="empty-state">No purchase orders logged.</td></tr>';
+  }
+
+  // 4. Invoices
+  const companyInvoices = (state.invoices || []).filter(i => i.company_name === cName || i.company_id === company.id);
+  if (el('companyInvoicesTable')) {
+    el('companyInvoicesTable').innerHTML = companyInvoices.map(i => `
+      <tr>
+        <td><strong>${escapeHTML(i.invoice_number || 'INV-001')}</strong></td>
+        <td><b>₹${((Number(i.total) || 0) / 100000).toFixed(1)}L</b></td>
+        <td>₹${((Number(i.amount_paid) || 0) / 100000).toFixed(1)}L</td>
+        <td>₹${((Number(i.balance_due) || 0) / 100000).toFixed(1)}L</td>
+        <td><span class="status-pill status-${(i.status || 'draft').toLowerCase()}">${escapeHTML(i.status || 'Draft')}</span></td>
+      </tr>
+    `).join('') || '<tr><td colspan="5" class="empty-state">No tax invoices generated.</td></tr>';
+  }
+
+  // 5. Payments
+  const companyInvoiceIds = companyInvoices.map(i => i.id);
+  const companyPayments = (state.payments || []).filter(p => companyInvoiceIds.includes(p.invoice_id));
+  if (el('companyPaymentsTable')) {
+    el('companyPaymentsTable').innerHTML = companyPayments.map(p => `
+      <tr>
+        <td>${p.payment_date || '—'}</td>
+        <td><b>₹${(Number(p.amount) || 0).toLocaleString('en-IN')}</b></td>
+        <td>${escapeHTML(p.payment_method || 'Bank Transfer')}</td>
+        <td>${escapeHTML(p.reference_number || '—')}</td>
+      </tr>
+    `).join('') || '<tr><td colspan="4" class="empty-state">No payments recorded.</td></tr>';
+  }
+
+  // 6. Documents
+  const companyDocs = (state.documents || []).filter(d => d.company_id === company.id || d.company_name === cName);
+  if (el('companyDocumentsList')) {
+    el('companyDocumentsList').innerHTML = companyDocs.map(d => `
+      <div class="panel doc-card">
+        <span>📄</span>
+        <div><strong>${escapeHTML(d.name)}</strong><small>${escapeHTML(d.type || 'Doc')} · ${d.version || 'v1.0'}</small></div>
+        <a href="${escapeHTML(d.file_path || '#')}" target="_blank" class="text-button">Download</a>
+      </div>
+    `).join('') || '<p class="empty-state">No documents attached to account.</p>';
+  }
+
+  // 7. Emails
+  const companyComms = (state.communications || []).filter(c => c.company_id === company.id || c.company_name === cName);
+  if (el('companyEmailsList')) {
+    el('companyEmailsList').innerHTML = companyComms.map(c => `
+      <div class="panel email-log-item" style="margin-bottom: 0.5rem; padding: 0.75rem;">
+        <div style="display: flex; justify-content: space-between;"><strong>✉ ${escapeHTML(c.subject || 'Email Outbound')}</strong><small>${c.sent_at || 'Recently'}</small></div>
+        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem;">To: ${escapeHTML(c.recipient_email || 'contact')} · Status: <span class="status-pill status-active">${escapeHTML(c.status || 'Sent')}</span></p>
+      </div>
+    `).join('') || '<p class="empty-state">No email dispatch logs found for this company.</p>';
+  }
+
+  // 8. Renewals
+  const companyRenewals = (state.renewals || []).filter(r => r.company_id === company.id || r.company_name === cName);
+  if (el('companyRenewalsTable')) {
+    el('companyRenewalsTable').innerHTML = companyRenewals.map(r => `
+      <tr>
+        <td><strong>${escapeHTML(r.product_name || 'Service')}</strong></td>
+        <td><b>₹${((Number(r.value) || 0) / 100000).toFixed(1)}L</b></td>
+        <td>${r.renewal_date || '—'}</td>
+        <td><span class="status-pill status-${(r.status || 'upcoming').toLowerCase()}">${escapeHTML(r.status || 'Upcoming')}</span></td>
+      </tr>
+    `).join('') || '<tr><td colspan="4" class="empty-state">No contract renewals scheduled.</td></tr>';
+  }
+
+  // 9. Unified Timeline
+  const companyActivities = state.activities.filter(a => a.company === cName || a.text?.includes(cName));
+  if (el('companyUnifiedTimeline')) {
+    const timelineItems = [
+      ...companyActivities.map(a => ({ title: a.text, date: 'Recent', icon: '💬' })),
+      ...companyComms.map(c => ({ title: `Email: ${c.subject}`, date: c.sent_at, icon: '✉' })),
+      ...companyQuotes.map(q => ({ title: `Quotation ${q.quotation_number} generated (${q.status})`, date: q.valid_until, icon: '📋' })),
+      ...companyInvoices.map(i => ({ title: `Invoice ${i.invoice_number} created (${i.status})`, date: i.issue_date, icon: '🧾' }))
+    ];
+    el('companyUnifiedTimeline').innerHTML = timelineItems.map(item => `
+      <div class="activity-item">
+        <span class="activity-icon">${item.icon}</span>
+        <div class="activity-details">
+          <p>${item.title}</p>
+          <small>${item.date || 'Audit event'}</small>
+        </div>
+      </div>
+    `).join('') || '<p class="empty-state">No timeline events recorded.</p>';
+  }
+}
+
+function deriveCustomerPurchaseHistory(company) {
+  const cName = company.name;
+  const cId = company.id;
+  const purchases = [];
+
+  // Won deals
+  const wonDeals = (state.deals || []).filter(d => (d.company === cName || d.company_id === cId) && d.stage === 'Won');
+  wonDeals.forEach(d => {
+    purchases.push({
+      product_name: d.title || 'Enterprise Solutions Suite',
+      sku: 'SP-SOL-' + String(d.id).padStart(3, '0'),
+      category: 'Enterprise',
+      qty: 1,
+      unit_price: Number(d.value) || 0,
+      discount: 0,
+      gst_tax: (Number(d.value) || 0) * 0.18,
+      total_price: Number(d.value) || 0,
+      purchase_date: d.due || '2026-08-15',
+      source_doc: `Won Deal (${d.title})`,
+      doc_type: 'deal',
+      doc_id: d.id
+    });
+  });
+
+  // Approved POs
+  const pos = (state.purchase_orders || []).filter(p => (p.company_name === cName || p.company_id === cId) && p.status !== 'cancelled');
+  pos.forEach(p => {
+    purchases.push({
+      product_name: `PO Contract: ${p.po_number || 'PO-001'}`,
+      sku: 'SP-PO-' + String(p.id).padStart(3, '0'),
+      category: 'Service Contract',
+      qty: 1,
+      unit_price: Number(p.amount) || 0,
+      discount: 0,
+      gst_tax: (Number(p.amount) || 0) * 0.18,
+      total_price: Number(p.amount) || 0,
+      purchase_date: p.issue_date || '2026-08-20',
+      source_doc: `PO #${p.po_number || 'PO-001'}`,
+      doc_type: 'po',
+      doc_id: p.id
+    });
+  });
+
+  // Invoices items
+  const invs = (state.invoices || []).filter(i => (i.company_name === cName || i.company_id === cId));
+  invs.forEach(i => {
+    const items = i.items || [];
+    if (items.length) {
+      items.forEach(item => {
+        purchases.push({
+          product_name: item.name || item.product_name || 'Payment Processing License',
+          sku: item.sku || 'SP-PG-001',
+          category: item.category || 'Gateway',
+          qty: Number(item.qty) || 1,
+          unit_price: Number(item.unit_price || item.price) || 0,
+          discount: Number(item.discount) || 0,
+          gst_tax: (Number(item.total || item.unit_price) || 0) * 0.18,
+          total_price: Number(item.total || (item.unit_price * (item.qty || 1))) || 0,
+          purchase_date: i.issue_date || '2026-09-01',
+          source_doc: `Invoice #${i.invoice_number}`,
+          doc_type: 'invoice',
+          doc_id: i.id
+        });
+      });
+    }
+  });
+
+  // Fallback demo purchase history for predefined accounts if no items derived yet
+  if (purchases.length === 0 && (cName.includes('Razorpay') || cName.includes('Urban') || cName.includes('Groww'))) {
+    purchases.push({
+      product_name: 'SmartPay Payment Gateway Enterprise',
+      sku: 'SP-PG-ENT',
+      category: 'Gateway',
+      qty: 1,
+      unit_price: 500000,
+      discount: 5,
+      gst_tax: 85500,
+      total_price: 560500,
+      purchase_date: '2026-07-15',
+      source_doc: 'PO #PO-RZP-2026-001',
+      doc_type: 'po'
+    });
+  }
+
+  return purchases;
+}
+
+function renderCustomerPurchaseHistory(company) {
+  const purchases = deriveCustomerPurchaseHistory(company);
+  const table = el('companyPurchaseHistoryTable');
+
+  const totalProducts = purchases.reduce((sum, p) => sum + (p.qty || 1), 0);
+  const totalValue = purchases.reduce((sum, p) => sum + (p.total_price || 0), 0);
+  const dates = purchases.map(p => p.purchase_date).filter(Boolean).sort();
+  const firstDate = dates.length ? displayDate(dates[0]) : '—';
+  const latestDate = dates.length ? displayDate(dates[dates.length - 1]) : '—';
+  const aov = purchases.length ? Math.round(totalValue / purchases.length) : 0;
+
+  if (el('cusTotalProductsCount')) el('cusTotalProductsCount').textContent = totalProducts;
+  if (el('cusTotalPurchaseValue')) el('cusTotalPurchaseValue').textContent = money(totalValue);
+  if (el('cusFirstPurchaseDate')) el('cusFirstPurchaseDate').textContent = firstDate;
+  if (el('cusLatestPurchaseDate')) el('cusLatestPurchaseDate').textContent = latestDate;
+  if (el('cusAvgOrderValue')) el('cusAvgOrderValue').textContent = money(aov);
+
+  if (table) {
+    table.innerHTML = purchases.map((p, idx) => `
+      <tr>
+        <td><strong>${escapeHTML(p.product_name)}</strong></td>
+        <td><code style="font-size:0.8rem;">${escapeHTML(p.sku)}</code></td>
+        <td><span class="tag-subtle">${escapeHTML(p.category)}</span></td>
+        <td><b>${p.qty}</b></td>
+        <td>${money(p.unit_price)}</td>
+        <td>${p.discount}%</td>
+        <td><b>${money(p.total_price)}</b></td>
+        <td>${p.purchase_date || '—'}</td>
+        <td><small>${escapeHTML(p.source_doc)}</small></td>
+        <td>
+          <button type="button" class="button button-quiet button-sm purchase-detail-btn" data-purchase-index="${idx}">Details</button>
+        </td>
+      </tr>
+    `).join('') || '<tr><td colspan="10" class="empty-state" style="text-align:center;padding:2rem;">No purchase history recorded for this customer.</td></tr>';
+
+    state.currentCustomerPurchases = purchases;
+  }
+}
+
+function openCustomerProfile(identifier) {
+  let company = state.companies.find(c => c.id === Number(identifier) || c.name === identifier);
+  if (!company) company = state.companies[0] || { name: 'RazorpayX Partners', id: 1 };
+  
+  const cName = company.name;
+  state.currentCustomer = company;
+
+  if (el('companyHeroLogo')) el('companyHeroLogo').textContent = company.initial || (cName ? cName[0] : 'C');
+  if (el('companyHeroName')) el('companyHeroName').textContent = cName;
+  if (el('companyHeroEyebrow')) el('companyHeroEyebrow').textContent = `${(company.status || 'Active')[0].toUpperCase() + (company.status || 'Active').slice(1)} customer · Code: ${company.customer_code || 'CUS-2026-0001'} · Owner: ${company.owner || 'Aarav Sharma'}`;
+  if (el('companyHeroMeta')) el('companyHeroMeta').textContent = `${company.industry || 'Fintech'} · ${company.city || 'Bengaluru'}, ${company.state || 'Karnataka'} · ${company.customer_type || 'Enterprise'}`;
+  
+  if (el('companyHeroEditBtn')) {
+    el('companyHeroEditBtn').onclick = () => openEditCustomerModal(company.id);
+  }
+
+  if (el('companyDetailCode')) el('companyDetailCode').textContent = company.customer_code || `CUS-2026-${String(company.id).padStart(4, '0')}`;
+  if (el('companyDetailGstin')) el('companyDetailGstin').textContent = company.gst_number || 'Not Provided';
+  if (el('companyDetailPan')) el('companyDetailPan').textContent = company.pan_number || 'Not Provided';
+  if (el('companyDetailType')) el('companyDetailType').textContent = company.customer_type || 'Enterprise';
+  if (el('companyDetailWebsite')) {
+    const web = company.website || 'razorpay.com';
+    el('companyDetailWebsite').textContent = web;
+    el('companyDetailWebsite').href = web.startsWith('http') ? web : `https://${web}`;
+  }
+  if (el('companyDetailPhone')) el('companyDetailPhone').textContent = company.phone || company.alternate_phone || '+91 80 4567 8900';
+  if (el('companyDetailBillingAddress')) el('companyDetailBillingAddress').textContent = company.billing_address || `${company.city || 'Bengaluru'}, ${company.state || 'Karnataka'}`;
+  if (el('companyDetailStatus')) el('companyDetailStatus').innerHTML = `<span class="status-pill status-${(company.status || 'active').toLowerCase()}">${(company.status || 'active').toUpperCase()}</span>`;
+
+  renderCompany360(cName);
+  renderCustomerPurchaseHistory(company);
+  openView('company-detail');
+  setCompanyTab('overview');
+}
+
+function openEditCustomerModal(customerId) {
+  const customer = state.companies.find(c => c.id === customerId);
+  if (!customer) return;
+  state.editingCustomerId = customer.id;
+  if (el('companyModalTitle')) el('companyModalTitle').textContent = `Edit Customer: ${customer.name}`;
+  if (el('companyModalName')) el('companyModalName').value = customer.name || '';
+  if (el('companyModalType')) el('companyModalType').value = customer.customer_type || 'Enterprise';
+  if (el('companyModalIndustry')) el('companyModalIndustry').value = customer.industry || 'Retail';
+  if (el('companyModalGstin')) el('companyModalGstin').value = customer.gst_number || '';
+  if (el('companyModalPan')) el('companyModalPan').value = customer.pan_number || '';
+  if (el('companyModalPhone')) el('companyModalPhone').value = customer.phone || '';
+  if (el('companyModalAltPhone')) el('companyModalAltPhone').value = customer.alternate_phone || '';
+  if (el('companyModalEmail')) el('companyModalEmail').value = customer.email || '';
+  if (el('companyModalAltEmail')) el('companyModalAltEmail').value = customer.alternate_email || '';
+  if (el('companyModalWebsite')) el('companyModalWebsite').value = customer.website || '';
+  if (el('companyModalStatus')) el('companyModalStatus').value = customer.status || 'active';
+  if (el('companyModalSource')) el('companyModalSource').value = customer.source || 'Inbound';
+  if (el('companyModalBillingAddress')) el('companyModalBillingAddress').value = customer.billing_address || '';
+  if (el('companyModalShippingAddress')) el('companyModalShippingAddress').value = customer.shipping_address || '';
+  if (el('companyModalCity')) el('companyModalCity').value = customer.city || '';
+  if (el('companyModalState')) el('companyModalState').value = customer.state || '';
+  if (el('companyModalCountry')) el('companyModalCountry').value = customer.country || 'India';
+  if (el('companyModalPinCode')) el('companyModalPinCode').value = customer.pin_code || '';
+  showModal('companyModal');
+}
+
+function showPurchaseDetail(idx) {
+  const p = (state.currentCustomerPurchases || [])[idx];
+  if (!p) return;
+  if (el('purchaseDetailProductName')) el('purchaseDetailProductName').textContent = p.product_name;
+  if (el('purchaseDetailSku')) el('purchaseDetailSku').textContent = p.sku;
+  if (el('purchaseDetailQty')) el('purchaseDetailQty').textContent = p.qty;
+  if (el('purchaseDetailUnitPrice')) el('purchaseDetailUnitPrice').textContent = money(p.unit_price);
+  if (el('purchaseDetailDiscount')) el('purchaseDetailDiscount').textContent = `${p.discount}%`;
+  if (el('purchaseDetailTax')) el('purchaseDetailTax').textContent = money(p.gst_tax || 0);
+  if (el('purchaseDetailTotal')) el('purchaseDetailTotal').textContent = money(p.total_price);
+  if (el('purchaseDetailDate')) el('purchaseDetailDate').textContent = p.purchase_date || '—';
+  if (el('purchaseDetailSourceDoc')) el('purchaseDetailSourceDoc').textContent = p.source_doc;
+  showModal('purchaseDetailModal');
 }
 
 function renderReports() {
@@ -1532,6 +2026,9 @@ function renderActionCenter() {
   if (el('overdueCountBadge')) el('overdueCountBadge').textContent = overdueTasks.length;
   if (el('todayCountBadge')) el('todayCountBadge').textContent = todayTasks.length;
 
+  // ─── Priority Actions Feed ──────────────────────────────────────
+  renderPriorityActions();
+
   // Render followups
   const activeFollowupList = state.followupTab === 'today' ? todayTasks : overdueTasks;
   const followupsContainer = el('dashboardFollowups');
@@ -1595,6 +2092,100 @@ function renderActionCenter() {
         </div>
       `).join('');
     }
+  }
+}
+
+function renderPriorityActions() {
+  const container = el('priorityActionsFeed');
+  if (!container) return;
+
+  const priorityItems = [];
+
+  // 0. Pending Approvals (>15% discount or >₹10L deal)
+  const pendingApprovals = (state.approvals || []).filter(a => (a.status || '').toLowerCase() === 'pending');
+  pendingApprovals.forEach(a => {
+    priorityItems.push({
+      type: 'approval',
+      title: `Approval Required: ${a.type}`,
+      subtitle: `Requested by ${a.requester_name || 'Rep'} · ${a.comments || 'Threshold review required'}`,
+      badge: 'APPROVAL NEEDED',
+      badgeClass: 'red',
+      actionText: 'Review Approval',
+      actionView: 'approvals'
+    });
+  });
+
+  // 0.5. Overdue Invoices
+  const overdueInvoices = (state.invoices || []).filter(i => (i.status || '').toLowerCase() === 'overdue');
+  overdueInvoices.forEach(i => {
+    priorityItems.push({
+      type: 'invoice',
+      title: `Overdue Invoice ${i.invoice_number}`,
+      subtitle: `${i.company_name || 'Client'} · Total: ${money(i.total)} · Due date: ${i.due_date || 'Past Due'}`,
+      badge: 'OVERDUE INVOICE',
+      badgeClass: 'red',
+      actionText: 'Manage Invoices',
+      actionView: 'invoices'
+    });
+  });
+
+  // 1. Quotes awaiting response
+  const pendingQuotes = (state.quotations || []).filter(q => ['sent', 'viewed', 'negotiation'].includes((q.status || '').toLowerCase()));
+  pendingQuotes.forEach(q => {
+    priorityItems.push({
+      type: 'quote',
+      title: `Quote ${q.quotation_number} awaiting client response`,
+      subtitle: `${q.company_name || 'Client'} · Total: ${money(q.total)} · Valid until ${q.valid_until || 'N/A'}`,
+      badge: 'QUOTATION',
+      badgeClass: 'blue',
+      actionText: 'View Quotes',
+      actionView: 'quotations'
+    });
+  });
+
+  // 2. Renewals due soon
+  const dueRenewals = (state.renewals || []).filter(r => (r.status || '').toLowerCase() === 'upcoming');
+  dueRenewals.forEach(r => {
+    priorityItems.push({
+      type: 'renewal',
+      title: `Contract renewal due for ${r.company_name || 'Customer'}`,
+      subtitle: `${r.product_name || 'Subscription'} · Value: ${money(r.value)} · Date: ${r.renewal_date || 'Upcoming'}`,
+      badge: 'RENEWAL',
+      badgeClass: 'amber',
+      actionText: 'Manage Renewal',
+      actionView: 'renewals'
+    });
+  });
+
+  // 3. Overdue Tasks
+  const overdueTasks = (state.tasks || []).filter(t => !t.done && t.bucket === 'overdue');
+  overdueTasks.slice(0, 3).forEach(t => {
+    priorityItems.push({
+      type: 'task',
+      title: `Overdue Follow-up: ${t.title}`,
+      subtitle: `${t.company || 'Account'} · Assigned to ${t.assignee || 'Aarav'}`,
+      badge: 'OVERDUE TASK',
+      badgeClass: 'red',
+      actionText: 'Open Tasks',
+      actionView: 'tasks'
+    });
+  });
+
+  if (priorityItems.length === 0) {
+    container.innerHTML = '<div style="grid-column: 1 / -1; padding: 1rem; color: var(--text-secondary); text-align: center;">✨ All sales priority actions cleared! Great job.</div>';
+  } else {
+    container.innerHTML = priorityItems.slice(0, 6).map(item => `
+      <div style="background: var(--bg-surface); padding: 1rem; border-radius: 8px; border: 1px solid var(--border-light); display: flex; flex-direction: column; justify-space-between;">
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <span class="status-pill status-${item.badgeClass}" style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase;">${escapeHTML(item.badge)}</span>
+          </div>
+          <strong style="font-size: 0.95rem; color: var(--text-primary); display: block; margin-bottom: 0.25rem;">${escapeHTML(item.title)}</strong>
+          <small style="color: var(--text-secondary); font-size: 0.8rem; display: block; margin-bottom: 0.75rem;">${escapeHTML(item.subtitle)}</small>
+        </div>
+        <button type="button" class="button button-quiet button-sm" data-view="${item.actionView}" style="align-self: flex-start;">${escapeHTML(item.actionText)} →</button>
+      </div>
+    `).join('');
   }
 }
 
@@ -1774,20 +2365,23 @@ function renderQuotations() {
   }
 
   if (filtered.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" class="empty-cell">No quotations found. Click "+ New Quotation" to create one.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" class="empty-cell">No quotations found. Click "+ New Quotation" to create one.</td></tr>';
     return;
   }
 
   tbody.innerHTML = filtered.map(q => `
     <tr>
-      <td><strong>${escapeHTML(q.quotation_number || `QTN-${q.id}`)}</strong></td>
+      <td><strong>${escapeHTML(q.quotation_number || `QTN-${q.id}`)}</strong> <span class="tag blue-tag" style="font-size:0.7rem; padding: 2px 6px;">v${q.version || 1}</span></td>
       <td>${escapeHTML(q.company_name || '—')}</td>
-      <td>${escapeHTML(q.deal_title || '—')}</td>
-      <td><strong>${money(q.total)}</strong></td>
-      <td><span class="status-pill status-${q.status || 'draft'}">${(q.status || 'draft').toUpperCase()}</span></td>
       <td>${q.valid_until ? displayDate(q.valid_until) : '—'}</td>
+      <td>${money(q.subtotal || 0)}</td>
+      <td>${q.discount_percent || 0}%</td>
+      <td>18%</td>
+      <td><strong>${money(q.total || 0)}</strong></td>
+      <td><span class="status-pill status-${(q.status || 'draft').toLowerCase()}">${(q.status || 'draft').toUpperCase()}</span></td>
       <td>
         <div style="display:flex;gap:6px;justify-content:flex-end">
+          <button type="button" class="button button-quiet button-sm" data-public-view-quote="${q.id}" title="Customer portal view">🔗 Portal View</button>
           <button type="button" class="button button-secondary button-sm" data-send-quotation="${q.id}">✉ Send</button>
         </div>
       </td>
@@ -1818,9 +2412,12 @@ function initQuotationModal() {
     validUntilInput.value = future.toISOString().split('T')[0];
   }
 
+  // Filter active products only
+  const activeProducts = state.products.filter(p => p.is_active !== false);
+
   // Initialize with 1 line item if empty
   if (state.quotationLineItems.length === 0) {
-    const firstProd = state.products[0] || { id: 1, name: 'Payment Gateway License', unit_price: 250000 };
+    const firstProd = activeProducts[0] || { id: 1, name: 'Payment Gateway License', unit_price: 250000 };
     state.quotationLineItems = [{
       product_id: firstProd.id,
       description: firstProd.name,
@@ -1895,7 +2492,7 @@ function renderInvoices() {
   const companyFilter = el('invoiceCompanyFilter')?.value || 'all';
 
   const companySelect = el('invoiceCompanyFilter');
-  if (companySelect && companySelect.options.length <= 1) {
+  if (companySelect && companySelect.options && companySelect.options.length <= 1) {
     companySelect.innerHTML = '<option value="all">All companies</option>' +
       state.companies.map(c => `<option value="${c.id}">${escapeHTML(c.name)}</option>`).join('');
   }
@@ -1999,7 +2596,7 @@ function renderPurchaseOrders() {
   const companyFilter = el('poCompanyFilter')?.value || 'all';
 
   const companySelect = el('poCompanyFilter');
-  if (companySelect && companySelect.options.length <= 1) {
+  if (companySelect && companySelect.options && companySelect.options.length <= 1) {
     companySelect.innerHTML = '<option value="all">All companies</option>' +
       state.companies.map(c => `<option value="${c.id}">${escapeHTML(c.name)}</option>`).join('');
   }
@@ -2184,10 +2781,272 @@ function initPoModal() {
   }
 }
 
+function renderLeads() {
+  const tbody = el('leadTableBody');
+  if (!tbody) return;
+
+  const search = (el('leadSearch')?.value || '').toLowerCase();
+  const statusFilter = el('leadStatusFilter')?.value || 'all';
+  const sourceFilter = el('leadSourceFilter')?.value || 'all';
+  const ownerFilter = el('leadOwnerFilter')?.value || 'all';
+
+  const filtered = (state.leads || []).filter(l => {
+    const matchesStatus = statusFilter === 'all' || (l.status || '').toLowerCase() === statusFilter.toLowerCase();
+    const matchesSource = sourceFilter === 'all' || (l.source || '').toLowerCase() === sourceFilter.toLowerCase();
+    const matchesOwner = ownerFilter === 'all' || (l.owner || '').toLowerCase() === ownerFilter.toLowerCase();
+    const matchesSearch = `${l.name || ''} ${l.company || ''} ${l.email || ''} ${l.phone || ''}`.toLowerCase().includes(search);
+    return matchesStatus && matchesSource && matchesOwner && matchesSearch;
+  });
+
+  if (el('leadResultCount')) {
+    el('leadResultCount').textContent = `${filtered.length} lead${filtered.length === 1 ? '' : 's'} found`;
+  }
+
+  tbody.innerHTML = filtered.map(l => {
+    const scoreColor = l.lead_score >= 80 ? 'green-tag' : (l.lead_score >= 60 ? 'blue-tag' : 'orange-tag');
+    const isConverted = l.status === 'Converted';
+    return `
+      <tr>
+        <td><input type="checkbox" class="lead-row-check" data-lead-id="${l.id}"></td>
+        <td><strong>${escapeHTML(l.name)}</strong><br/><small class="text-muted">${escapeHTML(l.contact_name || '')}</small></td>
+        <td><b>${escapeHTML(l.company || l.name)}</b><br/><small>${escapeHTML(l.industry || 'General')}</small></td>
+        <td><span class="tag gray-tag">${escapeHTML(l.source || 'Inbound')}</span></td>
+        <td><span class="tag ${scoreColor}">★ ${l.lead_score || 50}</span></td>
+        <td><span class="status-pill ${l.status ? l.status.toLowerCase() : 'new'}">${escapeHTML(l.status || 'New')}</span></td>
+        <td><b>₹${((Number(l.expected_value) || 0) / 100000).toFixed(1)}L</b></td>
+        <td>${l.next_followup || 'Unscheduled'}</td>
+        <td>${escapeHTML(l.owner || 'Aarav Sharma')}</td>
+        <td>
+          <div class="table-actions">
+            ${isConverted ? `<span class="badge badge-success">✓ Converted</span>` : `<button type="button" class="button button-primary button-sm convert-lead-btn" data-lead-id="${l.id}">⚡ Convert</button>`}
+            <button type="button" class="text-button edit-lead-btn" data-lead-id="${l.id}">Edit</button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('') || '<tr><td colspan="10" class="empty-state">No leads match your search criteria. <button type="button" class="text-link" id="emptyCreateLeadBtn">Create lead</button></td></tr>';
+}
+
+function renderRenewals() {
+  const tbody = el('renewalTableBody');
+  if (!tbody) return;
+  const list = state.renewals || [];
+  tbody.innerHTML = list.map(r => `
+    <tr>
+      <td><strong>${escapeHTML(r.company_name || 'Customer')}</strong></td>
+      <td>${escapeHTML(r.product_name || 'Contract')}</td>
+      <td><b>₹${((Number(r.value) || 0) / 100000).toFixed(1)}L</b></td>
+      <td>${r.renewal_date || '—'}</td>
+      <td><span class="status-pill ${r.status ? r.status.toLowerCase() : 'upcoming'}">${escapeHTML(r.status || 'Upcoming')}</span></td>
+      <td>${escapeHTML(r.owner || 'Aarav Sharma')}</td>
+      <td><button type="button" class="text-button edit-renewal-btn" data-renewal-id="${r.id}">Edit</button></td>
+    </tr>
+  `).join('') || '<tr><td colspan="7" class="empty-state">No contract renewals scheduled.</td></tr>';
+}
+
+function renderAutomations() {
+  const container = el('automationRulesList');
+  if (!container) return;
+  const list = state.automations || [];
+
+  container.innerHTML = list.map(a => {
+    let condText = 'Always trigger';
+    if (a.conditions) {
+      try {
+        const parsed = typeof a.conditions === 'string' ? JSON.parse(a.conditions) : a.conditions;
+        condText = Object.entries(parsed).map(([k, v]) => `${k} ${v}`).join(', ');
+      } catch (e) {
+        condText = String(a.conditions);
+      }
+    }
+
+    let actionText = a.action_type || 'Action';
+    if (a.action_config) {
+      try {
+        const ac = typeof a.action_config === 'string' ? JSON.parse(a.action_config) : a.action_config;
+        actionText = `${a.action_type}: ${ac.title || ac.template || ac.target_role || ''}`;
+      } catch (e) {
+        actionText = a.action_type;
+      }
+    }
+
+    return `
+      <div class="panel rule-card" style="padding: 1.25rem; background: #ffffff; border: 1px solid var(--border-light); border-radius: 10px; display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+            <strong style="font-size: 1rem; color: #0f172a;">${escapeHTML(a.name)}</strong>
+            <button type="button" class="button button-quiet button-sm toggle-automation-btn" data-auto-id="${a.id}" style="font-size: 11px; padding: 2px 8px;">
+              ${a.is_active ? '✅ Active' : '⏸ Paused'}
+            </button>
+          </div>
+          <p style="font-size: 0.82rem; color: #64748b; margin-bottom: 12px;">${escapeHTML(a.description || 'No description')}</p>
+          <div style="font-size: 0.8rem; background: #f8fafc; padding: 8px 10px; border-radius: 6px; display: flex; flex-direction: column; gap: 4px; border: 1px solid #f1f5f9;">
+            <div><span style="color: #6366f1; font-weight: 700;">WHEN:</span> ${escapeHTML(a.event)}</div>
+            <div><span style="color: #059669; font-weight: 700;">IF:</span> ${escapeHTML(condText)}</div>
+            <div><span style="color: #d97706; font-weight: 700;">THEN:</span> ${escapeHTML(actionText)}</div>
+          </div>
+        </div>
+        <div style="margin-top: 12px; display: flex; gap: 8px; justify-content: flex-end;">
+          <button type="button" class="button button-quiet button-sm test-rule-btn" data-auto-id="${a.id}">🧪 Test Rule</button>
+          <button type="button" class="button button-quiet button-sm edit-auto-btn" data-auto-id="${a.id}">Edit</button>
+        </div>
+      </div>
+    `;
+  }).join('') || '<p class="empty-state">No automation rules configured.</p>';
+}
+
+function renderApprovals() {
+  const tbody = el('approvalTableBody');
+  const list = state.approvals || [];
+  
+  // Update sidebar approval count
+  const pendingList = list.filter(a => (a.status || '').toLowerCase() === 'pending');
+  const countEl = el('sidebarApprovalCount');
+  if (countEl) {
+    if (pendingList.length > 0) {
+      countEl.textContent = pendingList.length;
+      countEl.style.display = 'inline-block';
+    } else {
+      countEl.style.display = 'none';
+    }
+  }
+
+  if (!tbody) return;
+
+  const currentUserId = currentUser?.id;
+  const isManagerOrAdmin = ['admin', 'Sales Manager'].includes(currentUser?.role || '');
+
+  tbody.innerHTML = list.map(a => {
+    const isPending = (a.status || '').toLowerCase() === 'pending';
+    const isRequester = Number(a.requested_by) === Number(currentUserId) || a.requester_name === currentUser?.name;
+    const selfApprovalBlocked = isPending && isRequester && !isManagerOrAdmin;
+
+    return `
+      <tr>
+        <td><strong>${escapeHTML(a.type || a.approval_type || 'Approval')}</strong></td>
+        <td>${escapeHTML(a.requester_name || a.requested_by_name || 'Rep')}</td>
+        <td>${escapeHTML(a.old_value || '—')} → <b style="color: #2563eb;">${escapeHTML(a.new_value || '—')}</b></td>
+        <td><span class="status-pill ${a.status ? a.status.toLowerCase() : 'pending'}">${escapeHTML(a.status || 'Pending')}</span></td>
+        <td>${escapeHTML(a.comments || a.rejection_reason || '—')}</td>
+        <td>
+          ${isPending ? (
+            selfApprovalBlocked ? `
+              <span style="font-size: 11px; color: #dc2626; font-weight: 600; background: #fef2f2; padding: 4px 8px; border-radius: 4px;" title="Cannot self-approve your own requests unless you are a Manager">⚠️ Cannot Self-Approve</span>
+            ` : `
+              <div style="display: flex; gap: 6px;">
+                <button type="button" class="button button-primary button-sm decide-approval-btn" data-app-id="${a.id}" data-decision="Approved">Approve</button>
+                <button type="button" class="button button-quiet button-sm decide-approval-btn" data-app-id="${a.id}" data-decision="Rejected">Reject</button>
+              </div>
+            `
+          ) : `
+            <span style="color: #64748b; font-size: 12px;">Decided by ${escapeHTML(a.reviewer_name || 'Manager')}</span>
+          `}
+        </td>
+      </tr>
+    `;
+  }).join('') || '<tr><td colspan="6" class="empty-state">No pending approval requests.</td></tr>';
+}
+
+function renderNotifications() {
+  const list = state.notifications || [];
+  const unreadList = list.filter(n => !n.is_read);
+
+  // 1. Update badges
+  const topbarBadge = el('topbarNotificationBadge');
+  if (topbarBadge) {
+    topbarBadge.textContent = unreadList.length;
+    topbarBadge.style.display = unreadList.length > 0 ? 'inline-block' : 'none';
+  }
+  const sidebarBadge = el('sidebarNotificationCount');
+  if (sidebarBadge) {
+    sidebarBadge.textContent = unreadList.length;
+    sidebarBadge.style.display = unreadList.length > 0 ? 'inline-block' : 'none';
+  }
+
+  // 2. Render topbar dropdown
+  const topbarListEl = el('topbarNotificationList');
+  if (topbarListEl) {
+    if (unreadList.length === 0) {
+      topbarListEl.innerHTML = '<div style="text-align: center; color: #94a3b8; padding: 16px; font-size: 13px;">No unread notifications</div>';
+    } else {
+      topbarListEl.innerHTML = unreadList.slice(0, 5).map(n => `
+        <div class="notification-item" data-notif-id="${n.id}" style="padding: 10px; border-radius: 8px; background: ${n.is_read ? '#ffffff' : '#f0f9ff'}; border: 1px solid ${n.is_read ? '#f1f5f9' : '#bae6fd'}; cursor: pointer;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <strong style="font-size: 0.85rem; color: #0f172a;">${escapeHTML(n.title)}</strong>
+            <small style="font-size: 0.7rem; color: #94a3b8;">${n.created_at ? new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Now'}</small>
+          </div>
+          <p style="font-size: 0.8rem; color: #475569; margin: 4px 0 0 0;">${escapeHTML(n.message)}</p>
+        </div>
+      `).join('');
+    }
+  }
+
+  // 3. Render full notifications view
+  const fullListEl = el('fullNotificationsList');
+  if (fullListEl) {
+    const filter = state.notifFilter || 'all';
+    let filtered = list;
+    if (filter === 'unread') filtered = list.filter(n => !n.is_read);
+    else if (filter === 'action_required') filtered = list.filter(n => n.type === 'action_required' || n.category === 'approval');
+    else if (filter === 'system') filtered = list.filter(n => n.type === 'system' || n.category === 'system');
+
+    if (filtered.length === 0) {
+      fullListEl.innerHTML = '<p class="empty-state">No notifications matching selected filter.</p>';
+    } else {
+      fullListEl.innerHTML = filtered.map(n => `
+        <div class="notification-card" style="padding: 1rem; border-radius: 10px; background: ${n.is_read ? '#ffffff' : '#f8fafc'}; border: 1px solid ${n.is_read ? '#e2e8f0' : '#3b82f6'}; display: flex; justify-content: space-between; align-items: center;">
+          <div style="display: flex; gap: 12px; align-items: flex-start;">
+            <span style="font-size: 1.5rem;">${n.is_read ? '✉️' : '📩'}</span>
+            <div>
+              <strong style="font-size: 0.95rem; color: #0f172a; display: block;">${escapeHTML(n.title)}</strong>
+              <p style="font-size: 0.85rem; color: #475569; margin: 4px 0 8px 0;">${escapeHTML(n.message)}</p>
+              <small style="color: #94a3b8; font-size: 0.75rem;">${n.created_at ? new Date(n.created_at).toLocaleString() : 'Just now'}</small>
+            </div>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            ${!n.is_read ? `<button type="button" class="button button-quiet button-sm mark-single-read-btn" data-notif-id="${n.id}">Mark Read</button>` : ''}
+            ${n.target_view ? `<button type="button" class="button button-primary button-sm notif-target-btn" data-view="${n.target_view}">View →</button>` : ''}
+          </div>
+        </div>
+      `).join('');
+    }
+  }
+}
+
+function renderDocuments() {
+  const container = el('documentList');
+  if (!container) return;
+  const list = state.documents || [];
+  container.innerHTML = list.map(d => `
+    <div class="panel doc-card">
+      <span>📄</span>
+      <div>
+        <strong>${escapeHTML(d.name)}</strong>
+        <small>${escapeHTML(d.type || 'Other')} · Uploaded by ${escapeHTML(d.uploaded_by || 'Aarav')}</small>
+      </div>
+      <a href="${escapeHTML(d.file_path || '#')}" target="_blank" class="text-button">Download</a>
+    </div>
+  `).join('') || '<p class="empty-state">No documents stored in repository.</p>';
+}
+
+function renderTemplates() {
+  const container = el('emailTemplateList');
+  if (!container) return;
+  const list = state.email_templates || [];
+  container.innerHTML = list.map(t => `
+    <div class="panel tpl-card">
+      <h3>${escapeHTML(t.name)}</h3>
+      <p><b>Subject:</b> ${escapeHTML(t.subject)}</p>
+      <small>Variables: ${escapeHTML(t.variables || 'None')}</small>
+    </div>
+  `).join('') || '<p class="empty-state">No email templates created.</p>';
+}
+
 function renderAll() {
   renderTotals();
   renderEnhancedDashboard();
   renderStageChart();
+  renderLeads();
   renderTasks();
   renderActivity();
   renderTeam();
@@ -2202,6 +3061,12 @@ function renderAll() {
   renderQuotations();
   renderInvoices();
   renderPurchaseOrders();
+  renderRenewals();
+  renderAutomations();
+  renderApprovals();
+  renderNotifications();
+  renderDocuments();
+  renderTemplates();
   renderTeams();
   renderCommissions();
   renderTargets();
@@ -2244,7 +3109,27 @@ document.addEventListener('click', async event => {
   if(event.target.closest('[data-close-modal]') || event.target === el('modalLayer')) { closeModal(); return; }
   const tab = event.target.closest('[data-company-tab],[data-company-tab-go]'); if(tab){ setCompanyTab(tab.dataset.companyTab || tab.dataset.companyTabGo); return; }
   const settings = event.target.closest('[data-settings]'); if(settings){ document.querySelectorAll('.settings-link').forEach(n=>n.classList.toggle('active',n===settings)); document.querySelectorAll('.settings-panel').forEach(n=>n.classList.toggle('active',n.id===`${settings.dataset.settings}-settings`)); return; }
-  const company = event.target.closest('.company-open'); if(company){ openView('company-detail'); setCompanyTab('overview'); return; }
+  const editCust = event.target.closest('.edit-customer-btn');
+  if (editCust) {
+    openEditCustomerModal(Number(editCust.dataset.customerId));
+    return;
+  }
+  const purDetail = event.target.closest('.purchase-detail-btn');
+  if (purDetail) {
+    showPurchaseDetail(Number(purDetail.dataset.purchaseIndex));
+    return;
+  }
+  const company = event.target.closest('.company-open');
+  if (company) {
+    openCustomerProfile(company.dataset.companyId || company.dataset.companyName);
+    return;
+  }
+  if (event.target.closest('#ignoreDuplicateSaveBtn')) {
+    state.forceSaveCustomer = true;
+    const form = el('companyModal');
+    if (form) form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+    return;
+  }
   const taskFilter = event.target.closest('[data-task-filter]'); if(taskFilter){ state.taskFilter=taskFilter.dataset.taskFilter; document.querySelectorAll('[data-task-filter]').forEach(n=>n.classList.toggle('active',n===taskFilter)); renderTasks(); return; }
   if(event.target.closest('#notificationBtn')) { el('notificationPopover').classList.toggle('visible'); return; }
   if(!event.target.closest('.notification-popover')) el('notificationPopover').classList.remove('visible');
@@ -2326,6 +3211,107 @@ document.addEventListener('click', async event => {
     const productId = Number(editProductBtn.dataset.editProduct);
     const product = state.products.find(p => p.id === productId);
     if (product) openProductModal(product);
+    return;
+  }
+
+  // Public View Quote Portal Modal
+  const publicViewQuoteBtn = event.target.closest('[data-public-view-quote]');
+  if (publicViewQuoteBtn) {
+    const quoteId = Number(publicViewQuoteBtn.dataset.publicViewQuote);
+    const quote = state.quotations.find(q => q.id === quoteId);
+    if (quote) {
+      state.activePublicQuote = quote;
+      if (el('pubQuoteNumber')) el('pubQuoteNumber').textContent = quote.quotation_number || `QTN-${quote.id}`;
+      if (el('pubQuoteClient')) el('pubQuoteClient').textContent = quote.company_name || 'Client';
+      if (el('pubQuoteStatus')) el('pubQuoteStatus').textContent = (quote.status || 'Draft').toUpperCase();
+      if (el('pubQuoteSubtotal')) el('pubQuoteSubtotal').textContent = money(quote.subtotal || 0);
+      if (el('pubQuoteTax')) el('pubQuoteTax').textContent = money(Math.round((quote.subtotal || 0) * 0.18));
+      if (el('pubQuoteTotal')) el('pubQuoteTotal').textContent = money(quote.total || 0);
+
+      const itemsBody = el('pubQuoteItemsBody');
+      if (itemsBody) {
+        itemsBody.innerHTML = (quote.items || [{ description: 'Payment Suite License', quantity: 1, unit_price: quote.subtotal || 0, total: quote.subtotal || 0 }]).map(item => `
+          <tr>
+            <td><strong>${escapeHTML(item.description || 'Line Item')}</strong></td>
+            <td>${item.quantity || 1}</td>
+            <td>${money(item.unit_price || 0)}</td>
+            <td>${item.discount_percent || 0}%</td>
+            <td><strong>${money(item.total || 0)}</strong></td>
+          </tr>
+        `).join('');
+      }
+      showModal('publicQuoteModal');
+    }
+    return;
+  }
+
+  // Verify Purchase Order
+  const verifyPoBtn = event.target.closest('[data-verify-po]');
+  if (verifyPoBtn) {
+    const poId = Number(verifyPoBtn.dataset.verifyPo);
+    try {
+      await apiRequest(`/api/purchase-orders/${poId}/verify`, 'POST');
+      showToast('Purchase Order verified and approved! ✅');
+      await loadCRMData();
+      renderAll();
+    } catch (e) {
+      showToast(e.message);
+    }
+    return;
+  }
+
+  // Reject Purchase Order
+  const rejectPoBtn = event.target.closest('[data-reject-po]');
+  if (rejectPoBtn) {
+    const poId = Number(rejectPoBtn.dataset.rejectPo);
+    const reason = prompt('Enter rejection reason for this Purchase Order:');
+    if (reason) {
+      try {
+        await apiRequest(`/api/purchase-orders/${poId}/reject`, 'POST', { reason });
+        showToast('Purchase Order rejected.');
+        await loadCRMData();
+        renderAll();
+      } catch (e) {
+        showToast(e.message);
+      }
+    }
+    return;
+  }
+
+  // Accept Quotation from Public Customer Portal Modal
+  if (event.target.closest('#pubAcceptBtn')) {
+    const quote = state.activePublicQuote;
+    if (quote) {
+      const token = quote.public_token || quote.id;
+      try {
+        await apiRequest(`/api/public/quotations/${token}/accept`, 'POST');
+        showToast(`Quotation ${quote.quotation_number} accepted! ⚡`);
+        closeModal();
+        await loadCRMData();
+        renderAll();
+      } catch (e) {
+        showToast(e.message);
+      }
+    }
+    return;
+  }
+
+  // Reject Quotation from Public Customer Portal Modal
+  if (event.target.closest('#pubRejectBtn')) {
+    const quote = state.activePublicQuote;
+    if (quote) {
+      const reason = prompt('Optional rejection reason / requested changes:');
+      const token = quote.public_token || quote.id;
+      try {
+        await apiRequest(`/api/public/quotations/${token}/reject`, 'POST', { reason });
+        showToast('Feedback submitted.');
+        closeModal();
+        await loadCRMData();
+        renderAll();
+      } catch (e) {
+        showToast(e.message);
+      }
+    }
     return;
   }
 
@@ -2618,8 +3604,105 @@ document.querySelectorAll('.form-modal').forEach(form => form.addEventListener('
   try {
     if (form.id === 'companyModal') {
       const name = String(data.get('companyName')).trim();
-      const created = await createCRMRecord('companies', { name, industry: data.get('industry'), status: data.get('status'), source: data.get('source') });
-      state.companies.unshift(created); renderAll(); showToast(`${name} was added to Companies.`);
+      const gst_number = String(data.get('gst_number') || '').trim().toUpperCase();
+      const pan_number = String(data.get('pan_number') || '').trim().toUpperCase();
+      const email = String(data.get('email') || '').trim();
+      const phone = String(data.get('phone') || '').trim();
+      
+      if (gst_number && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(gst_number)) {
+        showToast('Invalid Indian GSTIN format. Example: 29AAAAA0000A1Z5');
+        return;
+      }
+
+      if (!state.forceSaveCustomer) {
+        try {
+          const dupRes = await fetch('/api/customers/check-duplicate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              gst_number,
+              email,
+              phone,
+              name,
+              exclude_id: state.editingCustomerId || null
+            })
+          });
+          const dupData = await dupRes.json();
+          if (dupData.hasDuplicates) {
+            el('duplicateCustomerList').innerHTML = dupData.duplicates.map(d => `
+              <tr>
+                <td><b>${escapeHTML(d.name)}</b><br><small>${d.customer_code || ''}</small></td>
+                <td><span class="status-pill status-churned">${(d.matched_fields || []).join(', ')}</span></td>
+                <td>${escapeHTML(d.owner || 'Aarav Sharma')}</td>
+                <td><span class="status-pill status-active">${escapeHTML(d.status || 'Active')}</span></td>
+              </tr>
+            `).join('');
+            state.pendingCustomerForm = {
+              name,
+              customer_type: data.get('customer_type'),
+              industry: data.get('industry'),
+              gst_number,
+              pan_number,
+              phone,
+              alternate_phone: data.get('alternate_phone'),
+              email,
+              alternate_email: data.get('alternate_email'),
+              website: data.get('website'),
+              status: data.get('status'),
+              source: data.get('source'),
+              billing_address: data.get('billing_address'),
+              shipping_address: data.get('shipping_address'),
+              city: data.get('city'),
+              state: data.get('state'),
+              country: data.get('country'),
+              pin_code: data.get('pin_code')
+            };
+            showModal('duplicateCustomerModal');
+            return;
+          }
+        } catch (e) {
+          console.warn('Duplicate check error:', e);
+        }
+      }
+
+      const payload = state.pendingCustomerForm || {
+        name,
+        customer_type: data.get('customer_type'),
+        industry: data.get('industry'),
+        gst_number,
+        pan_number,
+        phone,
+        alternate_phone: data.get('alternate_phone'),
+        email,
+        alternate_email: data.get('alternate_email'),
+        website: data.get('website'),
+        status: data.get('status'),
+        source: data.get('source'),
+        billing_address: data.get('billing_address'),
+        shipping_address: data.get('shipping_address'),
+        city: data.get('city'),
+        state: data.get('state'),
+        country: data.get('country'),
+        pin_code: data.get('pin_code')
+      };
+
+      if (state.editingCustomerId) {
+        const updated = await updateCRMRecord('customers', state.editingCustomerId, payload);
+        const idx = state.companies.findIndex(c => c.id === state.editingCustomerId);
+        if (idx !== -1) state.companies[idx] = { ...state.companies[idx], ...updated };
+        showToast(`Customer account "${name}" updated.`);
+      } else {
+        const created = await createCRMRecord('customers', payload);
+        state.companies.unshift(created);
+        showToast(`Customer account "${name}" created (${created.customer_code || 'Success'}).`);
+      }
+
+      state.editingCustomerId = null;
+      state.pendingCustomerForm = null;
+      state.forceSaveCustomer = false;
+      closeModal();
+      renderCustomers();
+      return;
     }
     if (form.id === 'contactModal') {
       const name = `${data.get('firstName')} ${data.get('lastName')}`.trim();
@@ -2627,11 +3710,27 @@ document.querySelectorAll('.form-modal').forEach(form => form.addEventListener('
       const companyId = data.get('contactCompany') ? Number(data.get('contactCompany')) : null;
       const companyObj = state.companies.find(c => c.id === companyId);
       const company_name = companyObj ? companyObj.name : null;
+      const contact_role = data.get('contactRole') || 'Primary';
+      const department = data.get('contactDepartment') || '';
 
-      if (state.contacts.some(contact => contact.email.toLowerCase() === email)) { showToast('Potential duplicate email detected — review before continuing.'); return; }
-      const created = await createCRMRecord('contacts', { name, title: data.get('contactTitle'), email, phone: data.get('contactPhone'), primary: data.has('isPrimary'), company_id: companyId, company_name });
-      if (created.primary) state.contacts.forEach(contact => { contact.primary = false; });
-      state.contacts.unshift(created); renderContacts(); showToast(`${name} was added as a contact.`);
+      if (state.contacts.some(contact => contact.email.toLowerCase() === email)) {
+        showToast('Potential duplicate email detected — review before continuing.');
+      }
+      const created = await createCRMRecord('contacts', {
+        name,
+        title: data.get('contactTitle'),
+        email,
+        phone: data.get('contactPhone'),
+        primary: data.has('isPrimary'),
+        company_id: companyId,
+        company_name,
+        contact_role,
+        department
+      });
+      if (created.primary) state.contacts.forEach(contact => { if (contact.company_id === companyId) contact.primary = false; });
+      state.contacts.unshift(created);
+      renderContacts();
+      showToast(`${name} (${contact_role}) was added as a contact.`);
     }
     if (form.id === 'dealModal') {
       const title = String(data.get('dealTitle')).trim(), stage = String(data.get('dealStage')).split(' ·')[0];
@@ -2808,6 +3907,84 @@ document.querySelectorAll('.form-modal').forEach(form => form.addEventListener('
       renderPurchaseOrders();
       showToast(`Purchase Order ${created.po_number || ''} logged! 📦`);
     }
+    if (form.id === 'leadModal') {
+      const name = String(data.get('name')).trim();
+      const company = String(data.get('company') || '').trim();
+      const email = String(data.get('email') || '').trim();
+      const phone = String(data.get('phone') || '').trim();
+      const source = data.get('source') || 'Inbound';
+      const industry = data.get('industry') || 'General';
+      const status = data.get('status') || 'New';
+      const expected_value = Number(data.get('expected_value')) || 0;
+      const next_followup = data.get('next_followup') || null;
+      const owner = data.get('owner') || 'Aarav Sharma';
+      const notes = data.get('notes') || '';
+
+      const created = await apiRequest('/api/leads', 'POST', {
+        name, company, email, phone, source, industry, status, expected_value, next_followup, owner, notes
+      });
+      state.leads.unshift(created);
+      renderLeads();
+      showToast(`Lead "${name}" created! ⚡`);
+    }
+    if (form.id === 'leadConvertModal') {
+      const leadId = Number(el('convertLeadId').value);
+      const company_name = String(el('convertCompanyName').value).trim();
+      const email = String(el('convertContactEmail').value).trim();
+      const deal_title = String(el('convertDealTitle').value).trim();
+      const deal_value = Number(el('convertDealValue').value) || 0;
+
+      await apiRequest(`/api/leads/${leadId}/convert`, 'POST', {
+        company_name, email, deal_title, deal_value
+      });
+
+      const lead = state.leads.find(l => l.id === leadId);
+      if (lead) lead.status = 'Converted';
+
+      await loadCRMData();
+      renderAll();
+      showToast(`Lead successfully converted to Customer 360! 🎯`);
+    }
+    if (form.id === 'automationModal') {
+      const name = String(data.get('name')).trim();
+      const event_type = data.get('event');
+      const conditions_json = data.get('conditions') || '{}';
+      const action_json = JSON.stringify({ type: data.get('action_type') });
+
+      const created = await apiRequest('/api/automations', 'POST', {
+        name, event: event_type, conditions_json, action_json, is_active: true
+      });
+      state.automations.unshift(created);
+      renderAutomations();
+      showToast(`Automation rule "${name}" created! ⚙`);
+    }
+    if (form.id === 'documentModal') {
+      const name = String(data.get('name')).trim();
+      const type = data.get('type');
+      const file_path = data.get('file_path');
+      const version = data.get('version') || 'v1.0';
+      const company_id = Number(data.get('company_id')) || null;
+
+      const created = await apiRequest('/api/documents', 'POST', {
+        name, type, file_path, version, company_id
+      });
+      state.documents.unshift(created);
+      renderDocuments();
+      showToast(`Document "${name}" saved! 📁`);
+    }
+    if (form.id === 'templateModal') {
+      const name = String(data.get('name')).trim();
+      const subject = data.get('subject');
+      const body_html = data.get('body_html');
+      const variables = data.get('variables');
+
+      const created = await apiRequest('/api/templates', 'POST', {
+        name, subject, body_html, variables
+      });
+      state.email_templates.unshift(created);
+      renderTemplates();
+      showToast(`Email template "${name}" created! ✉`);
+    }
     if (form.id === 'inviteModal') showToast(`Invite sent to ${data.get('inviteEmail')}. It expires in 72 hours.`);
     if (form.id === 'letterEmailModal') { await sendLetterEmail(data); return; }
     closeModal(); form.reset();
@@ -2825,8 +4002,54 @@ el('confirmStageMove').addEventListener('click', async () => {
   } catch (error) { showToast(error.message); }
 });
 el('clearCompanyFilters').addEventListener('click',()=>{['companySearch','statusFilter','industryFilter','tagFilter'].forEach(id=>{if(id==='companySearch')el(id).value='';else el(id).value='all'});renderCompanies();});
-el('globalSearch').addEventListener('keydown',e=>{if(e.key==='Escape'){el('searchResults').classList.remove('visible');e.currentTarget.value='';}});
-document.addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();el('globalSearch').focus();}if(e.key==='Escape'){closeModal();el('searchResults').classList.remove('visible');}});
+
+// Cmd + K Global Search Modal Logic
+document.addEventListener('keydown', e => {
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+    e.preventDefault();
+    showModal('searchModal');
+    const input = el('globalSearchInput');
+    if (input) { input.focus(); input.select(); }
+  }
+  if (e.key === 'Escape') {
+    closeModal();
+  }
+});
+
+let searchDebounceTimer;
+el('globalSearchInput')?.addEventListener('input', e => {
+  clearTimeout(searchDebounceTimer);
+  const q = e.target.value.trim();
+  const resultsContainer = el('globalSearchResultsList');
+  if (!resultsContainer) return;
+
+  if (q.length < 2) {
+    resultsContainer.innerHTML = '<p class="search-empty-state">Type at least 2 characters to search across your CRM workspace.</p>';
+    return;
+  }
+
+  searchDebounceTimer = setTimeout(async () => {
+    try {
+      const res = await apiRequest(`/api/search?q=${encodeURIComponent(q)}`);
+      const results = res.results || [];
+      if (results.length === 0) {
+        resultsContainer.innerHTML = `<p class="search-empty-state">No matching records found for "${escapeHTML(q)}".</p>`;
+        return;
+      }
+      resultsContainer.innerHTML = results.map(r => `
+        <div class="search-result-item" data-type="${r.type}" data-id="${r.id}" style="padding: 10px 14px; border-bottom: 1px solid var(--border-light); cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <strong style="display: block; font-size: 0.95rem; color: var(--text-primary);">${escapeHTML(r.title)}</strong>
+            <small style="color: var(--text-secondary);">${escapeHTML(r.subtitle)}</small>
+          </div>
+          <span class="status-pill" style="font-size: 0.75rem; text-transform: uppercase;">${escapeHTML(r.type)}</span>
+        </div>
+      `).join('');
+    } catch (err) {
+      resultsContainer.innerHTML = `<p class="search-empty-state" style="color: #ef4444;">Error performing search: ${escapeHTML(err.message)}</p>`;
+    }
+  }, 250);
+});
 
 function exportCsv(type) { const rows=type==='companies'?[['Name','Industry','Owner','Status'],...state.companies.map(c=>[c.name,c.industry,c.owner,c.status])]:type==='contacts'?[['Name','Email','Phone'],...state.contacts.map(c=>[c.name,c.email,c.phone])]:type==='deals'?[['Title','Company','Value','Stage','Probability'],...state.deals.map(d=>[d.title,d.company,d.value,d.stage,d.probability])]:[['Rep','Won value','Deals won'],['Aarav Sharma','720000','3'],['Priya Menon','480000','2'],['Kunal Shah','220000','1']]; const csv=rows.map(r=>r.map(v=>`"${String(v).replaceAll('"','""')}"`).join(',')).join('\n'); const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=`smartpay-${type}-export.csv`;a.click();URL.revokeObjectURL(a.href);showToast(`${type[0].toUpperCase()+type.slice(1)} CSV download started.`); }
 
@@ -3804,6 +5027,551 @@ document.addEventListener('click', async e => {
       renderAll();
     } catch (err) {
       showToast(`Failed to update status: ${err.message}`);
+    }
+  }
+});
+
+// ─── PHASE 4: AUTOMATIONS, NOTIFICATIONS & APPROVALS HANDLERS ───────
+
+document.addEventListener('DOMContentLoaded', () => {
+  // 1. Topbar Notification Bell Toggle
+  const notifBtn = el('notificationBtn');
+  if (notifBtn) {
+    notifBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      const popover = el('notificationPopover');
+      if (popover) {
+        const isVisible = popover.style.display !== 'none';
+        popover.style.display = isVisible ? 'none' : 'block';
+      }
+    });
+  }
+
+  // Close notification popover when clicking outside
+  document.addEventListener('click', e => {
+    const popover = el('notificationPopover');
+    if (popover && !e.target.closest('#notificationPopover') && !e.target.closest('#notificationBtn')) {
+      popover.style.display = 'none';
+    }
+  });
+
+  // 2. Mark All Read
+  const markAllTopBtn = el('markAllNotificationsReadBtn');
+  if (markAllTopBtn) {
+    markAllTopBtn.addEventListener('click', async () => {
+      try {
+        await apiRequest('/api/notifications/read-all', { method: 'PUT' });
+        showToast('All notifications marked read');
+        await loadCRMData();
+        renderAll();
+      } catch (err) { showToast(`Failed to mark read: ${err.message}`); }
+    });
+  }
+  const markAllPageBtn = el('pageMarkAllReadBtn');
+  if (markAllPageBtn) {
+    markAllPageBtn.addEventListener('click', async () => {
+      try {
+        await apiRequest('/api/notifications/read-all', { method: 'PUT' });
+        showToast('All notifications marked read');
+        await loadCRMData();
+        renderAll();
+      } catch (err) { showToast(`Failed to mark read: ${err.message}`); }
+    });
+  }
+
+  // 3. Notification Filter Tabs
+  document.querySelectorAll('[data-notif-filter]').forEach(tab => {
+    tab.addEventListener('click', e => {
+      document.querySelectorAll('[data-notif-filter]').forEach(t => t.classList.remove('active'));
+      e.target.classList.add('active');
+      state.notifFilter = e.target.dataset.notifFilter;
+      renderNotifications();
+    });
+  });
+
+  // 4. Automations View Sub-Tabs
+  document.querySelectorAll('[data-auto-tab]').forEach(tab => {
+    tab.addEventListener('click', async e => {
+      document.querySelectorAll('[data-auto-tab]').forEach(t => t.classList.remove('active'));
+      e.target.classList.add('active');
+      const target = e.target.dataset.autoTab;
+      el('autoSubViewRules').style.display = target === 'rules' ? 'block' : 'none';
+      el('autoSubViewLogs').style.display = target === 'logs' ? 'block' : 'none';
+      el('autoSubViewSettings').style.display = target === 'settings' ? 'block' : 'none';
+
+      if (target === 'logs') {
+        try {
+          const res = await apiRequest('/api/automations/logs');
+          const logs = res.data || res || [];
+          const tbody = el('automationLogsTableBody');
+          if (tbody) {
+            tbody.innerHTML = logs.map(l => `
+              <tr>
+                <td><small>${l.executed_at ? new Date(l.executed_at).toLocaleString() : '—'}</small></td>
+                <td><strong>${escapeHTML(l.rule_name || 'Rule')}</strong></td>
+                <td><span class="badge-type-appointment">${escapeHTML(l.event_type || '—')}</span></td>
+                <td>${escapeHTML(l.entity_type)} #${escapeHTML(l.entity_id)}</td>
+                <td><span class="status-pill ${l.status === 'success' ? 'active' : 'failed'}">${escapeHTML(l.status)}</span></td>
+                <td><small style="color: #64748b;">${escapeHTML(typeof l.details === 'object' ? JSON.stringify(l.details) : String(l.details || ''))}</small></td>
+              </tr>
+            `).join('') || '<tr><td colspan="6" class="empty-state">No execution logs found.</td></tr>';
+          }
+        } catch (err) { console.warn('Failed to load logs:', err); }
+      } else if (target === 'settings') {
+        try {
+          const settings = await apiRequest('/api/automations/settings');
+          if (settings) {
+            if (el('settingDiscountThreshold')) el('settingDiscountThreshold').value = settings.discount_approval_threshold || 15;
+            if (el('settingHighDealThreshold')) el('settingHighDealThreshold').value = settings.high_deal_threshold || 1000000;
+            if (el('settingQuoteValidityDays')) el('settingQuoteValidityDays').value = settings.quote_validity_days || 14;
+            if (el('settingInactiveDealDays')) el('settingInactiveDealDays').value = settings.inactive_deal_days || 7;
+          }
+        } catch (err) { console.warn('Failed to load settings:', err); }
+      }
+    });
+  });
+
+  // 5. Governance Settings Form Submit
+  const autoSettingsForm = el('automationSettingsForm');
+  if (autoSettingsForm) {
+    autoSettingsForm.addEventListener('submit', async e => {
+      e.preventDefault();
+      const formData = new FormData(autoSettingsForm);
+      const data = Object.fromEntries(formData.entries());
+      try {
+        await apiRequest('/api/automations/settings', { method: 'POST', body: JSON.stringify(data) });
+        showToast('Governance thresholds saved successfully!');
+      } catch (err) {
+        showToast(`Failed to save settings: ${err.message}`);
+      }
+    });
+  }
+
+  // 6. Manual Cron Trigger Button
+  const runCronBtn = el('runCronManualBtn');
+  if (runCronBtn) {
+    runCronBtn.addEventListener('click', async () => {
+      try {
+        showToast('Executing daily automation jobs (expiry checks, renewal reminders, inactive deals)...');
+        const res = await apiRequest('/api/automations/run-cron', { method: 'POST' });
+        showToast('Automations executed successfully!');
+        await loadCRMData();
+        renderAll();
+      } catch (err) {
+        showToast(`Cron execution failed: ${err.message}`);
+      }
+    });
+  }
+
+  // 7. Automation Rule Form Submit
+  const autoModalForm = el('automationModal');
+  if (autoModalForm) {
+    autoModalForm.addEventListener('submit', async e => {
+      e.preventDefault();
+      const name = el('autoRuleName').value.trim();
+      const description = el('autoDescription')?.value.trim() || '';
+      const event = el('autoEvent').value;
+      const action_type = el('autoActionType').value;
+      const field = el('autoCondField').value.trim();
+      const op = el('autoCondOp').value;
+      const val = el('autoCondVal').value.trim();
+      const title = el('autoActionTitle')?.value.trim() || '';
+      const target_role = el('autoActionRole')?.value || 'owner';
+      const is_active = el('autoIsActive')?.checked ?? true;
+      const ruleId = el('autoRuleId')?.value;
+
+      const conditions = field ? { field, operator: op, value: isNaN(val) ? val : Number(val) } : {};
+      const action_config = { title, target_role };
+
+      const body = {
+        name,
+        description,
+        event_type: event,
+        event,
+        conditions: JSON.stringify(conditions),
+        action_type,
+        action_json: JSON.stringify(action_config),
+        action_config: JSON.stringify(action_config),
+        is_active
+      };
+
+      try {
+        if (ruleId) {
+          await apiRequest(`/api/automations/${ruleId}`, { method: 'PUT', body: JSON.stringify(body) });
+          showToast('Automation rule updated!');
+        } else {
+          await apiRequest('/api/automations', { method: 'POST', body: JSON.stringify(body) });
+          showToast('Automation rule created!');
+        }
+        closeModal();
+        await loadCRMData();
+        renderAll();
+      } catch (err) {
+        showToast(`Error saving automation rule: ${err.message}`);
+      }
+    });
+  }
+
+  // 8. Dry Run Rule Test Button
+  const dryRunBtn = el('autoDryRunBtn');
+  if (dryRunBtn) {
+    dryRunBtn.addEventListener('click', async () => {
+      const event = el('autoEvent').value;
+      const field = el('autoCondField').value.trim();
+      const op = el('autoCondOp').value;
+      const val = el('autoCondVal').value.trim();
+
+      const conditions = field ? { field, operator: op, value: isNaN(val) ? val : Number(val) } : {};
+      try {
+        showToast('Running rule test simulation against recent data...');
+        const res = await apiRequest('/api/automations/test', {
+          method: 'POST',
+          body: JSON.stringify({ event_type: event, conditions: JSON.stringify(conditions) })
+        });
+        showToast(`Test result: ${res.matched ? '✅ MATCHED!' : '❌ NO MATCH'} — ${res.message}`);
+      } catch (err) {
+        showToast(`Dry-run error: ${err.message}`);
+      }
+    });
+  }
+});
+
+// 9. Delegated Click Handlers for Approvals, Automations, Notifications
+document.addEventListener('click', async e => {
+  // Decision on Approval
+  const decideBtn = e.target.closest('.decide-approval-btn');
+  if (decideBtn) {
+    const id = decideBtn.dataset.appId;
+    const decision = decideBtn.dataset.decision;
+    try {
+      showToast(`Submitting ${decision} decision...`);
+      await apiRequest(`/api/approvals/${id}/decide`, {
+        method: 'PUT',
+        body: JSON.stringify({ decision, comments: `${decision} via Approval Center` })
+      });
+      showToast(`Approval request ${decision.toLowerCase()}!`);
+      await loadCRMData();
+      renderAll();
+    } catch (err) {
+      showToast(`Decision error: ${err.message}`);
+    }
+  }
+
+  // Toggle Automation Active State
+  const toggleAutoBtn = e.target.closest('.toggle-automation-btn');
+  if (toggleAutoBtn) {
+    const id = toggleAutoBtn.dataset.autoId;
+    const rule = (state.automations || []).find(a => Number(a.id) === Number(id));
+    if (rule) {
+      try {
+        await apiRequest(`/api/automations/${id}/toggle`, {
+          method: 'PUT',
+          body: JSON.stringify({ is_active: !rule.is_active })
+        });
+        showToast(`Rule ${!rule.is_active ? 'activated' : 'paused'}!`);
+        await loadCRMData();
+        renderAll();
+      } catch (err) {
+        showToast(`Toggle error: ${err.message}`);
+      }
+    }
+  }
+
+  // Mark single notification read
+  const markReadBtn = e.target.closest('.mark-single-read-btn');
+  if (markReadBtn) {
+    const id = markReadBtn.dataset.notifId;
+    try {
+      await apiRequest(`/api/notifications/${id}/read`, { method: 'PUT' });
+      await loadCRMData();
+      renderAll();
+    } catch (err) { console.warn('Failed to mark read:', err); }
+  }
+
+  // Click on topbar notification item
+  const notifItem = e.target.closest('.notification-item');
+  if (notifItem) {
+    const id = notifItem.dataset.notifId;
+    try {
+      await apiRequest(`/api/notifications/${id}/read`, { method: 'PUT' });
+      await loadCRMData();
+      renderAll();
+    } catch (err) { console.warn('Failed to mark read:', err); }
+  }
+
+  // Target view button on notification
+  const notifTargetBtn = e.target.closest('.notif-target-btn');
+  if (notifTargetBtn) {
+    const view = notifTargetBtn.dataset.view;
+    if (view && typeof openView === 'function') {
+      openView(view);
+    }
+  }
+});
+
+// ─── iKnow AI COPILOT FRONTEND CONTROLLER ────────────────────────────
+
+let iKnowContext = {
+  page: 'dashboard',
+  entityType: null,
+  entityId: null,
+  entityName: null
+};
+
+function updateIkNowContext(page, entityType = null, entityId = null, entityName = null) {
+  iKnowContext.page = page || state.activeView || 'dashboard';
+  iKnowContext.entityType = entityType;
+  iKnowContext.entityId = entityId;
+  iKnowContext.entityName = entityName;
+
+  const pill = el('iKnowContextPill');
+  if (pill) {
+    if (entityType && entityName) {
+      pill.textContent = `📍 ${entityType}: ${entityName}`;
+    } else {
+      const pageTitle = (page || 'dashboard').charAt(0).toUpperCase() + (page || 'dashboard').slice(1);
+      pill.textContent = `📍 ${pageTitle} View`;
+    }
+  }
+}
+
+async function sendIkNowMessage(promptText) {
+  const text = (promptText || el('iKnowInputText')?.value || '').trim();
+  if (!text) return;
+
+  const streamEl = el('iKnowMessageStream');
+  const welcomeCard = el('iKnowWelcomeCard');
+  if (welcomeCard) welcomeCard.style.display = 'none';
+
+  // 1. Render User Bubble
+  if (streamEl) {
+    const userRow = document.createElement('div');
+    userRow.className = 'iknow-msg-row user-row';
+    userRow.innerHTML = `<div class="iknow-msg-bubble">${escapeHTML(text)}</div>`;
+    streamEl.appendChild(userRow);
+
+    // Clear input
+    if (el('iKnowInputText')) el('iKnowInputText').value = '';
+
+    // Scroll to bottom
+    const msgContainer = el('iKnowMessages');
+    if (msgContainer) msgContainer.scrollTop = msgContainer.scrollHeight;
+
+    // 2. Render Typing Indicator
+    const typingRow = document.createElement('div');
+    typingRow.className = 'iknow-msg-row ai-row iknow-typing-row';
+    typingRow.innerHTML = `
+      <div class="iknow-avatar">🤖</div>
+      <div class="iknow-msg-bubble" style="color: #64748b; font-style: italic;">
+        iKnow is analyzing CRM context... ⏳
+      </div>
+    `;
+    streamEl.appendChild(typingRow);
+    if (msgContainer) msgContainer.scrollTop = msgContainer.scrollHeight;
+
+    try {
+      // 3. API Request to /api/ai/chat
+      const res = await apiRequest('/api/ai/chat', {
+        method: 'POST',
+        body: JSON.stringify({
+          message: text,
+          current_page: iKnowContext.page,
+          entity_type: iKnowContext.entityType,
+          entity_id: iKnowContext.entityId
+        })
+      });
+
+      // Remove typing row
+      typingRow.remove();
+
+      // 4. Render AI Response Bubble
+      const aiRow = document.createElement('div');
+      aiRow.className = 'iknow-msg-row ai-row';
+
+      let formattedHtml = '';
+      if (res.reply) {
+        // Simple Markdown parsing for headers, bold, linebreaks, lists
+        let raw = res.reply
+          .replace(/### (.*?)\n/g, '<h3>$1</h3>')
+          .replace(/#### (.*?)\n/g, '<h4>$1</h4>')
+          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+          .replace(/`([^`]+)`/g, '<code>$1</code>')
+          .replace(/- (.*?)\n/g, '<li>$1</li>');
+        formattedHtml = raw.replace(/\n/g, '<br>');
+      } else {
+        formattedHtml = 'I processed your request.';
+      }
+
+      // Render Action Buttons if present
+      let actionsHtml = '';
+      if (res.actions && Array.isArray(res.actions) && res.actions.length > 0) {
+        actionsHtml = `<div class="iknow-actions-grid">` + res.actions.map(act => {
+          if (act.action === 'request_confirmation') {
+            return `
+              <div class="iknow-confirmation-card">
+                <strong>⚠️ Confirmation Required: ${escapeHTML(act.label)}</strong>
+                <span style="font-size: 11px; color: #713f12; display: block; margin-top: 2px;">Would you like iKnow to execute this CRM action?</span>
+                <div class="iknow-confirm-buttons">
+                  <button type="button" class="iknow-confirm-btn" data-tool="${act.tool}" data-payload='${JSON.stringify(act.payload || {})}'>Yes, Execute Action</button>
+                  <button type="button" class="iknow-cancel-btn">Cancel</button>
+                </div>
+              </div>
+            `;
+          }
+          if (act.action === 'trigger_prompt') {
+            return `<button type="button" class="iknow-action-btn" data-trigger-prompt="${escapeHTML(act.prompt)}"><span>${escapeHTML(act.label)}</span> →</button>`;
+          }
+          return `<button type="button" class="iknow-action-btn" data-target-view="${act.targetView || 'dashboard'}"><span>${escapeHTML(act.label)}</span> →</button>`;
+        }).join('') + `</div>`;
+      }
+
+      aiRow.innerHTML = `
+        <div class="iknow-avatar">🤖</div>
+        <div class="iknow-msg-bubble">
+          ${formattedHtml}
+          ${actionsHtml}
+        </div>
+      `;
+
+      streamEl.appendChild(aiRow);
+      if (msgContainer) msgContainer.scrollTop = msgContainer.scrollHeight;
+
+    } catch (err) {
+      typingRow.remove();
+      const errRow = document.createElement('div');
+      errRow.className = 'iknow-msg-row ai-row';
+      errRow.innerHTML = `
+        <div class="iknow-avatar">🤖</div>
+        <div class="iknow-msg-bubble" style="border-color: #fca5a5; background: #fef2f2; color: #991b1b;">
+          ⚠️ Unable to connect to iKnow AI Assistant: ${escapeHTML(err.message)}
+        </div>
+      `;
+      streamEl.appendChild(errRow);
+    }
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  // Floating Button Toggle
+  const floatBtn = el('iKnowFloatingBtn');
+  const panel = el('iKnowChatPanel');
+  if (floatBtn && panel) {
+    floatBtn.addEventListener('click', () => {
+      const isVisible = panel.style.display !== 'none';
+      panel.style.display = isVisible ? 'none' : 'flex';
+      if (!isVisible) {
+        updateIkNowContext(state.activeView);
+        if (el('iKnowInputText')) setTimeout(() => el('iKnowInputText').focus(), 100);
+      }
+    });
+  }
+
+  // Header Actions
+  if (el('iKnowCloseBtn')) {
+    el('iKnowCloseBtn').addEventListener('click', () => {
+      if (panel) panel.style.display = 'none';
+    });
+  }
+  if (el('iKnowMinimizeBtn')) {
+    el('iKnowMinimizeBtn').addEventListener('click', () => {
+      if (panel) panel.style.display = 'none';
+    });
+  }
+  if (el('iKnowClearBtn')) {
+    el('iKnowClearBtn').addEventListener('click', () => {
+      if (el('iKnowMessageStream')) el('iKnowMessageStream').innerHTML = '';
+      if (el('iKnowWelcomeCard')) el('iKnowWelcomeCard').style.display = 'block';
+    });
+  }
+
+  // Keyboard shortcut (⌘ J or Ctrl + J)
+  document.addEventListener('keydown', e => {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'j') {
+      e.preventDefault();
+      if (panel) {
+        const isVisible = panel.style.display !== 'none';
+        panel.style.display = isVisible ? 'none' : 'flex';
+        if (!isVisible && el('iKnowInputText')) setTimeout(() => el('iKnowInputText').focus(), 100);
+      }
+    }
+  });
+
+  // Input Form Submit
+  const inputForm = el('iKnowInputForm');
+  if (inputForm) {
+    inputForm.addEventListener('submit', e => {
+      e.preventDefault();
+      sendIkNowMessage();
+    });
+  }
+
+  // Textarea Enter key submit (Shift+Enter for newline)
+  const inputArea = el('iKnowInputText');
+  if (inputArea) {
+    inputArea.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendIkNowMessage();
+      }
+    });
+  }
+});
+
+// Global Delegated Handlers for iKnow Dynamic Buttons
+document.addEventListener('click', async e => {
+  // Quick Action Pill
+  const pill = e.target.closest('.iknow-pill');
+  if (pill) {
+    const prompt = pill.dataset.prompt;
+    if (prompt) sendIkNowMessage(prompt);
+  }
+
+  // Target View Navigation
+  const targetViewBtn = e.target.closest('[data-target-view]');
+  if (targetViewBtn) {
+    const view = targetViewBtn.dataset.targetView;
+    if (view && typeof openView === 'function') {
+      openView(view);
+    }
+  }
+
+  // Trigger Prompt Button
+  const triggerBtn = e.target.closest('[data-trigger-prompt]');
+  if (triggerBtn) {
+    const prompt = triggerBtn.dataset.triggerPrompt;
+    if (prompt) sendIkNowMessage(prompt);
+  }
+
+  // Confirm Tool Action Button
+  const confirmBtn = e.target.closest('.iknow-confirm-btn');
+  if (confirmBtn) {
+    const tool = confirmBtn.dataset.tool;
+    let payload = {};
+    try { payload = JSON.parse(confirmBtn.dataset.payload || '{}'); } catch(err) {}
+
+    try {
+      showToast(`Executing ${tool}...`);
+      const res = await apiRequest('/api/ai/execute-action', {
+        method: 'POST',
+        body: JSON.stringify({ tool, payload, confirmation_granted: true })
+      });
+      showToast(res.message || 'Action executed successfully!');
+      confirmBtn.closest('.iknow-confirmation-card').innerHTML = `
+        <div style="color: #059669; font-weight: 700; font-size: 12px;">✅ Action Executed: ${escapeHTML(res.message)}</div>
+      `;
+      await loadCRMData();
+      renderAll();
+    } catch (err) {
+      showToast(`Action execution failed: ${err.message}`);
+    }
+  }
+
+  // Cancel Tool Action Button
+  const cancelBtn = e.target.closest('.iknow-cancel-btn');
+  if (cancelBtn) {
+    const card = cancelBtn.closest('.iknow-confirmation-card');
+    if (card) {
+      card.innerHTML = `<div style="color: #64748b; font-size: 12px;">Action cancelled.</div>`;
     }
   }
 });

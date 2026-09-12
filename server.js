@@ -183,6 +183,19 @@ app.use('/api/commissions', commissionsRouter);
 const targetsRouter = require('./routes/targets');
 app.use('/api/targets', targetsRouter);
 
+// ─── Mount Sales Operating System Modules ────────────────────────────
+app.use('/api/leads', require('./routes/leads'));
+app.use('/api/renewals', require('./routes/renewals'));
+app.use('/api/communications', require('./routes/communications'));
+app.use('/api/templates', require('./routes/templates'));
+app.use('/api/automations', require('./routes/automations'));
+app.use('/api/documents', require('./routes/documents'));
+app.use('/api/approvals', require('./routes/approvals'));
+app.use('/api/search', require('./routes/search'));
+app.use('/api/public', require('./routes/public'));
+app.use('/api/customers', require('./routes/customers'));
+app.use('/api/ai', require('./routes/ai'));
+
 // ─── User Profile Endpoints ─────────────────────────────────────────
 
 app.get('/api/user', requireAuth, async (req, res) => {
@@ -420,6 +433,14 @@ if (process.env.VERCEL !== '1') {
       setWsBroadcast(broadcast);
     } catch (wsErr) {
       console.warn('⚠️  WebSocket initialization skipped:', wsErr.message);
+    }
+
+    // Initialize Automation Scheduler
+    try {
+      const { initScheduler } = require('./services/scheduler');
+      initScheduler();
+    } catch (schedErr) {
+      console.warn('⚠️  Automation Scheduler initialization skipped:', schedErr.message);
     }
 
     server.listen(PORT, () => {

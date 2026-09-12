@@ -140,6 +140,34 @@ const data = {
     { id: 1, user_id: 1, rep_name: 'Aarav Sharma', team_id: 1, period_type: 'monthly', period_name: 'September 2026', target_amount: 2000000, created_at: '2026-09-01' },
     { id: 2, user_id: 2, rep_name: 'Priya Menon', team_id: 2, period_type: 'monthly', period_name: 'September 2026', target_amount: 1500000, created_at: '2026-09-01' },
     { id: 3, user_id: 3, rep_name: 'Kunal Shah', team_id: 2, period_type: 'monthly', period_name: 'September 2026', target_amount: 1200000, created_at: '2026-09-01' }
+  ],
+  leads: [
+    { id: 1, name: 'Siddharth Rao', company: 'Orbit D2C Retail', contact_name: 'Siddharth Rao', email: 'siddharth@orbitd2c.com', phone: '+91 98112 34567', source: 'Inbound', industry: 'Retail', owner: 'Aarav Sharma', lead_score: 85, status: 'Qualified', expected_value: 450000, next_followup: '2026-09-18', notes: 'Interested in UPI Autopay and Checkout SDK', created_at: '2026-09-01' },
+    { id: 2, name: 'Kavita Verma', company: 'Healthify Tech', contact_name: 'Kavita Verma', email: 'kavita@healthifytech.io', phone: '+91 99001 88223', source: 'Referral', industry: 'Healthcare', owner: 'Priya Menon', lead_score: 65, status: 'Contacted', expected_value: 320000, next_followup: '2026-09-16', notes: 'Requested digital KYC and onboarding compliance specs', created_at: '2026-09-03' },
+    { id: 3, name: 'Vikram Sharma', company: 'FinEdge Systems', contact_name: 'Vikram Sharma', email: 'vikram@finedge.in', phone: '+91 97123 44556', source: 'Outbound', industry: 'Fintech', owner: 'Kunal Shah', lead_score: 90, status: 'Proposal', expected_value: 680000, next_followup: '2026-09-15', notes: 'High intent prospect for Payout Engine', created_at: '2026-09-05' }
+  ],
+  renewals: [
+    { id: 1, company_id: 1, company_name: 'RazorpayX Partners', product_id: 1, product_name: 'Payment Gateway License', contract_start: '2025-10-01', contract_end: '2026-10-01', renewal_date: '2026-10-01', value: 800000, owner: 'Aarav Sharma', status: 'Upcoming', notes: 'Annual gateway contract renewal' },
+    { id: 2, company_id: 2, company_name: 'Urban Company', product_id: 6, product_name: 'Checkout SDK', contract_start: '2025-11-15', contract_end: '2026-11-15', renewal_date: '2026-11-15', value: 450000, owner: 'Aarav Sharma', status: 'Upcoming', notes: 'SDK annual subscription renewal' }
+  ],
+  communications: [
+    { id: 1, type: 'email', recipient: 'neha.agarwal@razorpay.com', cc: '', bcc: '', subject: 'SmartPay Gateway Expansion Proposal', body_html: '<p>Hi Neha, Please find attached the updated proposal for gateway expansion.</p>', status: 'sent', entity_type: 'company', entity_id: 1, user_id: 1, created_at: '2026-09-10T10:00:00.000Z' }
+  ],
+  email_templates: [
+    { id: 1, name: 'Introduction', subject: 'Introducing SmartPay Payment Solutions for {{company_name}}', category: 'outreach', body_html: '<p>Dear {{contact_name}},</p><p>I noticed {{company_name}} is expanding digital operations. SmartPay offers seamless payment gateway and automated payout infrastructure tailored for your team.</p><p>Best regards,<br/>{{sales_owner}}<br/>SmartPay India</p>', variables: '{{contact_name}}, {{company_name}}, {{sales_owner}}' },
+    { id: 2, name: 'Quotation Follow-up', subject: 'Following up on Quotation #{{quotation_number}} for {{company_name}}', category: 'followup', body_html: '<p>Hi {{contact_name}},</p><p>I wanted to check if you had a chance to review Quotation #{{quotation_number}} for {{deal_name}} (Valued at {{deal_value}}).</p><p>Let me know if you need any adjustments.</p><p>Regards,<br/>{{sales_owner}}</p>', variables: '{{contact_name}}, {{quotation_number}}, {{company_name}}, {{deal_name}}, {{deal_value}}, {{sales_owner}}' },
+    { id: 3, name: 'Renewal Reminder', subject: 'Upcoming Contract Renewal for {{company_name}} — {{renewal_date}}', category: 'renewal', body_html: '<p>Dear {{contact_name}},</p><p>This is a friendly reminder that your contract for {{company_name}} is due for renewal on <strong>{{renewal_date}}</strong>.</p><p>Please let us know your preferred time to discuss renewal terms.</p><p>Best regards,<br/>{{sales_owner}}</p>', variables: '{{contact_name}}, {{company_name}}, {{renewal_date}}, {{sales_owner}}' }
+  ],
+  automations: [
+    { id: 1, name: 'Proposal Sent -> Schedule Follow-up Task', event: 'deal:stage_change', condition_json: JSON.stringify({ stage: 'Proposal Sent' }), action_json: JSON.stringify({ type: 'create_task', title: 'Follow up on proposal', due_days: 3 }), is_active: true },
+    { id: 2, name: 'Deal Won -> Schedule Onboarding Task', event: 'deal:won', condition_json: JSON.stringify({ stage: 'Won' }), action_json: JSON.stringify({ type: 'create_task', title: 'Schedule kickoff & onboarding meeting', due_days: 1 }), is_active: true }
+  ],
+  automation_logs: [],
+  documents: [
+    { id: 1, name: 'SmartPay_Master_Services_Agreement_RZP.pdf', type: 'Contract', entity_type: 'company', entity_id: 1, file_path: '/documents/msa_rzp.pdf', file_size: 450000, version: 1, uploaded_by: 'Aarav Sharma', created_at: '2026-09-02' }
+  ],
+  approvals: [
+    { id: 1, type: 'Discount Threshold', entity_type: 'quotation', entity_id: 2, requester_name: 'Priya Menon', approver_name: 'Aarav Sharma', status: 'Pending', old_value: '0%', new_value: '15%', comments: 'Discount requested for strategic Q3 sign-off', created_at: '2026-09-11' }
   ]
 };
 
@@ -179,36 +207,63 @@ async function snapshot() {
       invoice_items: data.invoice_items,
       payments: data.payments,
       teams: data.teams,
+      teams: data.teams,
       commission_rules: data.commission_rules,
       commissions: data.commissions,
-      sales_targets: data.sales_targets
+      sales_targets: data.sales_targets,
+      leads: data.leads,
+      renewals: data.renewals,
+      communications: data.communications,
+      email_templates: data.email_templates,
+      automations: data.automations,
+      documents: data.documents,
+      approvals: data.approvals
     });
   }
 
-  const [
-    companies, deals, tasks, contacts, activities, letters, stages,
-    products, quotations, quotation_items, purchase_orders, invoices, invoice_items, payments,
-    teams, commission_rules, commissions, sales_targets
-  ] = await Promise.all([
-    sql`SELECT * FROM companies ORDER BY id DESC`,
-    sql`SELECT * FROM deals ORDER BY id DESC`,
-    sql`SELECT * FROM tasks ORDER BY id DESC`,
-    sql`SELECT * FROM contacts ORDER BY id DESC`,
-    sql`SELECT * FROM activities ORDER BY id DESC`,
-    sql`SELECT * FROM letters ORDER BY id DESC`,
-    sql`SELECT * FROM stages`,
-    sql`SELECT * FROM products ORDER BY id DESC`,
-    sql`SELECT * FROM quotations ORDER BY id DESC`,
-    sql`SELECT * FROM quotation_items ORDER BY sort_order ASC`,
-    sql`SELECT * FROM purchase_orders ORDER BY id DESC`,
-    sql`SELECT * FROM invoices ORDER BY id DESC`,
-    sql`SELECT * FROM invoice_items ORDER BY sort_order ASC`,
-    sql`SELECT * FROM payments ORDER BY id DESC`,
-    sql`SELECT * FROM teams ORDER BY id DESC`,
-    sql`SELECT * FROM commission_rules ORDER BY min_attainment_pct ASC`,
-    sql`SELECT * FROM commissions ORDER BY id DESC`,
-    sql`SELECT * FROM sales_targets ORDER BY id DESC`
-  ]);
+  try {
+    const [
+      companies, deals, tasks, contacts, activities, letters, stages,
+      products, quotations, quotation_items, purchase_orders, invoices, invoice_items, payments,
+      teams, commission_rules, commissions, sales_targets,
+      leads, renewals, communications, email_templates, automations, documents, approvals
+    ] = await Promise.all([
+      sql`SELECT * FROM companies ORDER BY id DESC`,
+      sql`SELECT * FROM deals ORDER BY id DESC`,
+      sql`SELECT * FROM tasks ORDER BY id DESC`,
+      sql`SELECT * FROM contacts ORDER BY id DESC`,
+      sql`SELECT * FROM activities ORDER BY id DESC`,
+      sql`SELECT * FROM letters ORDER BY id DESC`,
+      sql`SELECT * FROM stages`,
+      sql`SELECT * FROM products ORDER BY id DESC`,
+      sql`SELECT * FROM quotations ORDER BY id DESC`,
+      sql`SELECT * FROM quotation_items ORDER BY sort_order ASC`,
+      sql`SELECT * FROM purchase_orders ORDER BY id DESC`,
+      sql`SELECT * FROM invoices ORDER BY id DESC`,
+      sql`SELECT * FROM invoice_items ORDER BY sort_order ASC`,
+      sql`SELECT * FROM payments ORDER BY id DESC`,
+      sql`SELECT * FROM teams ORDER BY id DESC`,
+      sql`SELECT * FROM commission_rules ORDER BY min_attainment_pct ASC`,
+      sql`SELECT * FROM commissions ORDER BY id DESC`,
+      sql`SELECT * FROM sales_targets ORDER BY id DESC`,
+      sql`SELECT * FROM leads ORDER BY id DESC`.catch(() => data.leads),
+      sql`SELECT * FROM renewals ORDER BY id DESC`.catch(() => data.renewals),
+      sql`SELECT * FROM communications ORDER BY id DESC`.catch(() => data.communications),
+      sql`SELECT * FROM email_templates ORDER BY id ASC`.catch(() => data.email_templates),
+      sql`SELECT * FROM automations ORDER BY id DESC`.catch(() => data.automations),
+      sql`SELECT * FROM documents ORDER BY id DESC`.catch(() => data.documents),
+      sql`SELECT * FROM approvals ORDER BY id DESC`.catch(() => data.approvals)
+    ]);
+
+    return {
+      companies, deals, tasks, contacts, activities, letters, stages,
+      products, quotations, quotation_items, purchase_orders, invoices, invoice_items, payments,
+      teams, commission_rules, commissions, sales_targets,
+      leads, renewals, communications, email_templates, automations, documents, approvals
+    };
+  } catch (err) {
+    return clone(data);
+  }
 
   companies.forEach(company => {
     company.deals = deals.filter(deal => deal.company === company.name && !['Won', 'Lost'].includes(deal.stage)).length;

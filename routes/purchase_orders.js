@@ -154,6 +154,61 @@ router.put('/:id', requireAuth, async (req, res, next) => {
   } catch (error) { next(error); }
 });
 
+const { triggerAutomation } = require('../services/automationService');
+
+// ─── Verify Purchase Order ──────────────────────────────────────────
+
+router.post('/:id/verify', requireAuth, async (req, res, next) => {
+  try {
+    const po = await crmStore.update('purchase_orders', req.params.id, { status: 'approved' });
+    if (!po) return res.status(404).json({ error: 'Purchase Order not found' });
+
+    await crmStore.create('activities', {
+      type: 'po',
+      icon: '✅',
+      text: `<strong>Purchase Order ${po.po_number}</strong> verified & approved by ${req.user?.name || 'Manager'}`,
+      time: 'Just now',
+      user_id: req.user?.id || null
+    });
+
+    triggerAutomation('po_approved', {
+      po_id: po.id,
+      po_number: po.po_number,
+      amount: po.amount,
+      company_id: po.company_id
+    }, req.user).catch(err => console.error('Automation error (po_approved):', err));
+
+    res.json({ success: true, message: 'PO verified and approved', po });
+  } catch (error) { next(error); }
+});
+
+// ─── Reject Purchase Order ──────────────────────────────────────────
+
+router.post('/:id/reject', requireAuth, async (req, res, next) => {
+  try {
+    const { reason } = req.body;
+    const po = await crmStore.update('purchase_orders', req.params.id, { status: 'rejected', rejection_reason: reason || 'Discrepancy in terms' });
+    if (!po) return res.status(404).json({ error: 'Purchase Order not found' });
+
+    await crmStore.create('activities', {
+      type: 'po',
+      icon: '❌',
+      text: `<strong>Purchase Order ${po.po_number}</strong> rejected · Reason: ${reason || 'Terms mismatch'}`,
+      time: 'Just now',
+      user_id: req.user?.id || null
+    });
+
+    triggerAutomation('po_rejected', {
+      po_id: po.id,
+      po_number: po.po_number,
+      reason: reason || 'Terms mismatch',
+      company_id: po.company_id
+    }, req.user).catch(err => console.error('Automation error (po_rejected):', err));
+
+    res.json({ success: true, message: 'PO rejected', po });
+  } catch (error) { next(error); }
+});
+
 // ─── Delete Purchase Order ──────────────────────────────────────────
 
 router.delete('/:id', requireAuth, async (req, res, next) => {

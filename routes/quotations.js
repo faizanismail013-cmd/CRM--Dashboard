@@ -7,6 +7,7 @@ const express = require('express');
 const router = express.Router();
 const { requireAuth, rbacFilter } = require('../middleware/auth');
 const crmStore = require('../crm-store');
+const { triggerAutomation, getAutomationSettings } = require('../services/automationService');
 
 // Helper: Generate unique quotation number
 function generateQuotationNumber() {
@@ -95,6 +96,17 @@ router.get('/:id', requireAuth, async (req, res, next) => {
   } catch (error) { next(error); }
 });
 
+const crypto = require('crypto');
+
+// ─── List Quotation Versions ────────────────────────────────────────
+router.get('/:id/versions', requireAuth, async (req, res, next) => {
+  try {
+    const versions = await crmStore.list('quotation_versions');
+    const filtered = versions.filter(v => Number(v.quotation_id) === Number(req.params.id));
+    res.json({ success: true, versions: filtered });
+  } catch (error) { next(error); }
+});
+
 // ─── Create Quotation with Line Items ───────────────────────────────
 
 router.post('/', requireAuth, async (req, res, next) => {
@@ -110,16 +122,26 @@ router.post('/', requireAuth, async (req, res, next) => {
 
     const userId = req.user?.id || null;
     const quotation_number = generateQuotationNumber();
+    const public_token = crypto.randomBytes(16).toString('hex');
 
     // Calculate totals
     const { subtotal, total } = calculateTotals(items, Number(discount_percent), Number(tax_percent));
 
+    const settings = await getAutomationSettings();
+    let initialStatus = status;
+    const requiresDiscountApproval = Number(discount_percent) > Number(settings.discount_approval_percent || 15);
+    if (requiresDiscountApproval && status !== 'approved') {
+      initialStatus = 'pending_approval';
+    }
+
     const quotation = await crmStore.create('quotations', {
       quotation_number,
+      public_token,
+      version: 1,
       deal_id: deal_id ? Number(deal_id) : null,
       company_id: Number(company_id),
       contact_id: contact_id ? Number(contact_id) : null,
-      status,
+      status: initialStatus,
       valid_until: valid_until || null,
       subtotal,
       discount_percent: Number(discount_percent),
@@ -128,6 +150,34 @@ router.post('/', requireAuth, async (req, res, next) => {
       notes: notes || null,
       terms: terms || 'Net 30 days from acceptance',
       user_id: userId
+    });
+
+    if (requiresDiscountApproval && initialStatus === 'pending_approval') {
+      await crmStore.create('approvals', {
+        type: 'Quotation Discount Approval',
+        entity_type: 'quotation',
+        entity_id: quotation.id,
+        requested_by: userId || 1,
+        requester_name: req.user?.name || 'Sales Rep',
+        approver_name: 'Sales Manager',
+        status: 'Pending',
+        old_value: '0%',
+        new_value: `${discount_percent}%`,
+        comments: `Discount of ${discount_percent}% requested for quotation ${quotation_number} (Exceeds ${settings.discount_approval_percent}% threshold)`,
+        created_at: new Date().toISOString()
+      });
+    }
+
+    // Trigger automation event
+    const snapshotComp = await crmStore.snapshot();
+    const companyObj = snapshotComp.companies.find(c => c.id === Number(company_id));
+    await triggerAutomation('quotation_created', 'quotation', quotation.id, {
+      company_name: companyObj ? companyObj.name : 'Customer',
+      company_id: Number(company_id),
+      quotation_number,
+      total,
+      discount_percent: Number(discount_percent),
+      owner: req.user?.name || 'Aarav Sharma'
     });
 
     // Create line items
@@ -150,6 +200,18 @@ router.post('/', requireAuth, async (req, res, next) => {
       savedItems.push(saved);
     }
 
+    // Log initial version
+    await crmStore.create('quotation_versions', {
+      quotation_id: quotation.id,
+      version: 1,
+      subtotal,
+      discount_amount: Math.round(subtotal * (discount_percent / 100)),
+      tax_amount: Math.round((subtotal - (subtotal * (discount_percent / 100))) * (tax_percent / 100)),
+      total,
+      items_json: JSON.stringify(savedItems),
+      created_by: req.user?.username || 'user'
+    });
+
     // Log activity
     await crmStore.create('activities', {
       type: 'quotation',
@@ -170,8 +232,26 @@ router.put('/:id', requireAuth, async (req, res, next) => {
     const existing = await crmStore.findById('quotations', req.params.id);
     if (!existing) return res.status(404).json({ error: 'Quotation not found' });
 
+    // Versioning snapshot if quote was already sent/viewed
+    if ((existing.status || '').toLowerCase() !== 'draft') {
+      const currentVersion = Number(existing.version || 1);
+      const allItems = await crmStore.list('quotation_items');
+      const oldItems = allItems.filter(i => Number(i.quotation_id) === Number(req.params.id));
+
+      await crmStore.create('quotation_versions', {
+        quotation_id: existing.id,
+        version: currentVersion,
+        subtotal: existing.subtotal || 0,
+        total: existing.total || 0,
+        items_json: JSON.stringify(oldItems),
+        created_by: req.user?.username || 'user'
+      });
+
+      req.body.version = currentVersion + 1;
+    }
+
     const allowed = ['deal_id', 'company_id', 'contact_id', 'status', 'valid_until',
-                     'discount_percent', 'tax_percent', 'notes', 'terms'];
+                     'discount_percent', 'tax_percent', 'notes', 'terms', 'version'];
     const updates = {};
     for (const key of allowed) {
       if (req.body[key] !== undefined) {
@@ -222,9 +302,9 @@ router.put('/:id', requireAuth, async (req, res, next) => {
 router.put('/:id/status', requireAuth, async (req, res, next) => {
   try {
     const { status } = req.body;
-    const validStatuses = ['draft', 'sent', 'accepted', 'rejected', 'expired'];
-    if (!validStatuses.includes(status)) {
-      return res.status(400).json({ error: `Invalid status. Must be: ${validStatuses.join(', ')}` });
+    const validStatuses = ['draft', 'sent', 'viewed', 'under negotiation', 'negotiation', 'accepted', 'rejected', 'expired', 'cancelled'];
+    if (!validStatuses.includes(status.toLowerCase())) {
+      return res.status(400).json({ error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` });
     }
 
     const quotation = await crmStore.update('quotations', req.params.id, { status });

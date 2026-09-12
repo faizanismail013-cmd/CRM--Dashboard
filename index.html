@@ -87,6 +87,10 @@
               <span>Sign in with Google</span>
             </a>
 
+            <button type="button" class="google-signin-btn" id="quickDemoLoginBtn" style="margin-top: 10px; background: #EEF2FF; border-color: #C7D2FE; color: #3730A3; justify-content: center; font-weight: 600;">
+              ⚡ Quick Demo Sign In (Aarav Sharma)
+            </button>
+
             <div class="login-divider">
               <span>or sign in with credentials</span>
             </div>
@@ -357,15 +361,23 @@
         </a>
         <nav class="main-nav" aria-label="Main navigation">
           <button type="button" class="nav-link active" data-view="dashboard"><span>▦</span> Overview</button>
-          <button type="button" class="nav-link" data-view="companies"><span>▣</span> Companies</button>
+          <button type="button" class="nav-link" data-view="leads"><span>⚡</span> Leads <em class="alert-count">3</em></button>
+          <button type="button" class="nav-link" data-view="customers"><span>🏢</span> Customers</button>
           <button type="button" class="nav-link" data-view="pipeline"><span>◫</span> Pipeline <em>12</em></button>
           <button type="button" class="nav-link" data-view="products"><span>◈</span> Products</button>
           <button type="button" class="nav-link" data-view="quotations"><span>📋</span> Quotations</button>
           <button type="button" class="nav-link" data-view="purchase_orders"><span>📦</span> Orders (PO)</button>
           <button type="button" class="nav-link" data-view="invoices"><span>🧾</span> Invoices</button>
+          <button type="button" class="nav-link" data-view="payments"><span>💳</span> Payments</button>
+          <button type="button" class="nav-link" data-view="renewals"><span>🔄</span> Renewals</button>
           <button type="button" class="nav-link" data-view="tasks"><span>✓</span> Tasks <em class="alert-count">4</em></button>
           <button type="button" class="nav-link" data-view="reports"><span>◔</span> Reports</button>
-          <p class="nav-label">Sales Operations</p>
+          <p class="nav-label">Sales Operations &amp; Engine</p>
+          <button type="button" class="nav-link" data-view="notifications"><span>🔔</span> Notifications <em class="alert-count" id="sidebarNotificationCount" style="display:none;">0</em></button>
+          <button type="button" class="nav-link" data-view="automations"><span>⚙</span> Automations</button>
+          <button type="button" class="nav-link" data-view="approvals"><span>✋</span> Approvals <em class="alert-count" id="sidebarApprovalCount" style="display:none;">0</em></button>
+          <button type="button" class="nav-link" data-view="documents"><span>📁</span> Documents</button>
+          <button type="button" class="nav-link" data-view="templates"><span>✉</span> Email Templates</button>
           <button type="button" class="nav-link" data-view="teams"><span>👥</span> Teams &amp; Hierarchy</button>
           <button type="button" class="nav-link" data-view="commissions"><span>💰</span> Commissions</button>
           <button type="button" class="nav-link" data-view="targets"><span>🎯</span> Sales Quotas</button>
@@ -422,9 +434,21 @@
             <kbd>⌘ K</kbd>
             <div class="search-results" id="searchResults"></div>
           </div>
-          <div class="top-actions">
-            <button type="button" class="icon-button notification-button" id="notificationBtn" aria-label="Notifications"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><b>4</b></button>
+          <div class="top-actions" style="position: relative;">
+            <button type="button" class="icon-button notification-button" id="notificationBtn" aria-label="Notifications"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><b id="topbarNotificationBadge">0</b></button>
             <button type="button" class="button button-primary" data-open-modal="createModal">+ New</button>
+            <div class="notification-popover" id="notificationPopover" style="display:none; position: absolute; right: 0; top: 48px; width: 380px; background: #ffffff; border: 1px solid var(--border-light); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); z-index: 1000; padding: 16px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; margin-bottom: 12px;">
+                <strong style="font-size: 15px; color: #0f172a;">Notifications</strong>
+                <button type="button" id="markAllNotificationsReadBtn" style="background: none; border: none; color: #2563eb; font-size: 12px; font-weight: 600; cursor: pointer;">Mark all read</button>
+              </div>
+              <div id="topbarNotificationList" style="max-height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
+                <div style="text-align: center; color: #94a3b8; padding: 16px; font-size: 13px;">No unread notifications</div>
+              </div>
+              <div style="border-top: 1px solid #f1f5f9; margin-top: 12px; padding-top: 8px; text-align: center;">
+                <button type="button" id="viewAllNotificationsBtn" class="nav-link" data-view="notifications" style="display: inline-block; width: 100%; border: none; background: #eff6ff; color: #2563eb; border-radius: 6px; padding: 8px; font-size: 13px; font-weight: 600; cursor: pointer;">View Notification Center →</button>
+              </div>
+            </div>
           </div>
         </header>
 
@@ -445,14 +469,14 @@
 
           <!-- Zone 1: Executive KPI Bar -->
           <div class="metric-grid metric-grid-8">
-            <article class="metric-card"><div class="metric-top"><span class="metric-icon blue">◫</span><span class="trend positive">↑ 12.5%</span></div><p>Open pipeline</p><strong id="pipelineTotal">₹34.8L</strong><small id="pipelineDealCount">12 deals in progress</small></article>
-            <article class="metric-card"><div class="metric-top"><span class="metric-icon cyan">◌</span><span class="trend positive">↑ 8.2%</span></div><p>Weighted forecast</p><strong id="forecastTotal">₹18.7L</strong><small>Expected this month</small></article>
-            <article class="metric-card"><div class="metric-top"><span class="metric-icon orange">✓</span><span class="trend alert" id="tasksDueBadge">4 due</span></div><p>Tasks due this week</p><strong id="tasksTotal">07</strong><small id="tasksSubtext">2 overdue · needs attention</small></article>
-            <article class="metric-card"><div class="metric-top"><span class="metric-icon green">◔</span><span class="trend positive">↑ 5.1%</span></div><p>Win rate</p><strong id="winRateValue">42.8%</strong><small id="winRateSubtext">vs. 37.7% last month</small></article>
-            <article class="metric-card metric-card-revenue"><div class="metric-top"><span class="metric-icon emerald">₹</span></div><p>Revenue this month</p><strong id="revenueThisMonth">₹0</strong><small id="revenueMonthDeals">0 deals won</small></article>
-            <article class="metric-card metric-card-revenue"><div class="metric-top"><span class="metric-icon purple">◇</span></div><p>Revenue this quarter</p><strong id="revenueThisQuarter">₹0</strong><small id="revenueQuarterDeals">Q3 2026</small></article>
-            <article class="metric-card metric-card-renewal"><div class="metric-top"><span class="metric-icon teal">↻</span></div><p>Renewal revenue</p><strong id="renewalRevenue">₹0</strong><small id="renewalDeals">0 renewals</small></article>
-            <article class="metric-card metric-card-leads"><div class="metric-top"><span class="metric-icon amber">★</span></div><p>New leads</p><strong id="newLeadCount">0</strong><small>Inbound today</small></article>
+            <article class="metric-card" data-view-go="pipeline" style="cursor: pointer;" title="Click to view Pipeline"><div class="metric-top"><span class="metric-icon blue">◫</span><span class="trend positive">↑ 12.5%</span></div><p>Open pipeline</p><strong id="pipelineTotal">₹34.8L</strong><small id="pipelineDealCount">12 deals in progress</small></article>
+            <article class="metric-card" data-view-go="pipeline" style="cursor: pointer;" title="Click to view Forecast & Deals"><div class="metric-top"><span class="metric-icon cyan">◌</span><span class="trend positive">↑ 8.2%</span></div><p>Weighted forecast</p><strong id="forecastTotal">₹18.7L</strong><small>Expected this month</small></article>
+            <article class="metric-card" data-view-go="tasks" style="cursor: pointer;" title="Click to view Tasks"><div class="metric-top"><span class="metric-icon orange">✓</span><span class="trend alert" id="tasksDueBadge">4 due</span></div><p>Tasks due this week</p><strong id="tasksTotal">07</strong><small id="tasksSubtext">2 overdue · needs attention</small></article>
+            <article class="metric-card" data-view-go="reports" style="cursor: pointer;" title="Click to view Sales Reports"><div class="metric-top"><span class="metric-icon green">◔</span><span class="trend positive">↑ 5.1%</span></div><p>Win rate</p><strong id="winRateValue">42.8%</strong><small id="winRateSubtext">vs. 37.7% last month</small></article>
+            <article class="metric-card metric-card-revenue" data-view-go="invoices" style="cursor: pointer;" title="Click to view Invoices & Revenue"><div class="metric-top"><span class="metric-icon emerald">₹</span></div><p>Revenue this month</p><strong id="revenueThisMonth">₹0</strong><small id="revenueMonthDeals">0 deals won</small></article>
+            <article class="metric-card metric-card-revenue" data-view-go="invoices" style="cursor: pointer;" title="Click to view Quarterly Revenue"><div class="metric-top"><span class="metric-icon purple">◇</span></div><p>Revenue this quarter</p><strong id="revenueThisQuarter">₹0</strong><small id="revenueQuarterDeals">Q3 2026</small></article>
+            <article class="metric-card metric-card-renewal" data-view-go="renewals" style="cursor: pointer;" title="Click to view Contract Renewals"><div class="metric-top"><span class="metric-icon teal">↻</span></div><p>Renewal revenue</p><strong id="renewalRevenue">₹0</strong><small id="renewalDeals">0 renewals</small></article>
+            <article class="metric-card metric-card-leads" data-view-go="leads" style="cursor: pointer;" title="Click to view Lead Management"><div class="metric-top"><span class="metric-icon amber">★</span></div><p>New leads</p><strong id="newLeadCount">0</strong><small>Inbound today</small></article>
           </div>
 
           <!-- Zone 2: Target vs Achievement -->
@@ -479,6 +503,19 @@
               </div>
             </div>
           </div>
+
+          <!-- Zone 2.5: My Priority Actions -->
+          <article class="panel priority-actions-panel" style="margin-bottom: 1.5rem; background: linear-gradient(135deg, rgba(79, 70, 229, 0.04), rgba(6, 182, 212, 0.04)); border: 1px solid var(--border-light); padding: 1.25rem;">
+            <div class="panel-heading" style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <h2>⚡ My Priority Actions</h2>
+                <p>Automated priority feed surfacing quotes awaiting response, upcoming renewals, overdue tasks &amp; high-intent prospects</p>
+              </div>
+            </div>
+            <div class="priority-actions-feed" id="priorityActionsFeed" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-top: 1rem;">
+              <!-- Populated dynamically by app.js -->
+            </div>
+          </article>
 
           <!-- Zone 3: Action Command Center -->
           <div class="action-center-grid">
@@ -546,7 +583,7 @@
         <!-- ═══════════════════════════════════════════════════════════ -->
         <section class="view" id="products-view">
           <div class="page-heading">
-            <div><p class="eyebrow">Product Catalog</p><h1>Products & Services</h1><p>Manage your product offerings, pricing, and SKUs for quotations.</p></div>
+            <div><p class="eyebrow">Product Catalog</p><h1>Products &amp; Services</h1><p>Manage your product offerings, pricing, and SKUs for quotations.</p></div>
             <button type="button" class="button button-primary" data-open-modal="productModal">+ Add Product</button>
           </div>
           <div class="toolbar panel-lite">
@@ -587,6 +624,8 @@
               <option value="all">All statuses</option>
               <option value="draft">Draft</option>
               <option value="sent">Sent</option>
+              <option value="viewed">Viewed</option>
+              <option value="negotiation">Negotiation</option>
               <option value="accepted">Accepted</option>
               <option value="rejected">Rejected</option>
               <option value="expired">Expired</option>
@@ -596,7 +635,19 @@
             <div class="table-top"><p id="quotationResultCount">0 quotations</p></div>
             <div class="table-scroll">
               <table>
-                <thead><tr><th>Quotation #</th><th>Company</th><th>Deal</th><th>Total</th><th>Status</th><th>Valid Until</th><th></th></tr></thead>
+                <thead>
+                  <tr>
+                    <th>Quotation #</th>
+                    <th>Company</th>
+                    <th>Valid Until</th>
+                    <th>Subtotal</th>
+                    <th>Discount</th>
+                    <th>GST Tax</th>
+                    <th>Total Amount</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
                 <tbody id="quotationTableBody"></tbody>
               </table>
             </div>
@@ -608,41 +659,34 @@
         <!-- ═══════════════════════════════════════════════════════════ -->
         <section class="view" id="purchase_orders-view">
           <div class="page-heading">
-            <div>
-              <p class="eyebrow">Procurement &amp; Orders</p>
-              <h1>Purchase Orders</h1>
-              <p>Track client POs, verify contractual amounts, and generate invoices with 1-click.</p>
-            </div>
+            <div><p class="eyebrow">Client Orders</p><h1>Purchase Orders</h1><p>Log and verify client purchase orders linked to accepted quotations and deals.</p></div>
             <button type="button" class="button button-primary" data-open-modal="poModal">+ Log PO</button>
           </div>
           <div class="toolbar panel-lite">
-            <div class="filter-search"><span>⌕</span><input id="poSearch" type="search" placeholder="Search POs..."></div>
-            <select id="poStatusFilter" aria-label="Filter by PO status">
+            <div class="filter-search"><span>⌕</span><input id="poSearch" type="search" placeholder="Search purchase orders..."></div>
+            <select id="poStatusFilter" aria-label="Filter by status">
               <option value="all">All statuses</option>
+              <option value="expected">Expected</option>
               <option value="received">Received</option>
-              <option value="verified">Verified</option>
-              <option value="invoiced">Invoiced</option>
-              <option value="cancelled">Cancelled</option>
-            </select>
-            <select id="poCompanyFilter" aria-label="Filter by company">
-              <option value="all">All companies</option>
+              <option value="under_verification">Under Verification</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+              <option value="completed">Completed</option>
             </select>
           </div>
           <article class="panel table-panel">
-            <div class="table-top"><p id="poResultCount">0 purchase orders</p></div>
+            <div class="table-top"><p id="poResultCount">0 orders</p></div>
             <div class="table-scroll">
               <table>
                 <thead>
                   <tr>
-                    <th>PO Number</th>
+                    <th>PO #</th>
                     <th>Company</th>
-                    <th>Linked Quotation</th>
-                    <th>Deal</th>
-                    <th>PO Amount</th>
+                    <th>Amount</th>
                     <th>Issue Date</th>
+                    <th>Delivery Date</th>
                     <th>Status</th>
-                    <th>Invoice</th>
-                    <th></th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody id="poTableBody"></tbody>
@@ -656,36 +700,8 @@
         <!-- ═══════════════════════════════════════════════════════════ -->
         <section class="view" id="invoices-view">
           <div class="page-heading">
-            <div>
-              <p class="eyebrow">Billing &amp; Revenue</p>
-              <h1>Invoices &amp; Payments</h1>
-              <p>Manage tax invoices, record customer payments, and track receivables in real time.</p>
-            </div>
+            <div><p class="eyebrow">Billing &amp; Tax</p><h1>Invoices</h1><p>Generate tax invoices from won deals or purchase orders, record payments, and track receivables.</p></div>
             <button type="button" class="button button-primary" data-open-modal="invoiceModal">+ Create Invoice</button>
-          </div>
-
-          <!-- Financial Receivables KPI Summary -->
-          <div class="invoice-kpis-grid">
-            <article class="metric-card">
-              <p>Total Invoiced</p>
-              <strong id="invKpiTotal">₹0</strong>
-              <small id="invKpiTotalCount">0 invoices generated</small>
-            </article>
-            <article class="metric-card">
-              <p>Total Collected</p>
-              <strong id="invKpiCollected" style="color: #10b981;">₹0</strong>
-              <small id="invKpiCollectionRate">0% collection rate</small>
-            </article>
-            <article class="metric-card">
-              <p>Outstanding Balance</p>
-              <strong id="invKpiOutstanding" style="color: #f59e0b;">₹0</strong>
-              <small>Pending client settlements</small>
-            </article>
-            <article class="metric-card">
-              <p>Overdue Amount</p>
-              <strong id="invKpiOverdue" style="color: #ef4444;">₹0</strong>
-              <small id="invKpiOverdueCount">0 overdue invoices</small>
-            </article>
           </div>
 
           <div class="toolbar panel-lite">
@@ -693,13 +709,9 @@
             <select id="invoiceStatusFilter" aria-label="Filter by invoice status">
               <option value="all">All statuses</option>
               <option value="paid">Paid</option>
-              <option value="partial">Partial</option>
-              <option value="sent">Sent</option>
+              <option value="partially_paid">Partially Paid</option>
+              <option value="unpaid">Unpaid</option>
               <option value="overdue">Overdue</option>
-              <option value="draft">Draft</option>
-            </select>
-            <select id="invoiceCompanyFilter" aria-label="Filter by company">
-              <option value="all">All companies</option>
             </select>
           </div>
           <article class="panel table-panel">
@@ -725,30 +737,348 @@
           </article>
         </section>
 
-        <section class="view" id="companies-view">
+        <section class="view" id="customers-view">
           <div class="page-heading">
-            <div><p class="eyebrow">Accounts</p><h1>Companies</h1><p>Manage merchants, contacts, deals and their relationship history.</p></div>
-            <button type="button" class="button button-primary" data-open-modal="companyModal">+ Add company</button>
+            <div>
+              <p class="eyebrow">Accounts &amp; Customer 360</p>
+              <h1>Customers</h1>
+              <p>Manage customer accounts, tax details, contact roles, purchase history and commercial relationships.</p>
+            </div>
+            <div class="heading-actions">
+              <button type="button" class="button button-primary" data-open-modal="companyModal">+ Add Customer</button>
+            </div>
           </div>
           <div class="toolbar panel-lite">
-            <div class="filter-search"><span>⌕</span><input id="companySearch" type="search" placeholder="Search companies"></div>
-            <select id="statusFilter" aria-label="Filter by status"><option value="all">All statuses</option><option value="lead">Lead</option><option value="active">Active</option><option value="churned">Churned</option></select>
-            <select id="industryFilter" aria-label="Filter by industry"><option value="all">All industries</option><option value="Fintech">Fintech</option><option value="Retail">Retail</option><option value="SaaS">SaaS</option><option value="Healthcare">Healthcare</option></select>
-            <select id="tagFilter" aria-label="Filter by tag"><option value="all">All tags</option><option value="high value">High value</option><option value="at risk">At risk</option><option value="referral">Referral partner</option></select>
+            <div class="filter-search">
+              <span>⌕</span>
+              <input id="companySearch" type="search" placeholder="Search customers by name, code, GSTIN, email, phone...">
+            </div>
+            <select id="statusFilter" aria-label="Filter by status">
+              <option value="all">All statuses</option>
+              <option value="active">Active</option>
+              <option value="lead">Lead</option>
+              <option value="churned">Churned</option>
+              <option value="inactive">Inactive</option>
+            </select>
+            <select id="customerTypeFilter" aria-label="Filter by customer type">
+              <option value="all">All Customer Types</option>
+              <option value="Enterprise">Enterprise</option>
+              <option value="SME">SME</option>
+              <option value="Startup">Startup</option>
+              <option value="Government">Government</option>
+              <option value="Partner">Partner</option>
+            </select>
+            <select id="industryFilter" aria-label="Filter by industry">
+              <option value="all">All industries</option>
+              <option value="Fintech">Fintech</option>
+              <option value="Retail">Retail</option>
+              <option value="SaaS">SaaS</option>
+              <option value="Healthcare">Healthcare</option>
+              <option value="E-commerce">E-commerce</option>
+              <option value="Manufacturing">Manufacturing</option>
+            </select>
+            <select id="tagFilter" aria-label="Filter by tag">
+              <option value="all">All tags</option>
+              <option value="high value">High value</option>
+              <option value="at risk">At risk</option>
+              <option value="referral">Referral partner</option>
+            </select>
             <button type="button" class="button button-quiet" id="clearCompanyFilters">Clear filters</button>
           </div>
-          <article class="panel table-panel"><div class="table-top"><p id="companyResultCount">8 companies</p><label>Sort by <select id="companySort"><option value="activity">Last activity</option><option value="name">Name</option><option value="created">Created date</option></select></label></div><div class="table-scroll"><table><thead><tr><th>Company</th><th>Industry</th><th>Owner</th><th>Status</th><th>Open deals</th><th>Last activity</th><th></th></tr></thead><tbody id="companyTableBody"></tbody></table></div><div class="table-footer"><span>Showing 1–8 of 8</span><div><button type="button" disabled>← Previous</button><button type="button" class="page-current">1</button><button type="button" disabled>Next →</button></div></div></article>
+          <article class="panel table-panel">
+            <div class="table-top">
+              <p id="companyResultCount">0 customers</p>
+              <label>Sort by 
+                <select id="companySort">
+                  <option value="activity">Last activity</option>
+                  <option value="name">Name</option>
+                  <option value="created">Created date</option>
+                  <option value="value">Purchase Value</option>
+                </select>
+              </label>
+            </div>
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Customer Name / Code</th>
+                    <th>GSTIN / PAN</th>
+                    <th>Industry</th>
+                    <th>Type</th>
+                    <th>Owner</th>
+                    <th>Status</th>
+                    <th>Total Value</th>
+                    <th>Last Activity</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="companyTableBody"></tbody>
+              </table>
+            </div>
+            <div class="table-footer">
+              <span id="customerTablePaginationText">Showing records</span>
+              <div>
+                <button type="button" disabled>← Previous</button>
+                <button type="button" class="page-current">1</button>
+                <button type="button" disabled>Next →</button>
+              </div>
+            </div>
+          </article>
         </section>
 
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- LEADS MANAGEMENT VIEW                                          -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <section class="view" id="leads-view">
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">Prospecting &amp; Qualification</p>
+              <h1>Lead Management</h1>
+              <p>Capture, score, and convert high-intent sales prospects into customer accounts.</p>
+            </div>
+            <div class="heading-actions">
+              <button type="button" class="button button-quiet" id="leadImportBtn">📥 Import CSV</button>
+              <button type="button" class="button button-quiet" id="leadExportBtn">📤 Export CSV</button>
+              <button type="button" class="button button-primary" id="createLeadBtn">+ Create Lead</button>
+            </div>
+          </div>
+
+          <div class="toolbar panel-lite">
+            <div class="filter-search">
+              <span>⌕</span>
+              <input id="leadSearch" type="search" placeholder="Search leads by name, company, email, phone...">
+            </div>
+            <select id="leadStatusFilter">
+              <option value="all">All Lead Statuses</option>
+              <option value="New">New</option>
+              <option value="Contacted">Contacted</option>
+              <option value="Qualified">Qualified</option>
+              <option value="Proposal">Proposal</option>
+              <option value="Negotiation">Negotiation</option>
+              <option value="Converted">Converted</option>
+              <option value="Lost">Lost</option>
+              <option value="Disqualified">Disqualified</option>
+            </select>
+            <select id="leadSourceFilter">
+              <option value="all">All Sources</option>
+              <option value="Inbound">Inbound</option>
+              <option value="Referral">Referral</option>
+              <option value="Outbound">Outbound</option>
+              <option value="Event">Event</option>
+              <option value="Other">Other</option>
+            </select>
+            <select id="leadOwnerFilter">
+              <option value="all">All Owners</option>
+              <option value="Aarav Sharma">Aarav Sharma</option>
+              <option value="Priya Menon">Priya Menon</option>
+              <option value="Kunal Shah">Kunal Shah</option>
+            </select>
+          </div>
+
+          <article class="panel table-panel">
+            <div class="table-top">
+              <p id="leadResultCount">Loading leads...</p>
+              <div class="table-bulk-actions" id="leadBulkActions" style="display:none;">
+                <span>With selected (<b id="leadSelectedCount">0</b>):</span>
+                <button type="button" class="button button-quiet button-sm" id="bulkAssignOwnerBtn">Assign Owner</button>
+                <button type="button" class="button button-quiet button-sm" id="bulkChangeStatusBtn">Change Status</button>
+                <button type="button" class="button button-quiet button-sm destructive-text" id="bulkDeleteLeadsBtn">Delete</button>
+              </div>
+            </div>
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th><input type="checkbox" id="selectAllLeadsCheck" aria-label="Select all leads"></th>
+                    <th>Lead Name</th>
+                    <th>Company</th>
+                    <th>Source</th>
+                    <th>Score</th>
+                    <th>Status</th>
+                    <th>Expected Value</th>
+                    <th>Next Follow-up</th>
+                    <th>Owner</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="leadTableBody"></tbody>
+              </table>
+            </div>
+          </article>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <!-- COMPANY 360 VIEW                                            -->
+        <!-- ═══════════════════════════════════════════════════════════ -->
         <section class="view" id="company-detail-view">
-          <button type="button" class="back-link" data-view-go="companies">← Back to companies</button>
-          <div class="company-hero"><div class="company-logo purple-logo">R</div><div><p class="eyebrow">Active account · Owner: Aarav Sharma</p><h1>RazorpayX Partners</h1><p>Fintech · Bengaluru, Karnataka · 201–500 employees</p></div><div class="company-hero-actions"><button type="button" class="button button-quiet">Edit company</button><button type="button" class="button button-primary" data-open-modal="dealModal">+ New deal</button></div></div>
-          <div class="tabs" role="tablist"><button type="button" class="tab active" data-company-tab="overview">Overview</button><button type="button" class="tab" data-company-tab="contacts">Contacts <span>3</span></button><button type="button" class="tab" data-company-tab="deals">Deals <span>2</span></button><button type="button" class="tab" data-company-tab="activity">Activity <span>14</span></button><button type="button" class="tab" data-company-tab="company-tasks">Tasks <span>3</span></button></div>
-          <div class="company-tab active" id="overview-tab"><div class="detail-grid"><article class="panel"><div class="panel-heading"><h2>Account details</h2><button type="button" class="text-button">Edit</button></div><dl class="details-list"><div><dt>Website</dt><dd><a href="#">razorpay.com</a></dd></div><div><dt>Phone</dt><dd>+91 80 4567 8900</dd></div><div><dt>Source</dt><dd>Referral</dd></div><div><dt>Tags</dt><dd><span class="tag blue-tag">High value</span><span class="tag purple-tag">Strategic</span></dd></div><div><dt>Address</dt><dd>Koramangala, Bengaluru<br>Karnataka 560034</dd></div></dl></article><article class="panel"><div class="panel-heading"><h2>Open deals</h2><button type="button" class="text-button" data-company-tab-go="deals">View all →</button></div><div class="mini-deals"><div><span class="stage-mini proposal"></span><p><strong>Payment Gateway Expansion</strong><small>Proposal sent · closes Sep 18</small></p><b>₹8.0L</b></div><div><span class="stage-mini negotiation"></span><p><strong>UPI Autopay Upgrade</strong><small>Negotiation · closes Sep 28</small></p><b>₹4.5L</b></div></div></article></div><article class="panel timeline-short"><div class="panel-heading"><div><h2>Latest activity</h2><p>Every call, email, meeting and note in one timeline.</p></div><button type="button" class="text-button" data-company-tab-go="activity">View all →</button></div><div class="activity-feed company-feed"></div></article></div>
-          <div class="company-tab" id="contacts-tab"><div class="section-actions"><div><h2>Contacts</h2><p>People at RazorpayX Partners</p></div><button type="button" class="button button-primary" data-open-modal="contactModal">+ Add contact</button></div><article class="panel table-panel"><div class="table-scroll"><table><thead><tr><th>Name</th><th>Title</th><th>Email</th><th>Phone</th><th>Type</th><th></th></tr></thead><tbody id="contactTable"></tbody></table></div></article></div>
-          <div class="company-tab" id="deals-tab"><div class="section-actions"><div><h2>Deals</h2><p>Sales opportunities linked to this account</p></div><button type="button" class="button button-primary" data-open-modal="dealModal">+ New deal</button></div><div class="deal-detail-cards" id="companyDeals"></div></div>
-          <div class="company-tab" id="activity-tab"><div class="section-actions"><div><h2>Activity timeline</h2><p>Reverse chronological communication log</p></div><button type="button" class="button button-primary" data-open-modal="activityModal">+ Log activity</button></div><article class="panel full-timeline"><div class="activity-feed company-feed" id="fullCompanyActivity"></div></article></div>
-          <div class="company-tab" id="company-tasks-tab"><div class="section-actions"><div><h2>Open tasks</h2><p>Follow-ups attached to this company or its deals</p></div><button type="button" class="button button-primary" data-open-modal="taskModal">+ Add task</button></div><article class="panel"><div class="task-list" id="companyTaskList"></div></article></div>
+          <button type="button" class="back-link" data-view-go="customers">← Back to Customers</button>
+          <div class="company-hero">
+            <div class="company-logo purple-logo" id="companyHeroLogo">R</div>
+            <div>
+              <p class="eyebrow" id="companyHeroEyebrow">Active customer · Owner: Aarav Sharma</p>
+              <h1 id="companyHeroName">RazorpayX Partners</h1>
+              <p id="companyHeroMeta">Fintech · Bengaluru, Karnataka · Enterprise</p>
+            </div>
+            <div class="company-hero-actions">
+              <button type="button" class="button button-quiet" id="companyHeroEditBtn">Edit Customer</button>
+              <button type="button" class="button button-primary" data-open-modal="dealModal">+ New deal</button>
+            </div>
+          </div>
+
+          <!-- 14 Customer 360 Tabs -->
+          <div class="tabs company-360-tabs" role="tablist" style="overflow-x: auto; flex-wrap: nowrap; gap: 0.5rem; border-bottom: 1px solid var(--border-light); padding-bottom: 0.5rem;">
+            <button type="button" class="tab active" data-company-tab="overview">Overview</button>
+            <button type="button" class="tab" data-company-tab="contacts">Contacts</button>
+            <button type="button" class="tab" data-company-tab="deals">Deals</button>
+            <button type="button" class="tab" data-company-tab="quotations">Quotations</button>
+            <button type="button" class="tab" data-company-tab="po">Purchase Orders</button>
+            <button type="button" class="tab" data-company-tab="invoices">Invoices</button>
+            <button type="button" class="tab" data-company-tab="payments">Payments</button>
+            <button type="button" class="tab" data-company-tab="products">Products (Purchase History)</button>
+            <button type="button" class="tab" data-company-tab="activity">Activities</button>
+            <button type="button" class="tab" data-company-tab="company-tasks">Tasks</button>
+            <button type="button" class="tab" data-company-tab="documents">Documents</button>
+            <button type="button" class="tab" data-company-tab="emails">Emails</button>
+            <button type="button" class="tab" data-company-tab="renewals">Renewals</button>
+            <button type="button" class="tab" data-company-tab="timeline">Timeline</button>
+          </div>
+
+          <!-- Tab Content Containers -->
+          <div class="company-tab active" id="overview-tab">
+            <div class="detail-grid">
+              <article class="panel">
+                <div class="panel-heading"><h2>Customer &amp; Tax Details</h2></div>
+                <dl class="details-list" id="companyDetailsList">
+                  <div><dt>Customer Code</dt><dd id="companyDetailCode">CUS-2026-0001</dd></div>
+                  <div><dt>GSTIN</dt><dd id="companyDetailGstin">29AAAAA0000A1Z5</dd></div>
+                  <div><dt>PAN</dt><dd id="companyDetailPan">AAAAA0000A</dd></div>
+                  <div><dt>Customer Type</dt><dd id="companyDetailType">Enterprise</dd></div>
+                  <div><dt>Website</dt><dd><a href="#" id="companyDetailWebsite">razorpay.com</a></dd></div>
+                  <div><dt>Phone</dt><dd id="companyDetailPhone">+91 80 4567 8900</dd></div>
+                  <div><dt>Billing Address</dt><dd id="companyDetailBillingAddress">Koramangala Industrial Layout, Bengaluru</dd></div>
+                  <div><dt>Status</dt><dd id="companyDetailStatus"><span class="tag blue-tag">Active</span></dd></div>
+                </dl>
+              </article>
+              <article class="panel">
+                <div class="panel-heading"><h2>Open deals</h2></div>
+                <div class="mini-deals" id="companyMiniDeals"></div>
+              </article>
+            </div>
+          </div>
+
+          <div class="company-tab" id="contacts-tab">
+            <div class="section-actions"><div><h2>Contacts</h2></div><button type="button" class="button button-primary" data-open-modal="contactModal">+ Add contact</button></div>
+            <article class="panel table-panel"><div class="table-scroll"><table><thead><tr><th>Name</th><th>Title</th><th>Email</th><th>Phone</th><th>Type</th></tr></thead><tbody id="contactTable"></tbody></table></div></article>
+          </div>
+
+          <div class="company-tab" id="deals-tab">
+            <div class="section-actions"><div><h2>Deals</h2></div><button type="button" class="button button-primary" data-open-modal="dealModal">+ New deal</button></div>
+            <div class="deal-detail-cards" id="companyDeals"></div>
+          </div>
+
+          <div class="company-tab" id="quotations-tab">
+            <div class="section-actions"><div><h2>Quotations</h2></div><button type="button" class="button button-primary" data-open-modal="quotationModal">+ New Quotation</button></div>
+            <article class="panel table-panel"><div class="table-scroll"><table><thead><tr><th>Quotation #</th><th>Total</th><th>Status</th><th>Valid Until</th></tr></thead><tbody id="companyQuotationsTable"></tbody></table></div></article>
+          </div>
+
+          <div class="company-tab" id="po-tab">
+            <div class="section-actions"><div><h2>Purchase Orders</h2></div><button type="button" class="button button-primary" data-open-modal="poModal">+ Log PO</button></div>
+            <article class="panel table-panel"><div class="table-scroll"><table><thead><tr><th>PO #</th><th>Amount</th><th>Status</th><th>Issue Date</th></tr></thead><tbody id="companyPoTable"></tbody></table></div></article>
+          </div>
+
+          <div class="company-tab" id="invoices-tab">
+            <div class="section-actions"><div><h2>Invoices</h2></div><button type="button" class="button button-primary" data-open-modal="invoiceModal">+ Create Invoice</button></div>
+            <article class="panel table-panel"><div class="table-scroll"><table><thead><tr><th>Invoice #</th><th>Total</th><th>Paid</th><th>Balance</th><th>Status</th></tr></thead><tbody id="companyInvoicesTable"></tbody></table></div></article>
+          </div>
+
+          <div class="company-tab" id="payments-tab">
+            <div class="section-actions"><div><h2>Payments Received</h2></div></div>
+            <article class="panel table-panel"><div class="table-scroll"><table><thead><tr><th>Date</th><th>Amount</th><th>Method</th><th>Reference</th></tr></thead><tbody id="companyPaymentsTable"></tbody></table></div></article>
+          </div>
+
+          <div class="company-tab" id="products-tab">
+            <div class="section-actions">
+              <div>
+                <h2>Products &amp; Purchase History</h2>
+                <p class="muted-copy" style="font-size: 0.85rem; margin-top: 0.25rem;">Derived commercial breakdown from approved purchase orders, won deals, and tax invoices.</p>
+              </div>
+            </div>
+            <!-- Derived Commercial Summary Banner -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.75rem; margin-bottom: 1.25rem;">
+              <article class="panel summary-card" style="padding: 0.85rem; text-align: center;">
+                <span style="font-size: 0.75rem; color: var(--muted); text-transform: uppercase;">Total Products</span>
+                <h3 id="cusTotalProductsCount" style="margin-top: 0.25rem; font-size: 1.3rem;">0</h3>
+              </article>
+              <article class="panel summary-card" style="padding: 0.85rem; text-align: center;">
+                <span style="font-size: 0.75rem; color: var(--muted); text-transform: uppercase;">Total Purchase Value</span>
+                <h3 id="cusTotalPurchaseValue" style="margin-top: 0.25rem; font-size: 1.3rem; color: #10b981;">₹0</h3>
+              </article>
+              <article class="panel summary-card" style="padding: 0.85rem; text-align: center;">
+                <span style="font-size: 0.75rem; color: var(--muted); text-transform: uppercase;">First Purchase</span>
+                <h4 id="cusFirstPurchaseDate" style="margin-top: 0.25rem; font-size: 0.95rem;">—</h4>
+              </article>
+              <article class="panel summary-card" style="padding: 0.85rem; text-align: center;">
+                <span style="font-size: 0.75rem; color: var(--muted); text-transform: uppercase;">Latest Purchase</span>
+                <h4 id="cusLatestPurchaseDate" style="margin-top: 0.25rem; font-size: 0.95rem;">—</h4>
+              </article>
+              <article class="panel summary-card" style="padding: 0.85rem; text-align: center;">
+                <span style="font-size: 0.75rem; color: var(--muted); text-transform: uppercase;">Avg Order Value</span>
+                <h3 id="cusAvgOrderValue" style="margin-top: 0.25rem; font-size: 1.3rem;">₹0</h3>
+              </article>
+            </div>
+            
+            <article class="panel table-panel">
+              <div class="table-scroll">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Product Name</th>
+                      <th>SKU</th>
+                      <th>Category</th>
+                      <th>Qty</th>
+                      <th>Unit Price</th>
+                      <th>Discount</th>
+                      <th>Total</th>
+                      <th>Purchase Date</th>
+                      <th>Source Doc</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="companyPurchaseHistoryTable"></tbody>
+                </table>
+              </div>
+            </article>
+          </div>
+
+          <div class="company-tab" id="activity-tab">
+            <div class="section-actions"><div><h2>Activity Log</h2></div><button type="button" class="button button-primary" data-open-modal="activityModal">+ Log activity</button></div>
+            <article class="panel full-timeline"><div class="activity-feed company-feed" id="fullCompanyActivity"></div></article>
+          </div>
+
+          <div class="company-tab" id="company-tasks-tab">
+            <div class="section-actions"><div><h2>Tasks</h2></div><button type="button" class="button button-primary" data-open-modal="taskModal">+ Add task</button></div>
+            <article class="panel"><div class="task-list" id="companyTaskList"></div></article>
+          </div>
+
+          <div class="company-tab" id="documents-tab">
+            <div class="section-actions"><div><h2>Documents</h2></div><button type="button" class="button button-primary" data-open-modal="documentModal">+ Upload Doc</button></div>
+            <div class="documents-grid" id="companyDocumentsList"></div>
+          </div>
+
+          <div class="company-tab" id="emails-tab">
+            <div class="section-actions"><div><h2>Emails Logged</h2></div></div>
+            <article class="panel"><div id="companyEmailsList"></div></article>
+          </div>
+
+          <div class="company-tab" id="renewals-tab">
+            <div class="section-actions"><div><h2>Contract Renewals</h2></div></div>
+            <article class="panel table-panel"><div class="table-scroll"><table><thead><tr><th>Product</th><th>Value</th><th>Renewal Date</th><th>Status</th></tr></thead><tbody id="companyRenewalsTable"></tbody></table></div></article>
+          </div>
+
+          <div class="company-tab" id="timeline-tab">
+            <div class="section-actions"><div><h2>Unified 360 Timeline</h2></div></div>
+            <article class="panel full-timeline"><div class="activity-feed company-feed" id="companyUnifiedTimeline"></div></article>
+          </div>
         </section>
 
         <section class="view" id="pipeline-view">
@@ -1248,7 +1578,294 @@
             <section class="settings-panel" id="security-settings"><h2>Authentication &amp; security</h2><p class="settings-intro">Invite-only access, secure sessions and server-enforced permissions protect client data.</p><article class="panel security-list"><div><span class="security-check">✓</span><p><strong>Email/password sign-in</strong><small>8+ characters and at least one number required.</small></p><button type="button" class="button button-quiet">Configured</button></div><div><span class="security-check">✓</span><p><strong>Google SSO</strong><small>Optional single sign-on for SmartPay teammates.</small></p><button type="button" class="button button-secondary">Connect Google</button></div><div><span class="security-check">✓</span><p><strong>Session protection</strong><small>Secure httpOnly cookies and rate-limited login attempts.</small></p><button type="button" class="button button-quiet">Enabled</button></div><div><span class="security-check">✓</span><p><strong>Audit trail</strong><small>Deal stages and task completion are timestamped and attributed.</small></p><button type="button" class="button button-quiet">Enabled</button></div></article></section>
           </div></div>
         </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- RENEWALS VIEW                                                   -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <section class="view" id="renewals-view">
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">Customer Retention &amp; ARR</p>
+              <h1>Contract Renewals</h1>
+              <p>Track subscription expiration dates, upcoming contract renewals, and retention workflows.</p>
+            </div>
+          </div>
+          <div class="toolbar panel-lite">
+            <div class="filter-search">
+              <span>⌕</span>
+              <input id="renewalSearch" type="search" placeholder="Search renewals by company or product...">
+            </div>
+            <select id="renewalWindowFilter">
+              <option value="all">All Expiration Windows</option>
+              <option value="30">Expiring in 30 days</option>
+              <option value="60">Expiring in 60 days</option>
+              <option value="90">Expiring in 90 days</option>
+            </select>
+          </div>
+          <article class="panel table-panel">
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Company</th>
+                    <th>Product / Service</th>
+                    <th>Contract Value</th>
+                    <th>Renewal Date</th>
+                    <th>Status</th>
+                    <th>Account Owner</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="renewalTableBody"></tbody>
+              </table>
+            </div>
+          </article>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- NOTIFICATIONS VIEW                                              -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <section class="view" id="notifications-view">
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">Real-Time Alerts &amp; Activities</p>
+              <h1>Notification Center</h1>
+              <p>Stay updated on deal approvals, quotation events, invoice due dates, and automated tasks.</p>
+            </div>
+            <div class="heading-actions">
+              <button type="button" class="button button-secondary" id="pageMarkAllReadBtn">✓ Mark all read</button>
+            </div>
+          </div>
+
+          <div class="action-tabs" style="margin-bottom: 1.5rem;">
+            <button type="button" class="action-tab active" data-notif-filter="all">All Notifications</button>
+            <button type="button" class="action-tab" data-notif-filter="unread">Unread Only</button>
+            <button type="button" class="action-tab" data-notif-filter="action_required">Action Required</button>
+            <button type="button" class="action-tab" data-notif-filter="system">System Alerts</button>
+          </div>
+
+          <article class="panel">
+            <div id="fullNotificationsList" style="display: flex; flex-direction: column; gap: 12px; padding: 12px 0;">
+              <!-- Populated by app.js -->
+            </div>
+          </article>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- AUTOMATIONS VIEW                                                -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <section class="view" id="automations-view">
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">Workflow Engine</p>
+              <h1>Automation Rules</h1>
+              <p>Configure trigger events (WHEN), conditions (IF), and automated actions (THEN).</p>
+            </div>
+            <div class="heading-actions">
+              <button type="button" class="button button-secondary" id="runCronManualBtn">⚡ Run Scheduled Jobs Now</button>
+              <button type="button" class="button button-primary" data-open-modal="automationModal">+ Create Rule</button>
+            </div>
+          </div>
+
+          <div class="action-tabs" style="margin-bottom: 1.5rem;">
+            <button type="button" class="action-tab active" data-auto-tab="rules">Active Rules</button>
+            <button type="button" class="action-tab" data-auto-tab="logs">Execution Audit Logs</button>
+            <button type="button" class="action-tab" data-auto-tab="settings">Governance Thresholds</button>
+          </div>
+
+          <!-- Rules List Sub-view -->
+          <div id="autoSubViewRules">
+            <div class="automation-rules-grid" id="automationRulesList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.25rem;"></div>
+          </div>
+
+          <!-- Execution Logs Sub-view -->
+          <div id="autoSubViewLogs" style="display:none;">
+            <article class="panel table-panel">
+              <div class="table-scroll">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Timestamp</th>
+                      <th>Rule Name</th>
+                      <th>Trigger Event</th>
+                      <th>Target Entity</th>
+                      <th>Status</th>
+                      <th>Details</th>
+                    </tr>
+                  </thead>
+                  <tbody id="automationLogsTableBody"></tbody>
+                </table>
+              </div>
+            </article>
+          </div>
+
+          <!-- Governance Settings Sub-view -->
+          <div id="autoSubViewSettings" style="display:none;">
+            <article class="panel" style="max-width: 680px; padding: 1.5rem;">
+              <h2 style="font-size: 1.1rem; margin-bottom: 1rem; color: #0f172a;">Sales Governance &amp; Thresholds</h2>
+              <form id="automationSettingsForm">
+                <div style="display: grid; gap: 1rem;">
+                  <label>
+                    <strong style="display: block; font-size: 0.9rem; color: #334155; margin-bottom: 4px;">Max Representative Discount Threshold (%)</strong>
+                    <span style="font-size: 0.8rem; color: #64748b; display: block; margin-bottom: 6px;">Quotations with discounts exceeding this percentage require Manager Approval.</span>
+                    <input type="number" id="settingDiscountThreshold" name="discount_approval_threshold" value="15" min="0" max="100" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                  </label>
+                  <label>
+                    <strong style="display: block; font-size: 0.9rem; color: #334155; margin-bottom: 4px;">High Deal Manager Approval Threshold (₹)</strong>
+                    <span style="font-size: 0.8rem; color: #64748b; display: block; margin-bottom: 6px;">Deals above this value require secondary sign-off before closing.</span>
+                    <input type="number" id="settingHighDealThreshold" name="high_deal_threshold" value="1000000" min="0" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                  </label>
+                  <label>
+                    <strong style="display: block; font-size: 0.9rem; color: #334155; margin-bottom: 4px;">Quotation Validity Period (Days)</strong>
+                    <span style="font-size: 0.8rem; color: #64748b; display: block; margin-bottom: 6px;">Quotations automatically expire after this duration.</span>
+                    <input type="number" id="settingQuoteValidityDays" name="quote_validity_days" value="14" min="1" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                  </label>
+                  <label>
+                    <strong style="display: block; font-size: 0.9rem; color: #334155; margin-bottom: 4px;">Inactive Deal Alert Threshold (Days)</strong>
+                    <span style="font-size: 0.8rem; color: #64748b; display: block; margin-bottom: 6px;">Flag open deals without activity for this many days.</span>
+                    <input type="number" id="settingInactiveDealDays" name="inactive_deal_days" value="7" min="1" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                  </label>
+                  <div style="margin-top: 1rem;">
+                    <button type="submit" class="button button-primary">Save Settings</button>
+                  </div>
+                </div>
+              </form>
+            </article>
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- APPROVALS VIEW                                                  -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <section class="view" id="approvals-view">
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">Governance &amp; Sign-offs</p>
+              <h1>Approval Workflows</h1>
+              <p>Review and decide pending discount approvals (&gt;15%) and high-value deal sign-offs (&gt;₹10L).</p>
+            </div>
+          </div>
+          <article class="panel table-panel">
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Approval Type</th>
+                    <th>Requested By</th>
+                    <th>Change / Threshold</th>
+                    <th>Status</th>
+                    <th>Comments</th>
+                    <th>Decision Action</th>
+                  </tr>
+                </thead>
+                <tbody id="approvalTableBody"></tbody>
+              </table>
+            </div>
+          </article>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- DOCUMENTS VIEW                                                  -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <section class="view" id="documents-view">
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">Document Repository</p>
+              <h1>Document Vault</h1>
+              <p>Store, version, and link contracts, NDAs, proposals, and compliance documents to accounts.</p>
+            </div>
+            <button type="button" class="button button-primary" data-open-modal="documentModal">+ Upload Document</button>
+          </div>
+          <div class="documents-grid" id="documentList"></div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- EMAIL TEMPLATES VIEW                                           -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <section class="view" id="templates-view">
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">Communication Hub</p>
+              <h1>Email Templates</h1>
+              <p>Manage standardized outbound email templates with dynamic variable insertion.</p>
+            </div>
+            <button type="button" class="button button-primary" data-open-modal="templateModal">+ Create Template</button>
+          </div>
+          <div class="templates-grid" id="emailTemplateList"></div>
+        </section>
       </main>
+
+      <!-- ═══════════════════════════════════════════════════════════════ -->
+      <!-- iKnow AI AGENT — PERSISTENT CRM COPILOT                        -->
+      <!-- ═══════════════════════════════════════════════════════════════ -->
+      <button type="button" class="iknow-floating-btn" id="iKnowFloatingBtn" aria-label="Open iKnow AI CRM Copilot" title="iKnow AI Copilot (⌘ J)">
+        <span class="iknow-btn-sparkle">✨</span>
+        <span class="iknow-btn-icon">🤖</span>
+        <span class="iknow-btn-label">iKnow</span>
+        <span class="iknow-btn-badge">AI</span>
+      </button>
+
+      <!-- iKnow Chat Drawer Panel -->
+      <div class="iknow-chat-panel" id="iKnowChatPanel" style="display:none;" role="dialog" aria-label="iKnow AI Copilot Assistant">
+        <!-- Header -->
+        <div class="iknow-header">
+          <div class="iknow-header-title">
+            <div class="iknow-avatar">🤖</div>
+            <div>
+              <h3>iKnow <span class="iknow-tag">COPILOT</span></h3>
+              <p>Your SmartPay CRM AI Assistant</p>
+            </div>
+          </div>
+          <div class="iknow-header-actions">
+            <button type="button" class="iknow-action-icon" id="iKnowClearBtn" title="Clear conversation">🗑️</button>
+            <button type="button" class="iknow-action-icon" id="iKnowMinimizeBtn" title="Minimize assistant">⎯</button>
+            <button type="button" class="iknow-action-icon" id="iKnowCloseBtn" title="Close assistant">✕</button>
+          </div>
+        </div>
+
+        <!-- Active Context Indicator Bar -->
+        <div class="iknow-context-bar" id="iKnowContextBar">
+          <span class="iknow-context-dot"></span>
+          <span id="iKnowContextPill">📍 Dashboard Overview</span>
+        </div>
+
+        <!-- Messages Container -->
+        <div class="iknow-messages" id="iKnowMessages">
+          <!-- Welcome Experience Card -->
+          <div class="iknow-welcome-card" id="iKnowWelcomeCard">
+            <div class="iknow-welcome-header">
+              <span class="iknow-welcome-wave">👋</span>
+              <div>
+                <strong>Hi, I'm iKnow.</strong>
+                <p>I can help you understand your CRM, find important information, identify follow-ups, and take approved actions.</p>
+              </div>
+            </div>
+
+            <div class="iknow-quick-section">
+              <span class="iknow-quick-label">⚡ QUICK ACTIONS FOR YOU</span>
+              <div class="iknow-quick-pills">
+                <button type="button" class="iknow-pill" data-prompt="Give me my daily briefing">☀️ Daily Briefing</button>
+                <button type="button" class="iknow-pill" data-prompt="What should I do today?">🎯 What should I do today?</button>
+                <button type="button" class="iknow-pill" data-prompt="Which deals need follow-up?">◫ Deals needing follow-up</button>
+                <button type="button" class="iknow-pill" data-prompt="Which invoices are overdue?">💳 Overdue invoices</button>
+                <button type="button" class="iknow-pill" data-prompt="Which renewals are coming up?">🔄 Upcoming renewals</button>
+                <button type="button" class="iknow-pill" data-prompt="Show my priority actions">⚡ Priority actions</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Dynamic Chat Message Stream -->
+          <div id="iKnowMessageStream"></div>
+        </div>
+
+        <!-- Chat Input Form -->
+        <form class="iknow-input-wrap" id="iKnowInputForm" onsubmit="return false;">
+          <textarea id="iKnowInputText" placeholder="Ask iKnow anything about your CRM, customers, quotes, or deals..." rows="1" required></textarea>
+          <button type="submit" class="iknow-send-btn" id="iKnowSendBtn" aria-label="Send message">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+          </button>
+        </form>
+      </div>
     </div>
 
     <!-- ═══════════════════════════════════════════════════════════════ -->
@@ -1256,9 +1873,242 @@
     <!-- ═══════════════════════════════════════════════════════════════ -->
     <div class="modal-layer" id="modalLayer">
       <div class="modal" id="createModal" role="dialog" aria-modal="true" aria-labelledby="createTitle"><button type="button" class="modal-close" data-close-modal aria-label="Close">×</button><p class="eyebrow">Quick create</p><h2 id="createTitle">What would you like to add?</h2><p class="modal-intro">Create records without leaving your current workspace.</p><div class="quick-create"><button type="button" data-open-modal="companyModal">▣ <span><b>Company</b><small>Create a merchant account</small></span>→</button><button type="button" data-open-modal="dealModal">◫ <span><b>Deal</b><small>Add an opportunity</small></span>→</button><button type="button" data-open-modal="quotationModal">📋 <span><b>Quotation</b><small>Draft pricing quote</small></span>→</button><button type="button" data-open-modal="invoiceModal">🧾 <span><b>Invoice</b><small>Generate tax invoice</small></span>→</button><button type="button" data-open-modal="poModal">📦 <span><b>Purchase Order</b><small>Log client PO</small></span>→</button><button type="button" data-open-modal="taskModal">✓ <span><b>Task</b><small>Schedule a follow-up</small></span>→</button><button type="button" data-open-modal="activityModal">◌ <span><b>Activity</b><small>Log a touchpoint</small></span>→</button></div></div>
-      <form class="modal form-modal" id="companyModal"><button type="button" class="modal-close" data-close-modal aria-label="Close">×</button><p class="eyebrow">New account</p><h2>Add company</h2><div class="form-grid"><label>Company name <input type="text" name="companyName" required placeholder="e.g. Orbit Retail"></label><label>Industry <select name="industry"><option>Retail</option><option>Fintech</option><option>SaaS</option><option>Healthcare</option></select></label><label>Lead source <select name="source"><option>Inbound</option><option>Referral</option><option>Outbound</option><option>Event</option><option>Other</option></select></label><label>Status <select name="status"><option>Lead</option><option>Active</option></select></label></div><p class="field-note">Similar company names are flagged as a warning, never blocked.</p><div class="modal-actions"><button type="button" class="button button-quiet" data-close-modal>Cancel</button><button type="submit" class="button button-primary">Save company</button></div></form>
-      <form class="modal form-modal" id="contactModal"><button type="button" class="modal-close" data-close-modal aria-label="Close">×</button><p class="eyebrow">Company contact</p><h2>Add contact</h2><div class="form-grid"><label>First name <input type="text" name="firstName" required placeholder="e.g. Ananya"></label><label>Last name <input type="text" name="lastName" required placeholder="e.g. Rao"></label><label>Company <select name="contactCompany" id="contactCompanySelect"><option value="">Select company...</option></select></label><label>Job title <input type="text" name="contactTitle" required placeholder="e.g. Head of Partnerships"></label><label>Email <input name="contactEmail" type="email" required placeholder="ananya@company.com"></label><label>Phone <input name="contactPhone" type="tel" placeholder="+91 98765 43210"></label><label class="checkbox-field span-2"><input name="isPrimary" type="checkbox"> Mark as primary contact</label></div><p class="field-note">Email format is validated and duplicate emails are flagged for review.</p><div class="modal-actions"><button type="button" class="button button-quiet" data-close-modal>Cancel</button><button type="submit" class="button button-primary">Save contact</button></div></form>
-      <form class="modal form-modal" id="dealModal"><button type="button" class="modal-close" data-close-modal aria-label="Close">×</button><p class="eyebrow">Sales opportunity</p><h2>Create deal</h2><div class="form-grid"><label>Deal title <input type="text" name="dealTitle" required placeholder="e.g. Payment gateway rollout"></label><label>Company <select name="dealCompany"><option>RazorpayX Partners</option><option>Urban Company</option><option>Groww Wealth</option></select></label><label>Value (INR) <input name="dealValue" type="number" required placeholder="500000"></label><label>Expected close date <input name="dealDate" type="date" required></label><label>Starting stage <select name="dealStage"><option>New Lead · 10%</option><option>Qualified · 25%</option><option>Proposal Sent · 50%</option></select></label><label>Owner <select name="dealOwner"><option>Aarav Sharma</option><option>Priya Menon</option><option>Kunal Shah</option></select></label></div><div class="modal-actions"><button type="button" class="button button-quiet" data-close-modal>Cancel</button><button type="submit" class="button button-primary">Create deal</button></div></form>
+      <!-- Lead Modal -->
+      <form class="modal form-modal" id="leadModal">
+        <button type="button" class="modal-close" data-close-modal aria-label="Close">×</button>
+        <p class="eyebrow">Prospecting</p>
+        <h2 id="leadModalTitle">Create Lead</h2>
+        <div class="form-grid">
+          <label class="span-2">Lead Name <input type="text" id="leadName" name="name" required placeholder="e.g. Siddharth Rao"></label>
+          <label>Company Name <input type="text" id="leadCompany" name="company" placeholder="e.g. Orbit D2C Retail"></label>
+          <label>Contact Person <input type="text" id="leadContactName" name="contact_name" placeholder="e.g. Siddharth Rao"></label>
+          <label>Email Address <input type="email" id="leadEmail" name="email" placeholder="siddharth@orbitd2c.com"></label>
+          <label>Phone Number <input type="tel" id="leadPhone" name="phone" placeholder="+91 98112 34567"></label>
+          <label>Source
+            <select id="leadSource" name="source">
+              <option value="Inbound">Inbound</option>
+              <option value="Referral">Referral</option>
+              <option value="Outbound">Outbound</option>
+              <option value="Event">Event</option>
+              <option value="Other">Other</option>
+            </select>
+          </label>
+          <label>Industry
+            <select id="leadIndustry" name="industry">
+              <option value="Retail">Retail</option>
+              <option value="Fintech">Fintech</option>
+              <option value="SaaS">SaaS</option>
+              <option value="Healthcare">Healthcare</option>
+              <option value="General">General</option>
+            </select>
+          </label>
+          <label>Status
+            <select id="leadStatus" name="status">
+              <option value="New">New</option>
+              <option value="Contacted">Contacted</option>
+              <option value="Qualified">Qualified</option>
+              <option value="Proposal">Proposal</option>
+              <option value="Negotiation">Negotiation</option>
+              <option value="Lost">Lost</option>
+              <option value="Disqualified">Disqualified</option>
+            </select>
+          </label>
+          <label>Expected Value (₹) <input type="number" id="leadExpectedValue" name="expected_value" placeholder="450000"></label>
+          <label>Next Follow-up Date <input type="date" id="leadNextFollowup" name="next_followup"></label>
+          <label>Assigned Owner
+            <select id="leadOwner" name="owner">
+              <option value="Aarav Sharma">Aarav Sharma</option>
+              <option value="Priya Menon">Priya Menon</option>
+              <option value="Kunal Shah">Kunal Shah</option>
+            </select>
+          </label>
+          <label class="span-2">Notes <textarea id="leadNotes" name="notes" placeholder="Prospect background, specific product interest, requirements..."></textarea></label>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="button button-quiet" data-close-modal>Cancel</button>
+          <button type="submit" class="button button-primary">Save Lead</button>
+        </div>
+      </form>
+
+      <!-- Convert Lead Modal -->
+      <form class="modal form-modal" id="leadConvertModal">
+        <button type="button" class="modal-close" data-close-modal aria-label="Close">×</button>
+        <p class="eyebrow">Convert Prospect</p>
+        <h2>Convert Lead to Customer 360</h2>
+        <p class="modal-intro">This will create a Company, primary Contact, active Deal opportunity, and initial Task in your CRM workspace.</p>
+        <input type="hidden" id="convertLeadId">
+        <div class="form-grid">
+          <label class="span-2">Company Name <input type="text" id="convertCompanyName" required></label>
+          <label>Contact Email <input type="email" id="convertContactEmail"></label>
+          <label>Deal Opportunity Title <input type="text" id="convertDealTitle" required></label>
+          <label class="span-2">Deal Value (₹) <input type="number" id="convertDealValue" required></label>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="button button-quiet" data-close-modal>Cancel</button>
+          <button type="submit" class="button button-primary">⚡ Confirm Conversion</button>
+        </div>
+      </form>
+
+      <!-- Global Search Modal (Cmd + K) -->
+      <div class="modal search-modal-dialog" id="searchModal" role="dialog">
+        <button type="button" class="modal-close" data-close-modal aria-label="Close">×</button>
+        <div class="global-search-input-wrap">
+          <span class="search-icon">⌕</span>
+          <input type="search" id="globalSearchInput" placeholder="Search companies, contacts, leads, deals, quotes, tasks, docs... (Press Esc to close)" autocomplete="off">
+        </div>
+        <div class="global-search-results-list" id="globalSearchResultsList">
+          <p class="search-empty-state">Type at least 2 characters to search across your CRM workspace.</p>
+        </div>
+      </div>
+
+      <!-- Customer Modal (Account Creation & Edit) -->
+      <form class="modal form-modal modal-wide" id="companyModal">
+        <button type="button" class="modal-close" data-close-modal aria-label="Close">×</button>
+        <p class="eyebrow">Customer Record</p>
+        <h2 id="companyModalTitle">Add Customer Account</h2>
+        <div class="form-grid">
+          <label class="span-2">Customer / Company Name <input type="text" name="companyName" id="companyModalName" required placeholder="e.g. Orbit D2C Retail Pvt Ltd"></label>
+          <label>Customer Type
+            <select name="customer_type" id="companyModalType">
+              <option value="Enterprise">Enterprise</option>
+              <option value="SME">SME</option>
+              <option value="Startup">Startup</option>
+              <option value="Government">Government</option>
+              <option value="Partner">Partner</option>
+            </select>
+          </label>
+          <label>Industry
+            <select name="industry" id="companyModalIndustry">
+              <option value="Retail">Retail</option>
+              <option value="Fintech">Fintech</option>
+              <option value="SaaS">SaaS</option>
+              <option value="Healthcare">Healthcare</option>
+              <option value="E-commerce">E-commerce</option>
+              <option value="Manufacturing">Manufacturing</option>
+              <option value="Logistics">Logistics</option>
+              <option value="Other">Other</option>
+            </select>
+          </label>
+          <label>GSTIN (Tax ID) <input type="text" name="gst_number" id="companyModalGstin" placeholder="e.g. 29AAAAA0000A1Z5" style="text-transform:uppercase;"></label>
+          <label>PAN Number <input type="text" name="pan_number" id="companyModalPan" placeholder="e.g. AAAAA0000A" style="text-transform:uppercase;"></label>
+          <label>Primary Phone <input type="tel" name="phone" id="companyModalPhone" placeholder="+91 98765 43210"></label>
+          <label>Alternate Phone <input type="tel" name="alternate_phone" id="companyModalAltPhone" placeholder="+91 80 1234 5678"></label>
+          <label>Primary Email <input type="email" name="email" id="companyModalEmail" placeholder="billing@company.com"></label>
+          <label>Alternate Email <input type="email" name="alternate_email" id="companyModalAltEmail" placeholder="accounts@company.com"></label>
+          <label>Website <input type="url" name="website" id="companyModalWebsite" placeholder="https://example.com"></label>
+          <label>Customer Status
+            <select name="status" id="companyModalStatus">
+              <option value="active">Active</option>
+              <option value="lead">Lead</option>
+              <option value="churned">Churned</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </label>
+          <label>Lead Source
+            <select name="source" id="companyModalSource">
+              <option value="Inbound">Inbound</option>
+              <option value="Referral">Referral</option>
+              <option value="Outbound">Outbound</option>
+              <option value="Event">Event</option>
+              <option value="Other">Other</option>
+            </select>
+          </label>
+          <label class="span-2">Billing Address <textarea name="billing_address" id="companyModalBillingAddress" placeholder="Registered office / tax invoice billing address..."></textarea></label>
+          <label class="span-2">Shipping Address <textarea name="shipping_address" id="companyModalShippingAddress" placeholder="Delivery / shipping destination address..."></textarea></label>
+          <label>City <input type="text" name="city" id="companyModalCity" placeholder="e.g. Bengaluru"></label>
+          <label>State <input type="text" name="state" id="companyModalState" placeholder="e.g. Karnataka"></label>
+          <label>Country <input type="text" name="country" id="companyModalCountry" value="India"></label>
+          <label>Pin Code <input type="text" name="pin_code" id="companyModalPinCode" placeholder="e.g. 560001"></label>
+        </div>
+        <p class="field-note">GSTIN, Phone, and Email are checked for duplicates upon saving.</p>
+        <div class="modal-actions">
+          <button type="button" class="button button-quiet" data-close-modal>Cancel</button>
+          <button type="submit" class="button button-primary" id="saveCustomerBtn">Save Customer Account</button>
+        </div>
+      </form>
+
+      <!-- Duplicate Customer Warning Modal -->
+      <div class="modal form-modal modal-wide" id="duplicateCustomerModal" role="dialog">
+        <button type="button" class="modal-close" data-close-modal aria-label="Close">×</button>
+        <p class="eyebrow" style="color: #f59e0b;">⚠️ Duplicate Record Notice</p>
+        <h2>Matching Customer Found</h2>
+        <p class="modal-intro">The details entered match existing customer records in your database based on GSTIN, Email, Phone, or Name.</p>
+        <div class="table-scroll" style="margin: 1rem 0; max-height: 200px;">
+          <table>
+            <thead>
+              <tr>
+                <th>Customer Name</th>
+                <th>Match Details</th>
+                <th>Owner</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="duplicateCustomerList"></tbody>
+          </table>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="button button-quiet" data-close-modal>Cancel &amp; Edit Details</button>
+          <button type="button" class="button button-primary" id="ignoreDuplicateSaveBtn">Proceed &amp; Save Customer</button>
+        </div>
+      </div>
+
+      <!-- Purchase Detail Modal -->
+      <div class="modal form-modal" id="purchaseDetailModal" role="dialog">
+        <button type="button" class="modal-close" data-close-modal aria-label="Close">×</button>
+        <p class="eyebrow">Transaction Breakdown</p>
+        <h2 id="purchaseDetailTitle">Purchase Item Detail</h2>
+        <div class="panel-lite" style="padding: 1rem; margin: 1rem 0;">
+          <div class="form-grid">
+            <div><small style="color: var(--muted); font-size: 11px;">Product</small><h4 id="purchaseDetailProductName" style="margin: 0;">-</h4></div>
+            <div><small style="color: var(--muted); font-size: 11px;">SKU</small><p id="purchaseDetailSku" style="margin: 0; font-weight: 600;">-</p></div>
+            <div><small style="color: var(--muted); font-size: 11px;">Quantity</small><p id="purchaseDetailQty" style="margin: 0; font-weight: 600;">-</p></div>
+            <div><small style="color: var(--muted); font-size: 11px;">Unit Price</small><p id="purchaseDetailUnitPrice" style="margin: 0; font-weight: 600;">-</p></div>
+            <div><small style="color: var(--muted); font-size: 11px;">Discount</small><p id="purchaseDetailDiscount" style="margin: 0; font-weight: 600;">-</p></div>
+            <div><small style="color: var(--muted); font-size: 11px;">GST Tax</small><p id="purchaseDetailTax" style="margin: 0; font-weight: 600;">-</p></div>
+            <div class="span-2"><small style="color: var(--muted); font-size: 11px;">Net Total</small><h3 id="purchaseDetailTotal" style="margin: 0; color: #10b981;">-</h3></div>
+          </div>
+        </div>
+        <dl class="details-list">
+          <div><dt>Purchase Date</dt><dd id="purchaseDetailDate">-</dd></div>
+          <div><dt>Source Document</dt><dd id="purchaseDetailSourceDoc">-</dd></div>
+          <div><dt>License / Serial #</dt><dd id="purchaseDetailLicenseKey">SP-LIC-2026-X892</dd></div>
+          <div><dt>SLA Support</dt><dd id="purchaseDetailSla">Standard 24x7 Enterprise Support</dd></div>
+        </dl>
+        <div class="modal-actions" style="margin-top: 1rem;">
+          <button type="button" class="button button-primary" data-close-modal>Close</button>
+        </div>
+      </div>
+
+      <form class="modal form-modal" id="contactModal">
+        <button type="button" class="modal-close" data-close-modal aria-label="Close">×</button>
+        <p class="eyebrow">Customer Contact</p>
+        <h2>Add Contact</h2>
+        <div class="form-grid">
+          <label>First Name <input type="text" name="firstName" required placeholder="e.g. Ananya"></label>
+          <label>Last Name <input type="text" name="lastName" required placeholder="e.g. Rao"></label>
+          <label>Customer Account <select name="contactCompany" id="contactCompanySelect"><option value="">Select customer...</option></select></label>
+          <label>Job Title <input type="text" name="contactTitle" required placeholder="e.g. Head of Finance"></label>
+          <label>Role / Function
+            <select name="contactRole" id="contactRoleSelect">
+              <option value="Primary">Primary Contact</option>
+              <option value="Decision Maker">Decision Maker</option>
+              <option value="Finance">Finance / Billing</option>
+              <option value="Technical">Technical / Integration</option>
+              <option value="Billing">Billing Contact</option>
+            </select>
+          </label>
+          <label>Department <input type="text" name="contactDepartment" placeholder="e.g. Finance, Tech"></label>
+          <label>Email <input name="contactEmail" type="email" required placeholder="ananya@company.com"></label>
+          <label>Phone <input name="contactPhone" type="tel" placeholder="+91 98765 43210"></label>
+          <label class="checkbox-field span-2"><input name="isPrimary" type="checkbox"> Mark as primary contact</label>
+        </div>
+        <p class="field-note">Email format is validated and duplicate emails are flagged for review.</p>
+        <div class="modal-actions">
+          <button type="button" class="button button-quiet" data-close-modal>Cancel</button>
+          <button type="submit" class="button button-primary">Save Contact</button>
+        </div>
+      </form>
+      <form class="modal form-modal" id="dealModal"><button type="button" class="modal-close" data-close-modal aria-label="Close">×</button><p class="eyebrow">Sales opportunity</p><h2>Create deal</h2><div class="form-grid"><label>Deal title <input type="text" name="dealTitle" required placeholder="e.g. Payment gateway rollout"></label><label>Company <select name="dealCompany" id="dealCompany"><option>RazorpayX Partners</option><option>Urban Company</option><option>Groww Wealth</option></select></label><label>Value (INR) <input name="dealValue" type="number" required placeholder="500000"></label><label>Expected close date <input name="dealDate" type="date" required></label><label>Starting stage <select name="dealStage"><option>New Lead · 10%</option><option>Qualified · 25%</option><option>Proposal Sent · 50%</option></select></label><label>Owner <select name="dealOwner"><option>Aarav Sharma</option><option>Priya Menon</option><option>Kunal Shah</option></select></label></div><div class="modal-actions"><button type="button" class="button button-quiet" data-close-modal>Cancel</button><button type="submit" class="button button-primary">Create deal</button></div></form>
       <form class="modal form-modal" id="taskModal"><button type="button" class="modal-close" data-close-modal aria-label="Close">×</button><p class="eyebrow">Follow-up</p><h2>Add task</h2><div class="form-grid"><label class="span-2">Task title <input type="text" name="taskTitle" required placeholder="e.g. Send proposal follow-up"></label><label>Due date <input name="taskDate" type="date" required></label><label>Priority <select name="taskPriority"><option value="high">High</option><option value="medium" selected>Medium</option><option value="low">Low</option></select></label><label>Assign to <select name="taskAssignee"><option>Aarav Sharma</option><option>Priya Menon</option><option>Kunal Shah</option></select></label><label>Link to <select name="taskLink"><option>RazorpayX Partners</option><option>Urban Company</option><option>Groww Wealth</option><option>No link</option></select></label></div><div class="modal-actions"><button type="button" class="button button-quiet" data-close-modal>Cancel</button><button type="submit" class="button button-primary">Create task</button></div></form>
       <form class="modal form-modal" id="activityModal"><button type="button" class="modal-close" data-close-modal aria-label="Close">×</button><p class="eyebrow">Communication log</p><h2>Log activity</h2><div class="activity-type-picker"><label><input type="radio" name="activityType" value="call" checked><span>☎ Call</span></label><label><input type="radio" name="activityType" value="email"><span>✉ Email</span></label><label><input type="radio" name="activityType" value="meeting"><span>▣ Meeting</span></label><label><input type="radio" name="activityType" value="note"><span>▤ Note</span></label></div><div class="form-grid"><label>Company <select name="activityCompany"><option>RazorpayX Partners</option><option>Urban Company</option><option>Groww Wealth</option></select></label><label>Contact / deal <select name="activityContact"><option>Neha Agarwal</option><option>Payment Gateway Expansion</option><option>None</option></select></label><label class="span-2">What happened?<textarea name="activityBody" required placeholder="Add the key details from this conversation…"></textarea></label></div><div class="modal-actions"><button type="button" class="button button-quiet" data-close-modal>Cancel</button><button type="submit" class="button button-primary">Save activity</button></div></form>
       <form class="modal form-modal invite-modal" id="inviteModal"><button type="button" class="modal-close" data-close-modal aria-label="Close">×</button><p class="eyebrow">Workspace access</p><h2>Invite teammate</h2><p class="modal-intro">They will receive a secure link to set a password. Invitations expire after 72 hours.</p><div class="form-grid"><label class="span-2">Work email <input name="inviteEmail" type="email" required placeholder="teammate@smartpay.in"></label><label class="span-2">Role <select name="inviteRole"><option>Sales Rep / Account Manager</option><option>Sales Manager</option><option>Read-only / Viewer</option><option>Admin</option></select></label></div><div class="modal-actions"><button type="button" class="button button-quiet" data-close-modal>Cancel</button><button type="submit" class="button button-primary">Send invite</button></div></form>
@@ -1525,6 +2375,178 @@
           <button type="submit" class="button button-primary">Save Tier Rule</button>
         </div>
       </form>
+
+      <!-- Automation Rule Modal -->
+      <form class="modal form-modal" id="automationModal">
+        <button type="button" class="modal-close" data-close-modal aria-label="Close">×</button>
+        <p class="eyebrow">Workflow Engine</p>
+        <h2 id="automationModalTitle">Create Automation Rule</h2>
+        <input type="hidden" id="autoRuleId" name="rule_id" value="">
+        <div class="form-grid">
+          <label class="span-2">Rule Name <input type="text" id="autoRuleName" name="name" required placeholder="e.g. High Value Deal Manager Approval &amp; Task"></label>
+          <label class="span-2">Description / Objective <input type="text" id="autoDescription" name="description" placeholder="e.g. Triggers manager review and tasks when deals exceed ₹10L"></label>
+          
+          <label>Trigger Event (WHEN)
+            <select id="autoEvent" name="event" required>
+              <optgroup label="Leads &amp; Deals">
+                <option value="lead_created">Lead Created</option>
+                <option value="deal_stage_changed">Deal Stage Changed</option>
+                <option value="deal_won">Deal Won</option>
+                <option value="deal_inactive_7d">Deal Inactive for 7 Days</option>
+              </optgroup>
+              <optgroup label="Quotations">
+                <option value="quotation_created">Quotation Created</option>
+                <option value="quotation_viewed">Quotation Viewed by Customer</option>
+                <option value="quotation_accepted">Quotation Accepted by Customer</option>
+                <option value="quotation_rejected">Quotation Rejected by Customer</option>
+                <option value="quotation_expired">Quotation Expired</option>
+              </optgroup>
+              <optgroup label="Orders &amp; Invoices">
+                <option value="po_approved">PO Verified &amp; Approved</option>
+                <option value="po_rejected">PO Rejected</option>
+                <option value="invoice_created">Invoice Issued</option>
+                <option value="invoice_overdue">Invoice Overdue</option>
+                <option value="payment_recorded">Payment Recorded</option>
+              </optgroup>
+              <optgroup label="Renewals">
+                <option value="renewal_due_90d">Renewal Due in 90 Days</option>
+                <option value="renewal_due_60d">Renewal Due in 60 Days</option>
+                <option value="renewal_due_30d">Renewal Due in 30 Days</option>
+                <option value="renewal_overdue">Renewal Overdue</option>
+              </optgroup>
+            </select>
+          </label>
+
+          <label>Action Type (THEN)
+            <select id="autoActionType" name="action_type" required>
+              <option value="create_task">Create Follow-Up Task</option>
+              <option value="send_notification">Send In-App Notification</option>
+              <option value="request_approval">Require Manager Approval</option>
+              <option value="send_email">Send Email Template</option>
+              <option value="change_status">Update Entity Status</option>
+            </select>
+          </label>
+
+          <div class="span-2" style="background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0;">
+            <strong style="display: block; font-size: 0.85rem; color: #334155; margin-bottom: 8px;">Condition Rule (IF)</strong>
+            <div style="display: grid; grid-template-columns: 2fr 1fr 2fr; gap: 8px;">
+              <input type="text" id="autoCondField" placeholder="Field (e.g. amount, discount_percent)" value="amount">
+              <select id="autoCondOp">
+                <option value=">">&gt; Greater than</option>
+                <option value=">=">&gt;= Greater/Equals</option>
+                <option value="<">&lt; Less than</option>
+                <option value="<=">&lt;= Less/Equals</option>
+                <option value="==">== Equals</option>
+                <option value="!=">!= Not Equals</option>
+              </select>
+              <input type="text" id="autoCondVal" placeholder="Value (e.g. 1000000 or 15)" value="1000000">
+            </div>
+          </div>
+
+          <label class="span-2">Task Title / Notification Subject <input type="text" id="autoActionTitle" name="action_title" placeholder="e.g. Follow up on high value opportunity"></label>
+          <label>Target User Role
+            <select id="autoActionRole" name="action_role">
+              <option value="owner">Entity Owner</option>
+              <option value="Sales Manager">Sales Manager</option>
+              <option value="admin">Administrator</option>
+            </select>
+          </label>
+
+          <label style="display: flex; align-items: center; gap: 8px; font-weight: 600; cursor: pointer; margin-top: 1.5rem;">
+            <input type="checkbox" id="autoIsActive" name="is_active" checked>
+            <span>Enable Rule Immediately</span>
+          </label>
+        </div>
+
+        <div class="modal-actions" style="display: flex; justify-content: space-between; align-items: center;">
+          <button type="button" class="button button-quiet" id="autoDryRunBtn" style="color: #6366f1; border-color: #c7d2fe;">🧪 Test Rule (Dry Run)</button>
+          <div style="display: flex; gap: 8px;">
+            <button type="button" class="button button-quiet" data-close-modal>Cancel</button>
+            <button type="submit" class="button button-primary">Save Automation Rule</button>
+          </div>
+        </div>
+      </form>
+
+      <!-- Document Modal -->
+      <form class="modal form-modal" id="documentModal">
+        <button type="button" class="modal-close" data-close-modal aria-label="Close">×</button>
+        <p class="eyebrow">Document Repository</p>
+        <h2>Upload / Link Document</h2>
+        <div class="form-grid">
+          <label class="span-2">Document Title <input type="text" id="docName" name="name" required placeholder="e.g. Master Services Agreement (MSA) - RazorpayX"></label>
+          <label>Document Type
+            <select id="docType" name="type">
+              <option value="Contract">Contract</option>
+              <option value="NDA">NDA</option>
+              <option value="Proposal">Proposal</option>
+              <option value="Compliance">Compliance</option>
+              <option value="Other">Other</option>
+            </select>
+          </label>
+          <label>File URL / Path <input type="text" id="docPath" name="file_path" required placeholder="https://docs.smartpay.in/... or /uploads/msa.pdf"></label>
+          <label>Version <input type="text" id="docVersion" name="version" value="v1.0"></label>
+          <label>Linked Company ID <input type="number" id="docCompanyId" name="company_id" placeholder="1"></label>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="button button-quiet" data-close-modal>Cancel</button>
+          <button type="submit" class="button button-primary">Save Document</button>
+        </div>
+      </form>
+
+      <!-- Email Template Modal -->
+      <form class="modal form-modal" id="templateModal">
+        <button type="button" class="modal-close" data-close-modal aria-label="Close">×</button>
+        <p class="eyebrow">Communication Hub</p>
+        <h2>Create Email Template</h2>
+        <div class="form-grid">
+          <label class="span-2">Template Name <input type="text" id="tplName" name="name" required placeholder="e.g. Welcome & Discovery Call Request"></label>
+          <label class="span-2">Subject Line <input type="text" id="tplSubject" name="subject" required placeholder="Hi {{contact_name}}, introduction to SmartPay"></label>
+          <label class="span-2">Email Body <textarea id="tplBody" name="body_html" required rows="5" placeholder="Hello {{contact_name}},\n\nThank you for reaching out to {{company_name}}..."></textarea></label>
+          <label class="span-2">Available Variables <input type="text" id="tplVars" name="variables" value="{{contact_name}}, {{company_name}}, {{deal_title}}, {{rep_name}}" readonly></label>
+        </div>
+      <!-- Public Customer Quotation View Modal -->
+      <div class="modal modal-wide" id="publicQuoteModal" role="dialog" aria-labelledby="pubQuoteTitle">
+        <button type="button" class="modal-close" data-close-modal aria-label="Close">×</button>
+        <p class="eyebrow">Customer Portal Preview</p>
+        <h2 id="pubQuoteTitle">Quotation Review</h2>
+        <div class="panel" style="padding: 1.5rem; background: var(--bg-surface); border: 1px solid var(--border-light); margin-bottom: 1rem;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+              <strong style="font-size: 1.25rem;" id="pubQuoteNumber">QTN-2026-001</strong>
+              <p style="color: var(--text-secondary); margin-top: 0.25rem;">Issued to: <strong id="pubQuoteClient">RazorpayX Partners</strong></p>
+            </div>
+            <span class="status-pill status-active" id="pubQuoteStatus">Sent</span>
+          </div>
+          <div class="table-scroll" style="margin-top: 1.5rem;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Product / Description</th>
+                  <th>Qty</th>
+                  <th>Unit Price</th>
+                  <th>Discount</th>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody id="pubQuoteItemsBody"></tbody>
+            </table>
+          </div>
+          <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
+            <div style="width: 250px;">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;"><span>Subtotal:</span><strong id="pubQuoteSubtotal">₹0</strong></div>
+              <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;"><span>GST (18%):</span><strong id="pubQuoteTax">₹0</strong></div>
+              <div style="display: flex; justify-content: space-between; font-size: 1.1rem; border-top: 1px solid var(--border-light); padding-top: 0.5rem;"><span>Grand Total:</span><strong id="pubQuoteTotal" style="color: var(--text-primary);">₹0</strong></div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-actions" style="justify-content: space-between;">
+          <button type="button" class="button button-quiet" data-close-modal>Close</button>
+          <div style="display: flex; gap: 0.75rem;">
+            <button type="button" class="button button-secondary" id="pubRejectBtn" style="border-color: #ef4444; color: #ef4444;">❌ Reject Quotation</button>
+            <button type="button" class="button button-primary" id="pubAcceptBtn" style="background: #10b981;">⚡ Accept Quotation</button>
+          </div>
+        </div>
+      </div>
     </div>
     <div class="popover notification-popover" id="notificationPopover"><div class="popover-heading"><h3>Reminders</h3><span>4 unread</span></div><p><b>Overdue</b> · Send revised proposal to Urban Company</p><p><b>Due today</b> · Call Neha at RazorpayX Partners</p><p><b>Due today</b> · Update discovery notes for Groww Wealth</p><button type="button" class="text-button" data-view-go="tasks">Open tasks →</button></div>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>

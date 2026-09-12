@@ -165,6 +165,9 @@ router.post('/', requireAuth, async (req, res, next) => {
     // Calculate totals
     const { subtotal, total } = calculateTotals(items, Number(discount_percent), Number(tax_percent));
 
+const { triggerAutomation } = require('../services/automationService');
+
+    // Create invoice
     const invoice = await crmStore.create('invoices', {
       invoice_number,
       po_id: po_id ? Number(po_id) : null,
@@ -184,6 +187,16 @@ router.post('/', requireAuth, async (req, res, next) => {
       terms: terms || 'Net 15 days from issue date',
       user_id: userId
     });
+
+    // Trigger automation event
+    triggerAutomation('invoice_created', {
+      invoice_id: invoice.id,
+      invoice_number: invoice.invoice_number,
+      total: invoice.total,
+      due_date: invoice.due_date,
+      company_id: invoice.company_id,
+      deal_id: invoice.deal_id
+    }, req.user).catch(err => console.error('Automation error (invoice_created):', err));
 
     // Create line items
     const savedItems = [];
@@ -333,6 +346,17 @@ router.post('/:id/payments', requireAuth, async (req, res, next) => {
       time: 'Just now',
       user_id: userId
     });
+
+    // Trigger automation event
+    triggerAutomation('payment_recorded', {
+      payment_id: payment.id,
+      payment_number: payment.payment_number,
+      invoice_id: invoice.id,
+      invoice_number: invoice.invoice_number,
+      amount: paymentAmount,
+      new_status: newStatus,
+      company_id: invoice.company_id
+    }, req.user).catch(err => console.error('Automation error (payment_recorded):', err));
 
     res.status(201).json({
       success: true,
