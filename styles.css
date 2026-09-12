@@ -2330,59 +2330,48 @@
   right: 24px;
   bottom: 24px;
   z-index: 9999;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 18px;
+  justify-content: center;
   background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #06b6d4 100%);
   color: #ffffff;
   border: none;
-  border-radius: 30px;
   font-family: 'Inter', -apple-system, sans-serif;
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: 0.3px;
-  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.38), 0 2px 6px rgba(0, 0, 0, 0.12);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  box-shadow: 0 6px 18px rgba(79, 70, 229, 0.35), 0 2px 6px rgba(0, 0, 0, 0.1);
   cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.2s ease-in-out;
 }
 
 .iknow-floating-btn:hover {
-  transform: translateY(-3px) scale(1.03);
-  box-shadow: 0 12px 32px rgba(99, 102, 241, 0.55), 0 4px 10px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 10px 24px rgba(79, 70, 229, 0.45), 0 4px 10px rgba(0, 0, 0, 0.15);
 }
 
 .iknow-floating-btn:active {
-  transform: translateY(-1px) scale(0.98);
+  transform: translateY(0) scale(0.95);
 }
 
-.iknow-btn-sparkle {
+.iknow-btn-ik {
   font-size: 14px;
-  animation: iknowSparkle 2s infinite ease-in-out;
-}
-
-@keyframes iknowSparkle {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.6; transform: scale(1.2) rotate(15deg); }
-}
-
-.iknow-btn-icon {
-  font-size: 18px;
-}
-
-.iknow-btn-label {
-  font-weight: 700;
-}
-
-.iknow-btn-badge {
-  background: rgba(255, 255, 255, 0.25);
-  backdrop-filter: blur(4px);
-  color: #ffffff;
-  font-size: 10px;
   font-weight: 800;
-  padding: 2px 6px;
-  border-radius: 10px;
-  text-transform: uppercase;
+  color: #ffffff;
+}
+
+.iknow-btn-dot {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 10px;
+  height: 10px;
+  background: #10b981;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
 }
 
 /* Chat Drawer Panel */

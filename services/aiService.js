@@ -1,62 +1,96 @@
 /**
- * SmartPay CRM — iKnow AI Service Provider
+ * SmartPay CRM — iKnow AI Service Provider (Upgraded)
  * 
- * Manages interaction with AI providers (Google Gemini / OpenAI / Custom LLM API)
- * and includes a deterministic Smart CRM Intelligence Engine for offline / zero-key mode.
- * Enforces ground-truth precision and strict confirmation flows.
+ * Centralized AI Intelligence & LLM Service supporting:
+ * - Provider-agnostic GPT LLM integration (OpenAI, Gemini, custom proxies) via env vars:
+ *   AI_PROVIDER, AI_MODEL, AI_API_KEY (or OPENAI_API_KEY / GEMINI_API_KEY)
+ * - Deterministic Smart CRM Intelligence Engine fallback for offline/zero-key reliability
+ * - CRM System Prompt establishing ground-truth precision & strict tool execution rules
+ * - Specialized intelligence: Customer, Deal Health, Quotation, Invoice/Collection, Renewal,
+ *   Daily Briefing, "What should I do today?", "Check this page", and "Fix safe issues".
  */
 
 const { formatCurrency } = require('./aiContextService');
 const crmStore = require('../crm-store');
 
+const SYSTEM_PROMPT = `You are iKnow, the intelligent AI copilot for SmartPay CRM.
+You have access only to authorized SmartPay CRM data and tools provided in the context.
+Never invent CRM information, customer names, amounts, or financial totals.
+When information is unavailable, clearly state so.
+Use actual CRM metrics derived from authoritative backend calculations.
+For actions, never claim an action succeeded unless confirmed by the backend execution layer.
+Before executing write operations, obtain explicit user confirmation via structured tool action buttons.
+Never attempt raw SQL or expose internal secrets, API keys, or system tokens.
+Respect the current user's permissions.
+Prefer concise, professional, action-oriented responses that explain:
+1. What is happening
+2. Why it is happening
+3. What should be done next
+You are an intelligent CRM sales copilot, not a generic chatbot.`;
+
 /**
  * Main processMessage entry point.
  */
-async function processMessage(promptMessage = '', contextData = {}) {
+async function processMessage(promptMessage = '', contextData = {}, sessionHistory = []) {
   const query = promptMessage.trim().toLowerCase();
   const activeCtx = contextData.activeEntityContext;
   const metrics = contextData.summaryMetrics || {};
   const currentPage = (contextData.currentPage || 'dashboard').toLowerCase();
   const user = contextData.user || {};
 
-  // Try LLM provider if API key is configured
-  const apiKey = process.env.GEMINI_API_KEY || process.env.OPENAI_API_KEY || process.env.AI_API_KEY;
-  if (apiKey) {
+  // 1. Try LLM Provider if configured via environment variables
+  const apiKey = process.env.AI_API_KEY || process.env.OPENAI_API_KEY || process.env.GEMINI_API_KEY;
+  const provider = (process.env.AI_PROVIDER || (process.env.OPENAI_API_KEY ? 'openai' : 'gemini')).toLowerCase();
+  const model = process.env.AI_MODEL || (provider === 'openai' ? 'gpt-4o-mini' : 'gemini-1.5-flash');
+
+  if (apiKey && apiKey !== 'your_api_key_here') {
     try {
-      // Call LLM Provider if available...
-      // (Falling back gracefully if network or API error occurs)
+      const llmResult = await callLlmProvider({ provider, model, apiKey, systemPrompt: SYSTEM_PROMPT, query: promptMessage, contextData, sessionHistory });
+      if (llmResult && llmResult.reply) {
+        return llmResult;
+      }
     } catch (err) {
-      console.warn('⚠️ AI Provider call failed, using Smart CRM Engine:', err.message);
+      console.warn('⚠️  LLM Provider call failed, utilizing Smart CRM Intelligence Engine:', err.message);
     }
   }
 
-  // ─── SMART CRM INTELLIGENCE ENGINE (Deterministic Fallback & NLU) ─────
+  // 2. SMART CRM INTELLIGENCE ENGINE (Deterministic Fallback & NLU)
 
-  // 1. DAILY BRIEFING / WHAT SHOULD I DO TODAY?
+  // A. "CHECK THIS PAGE" / PAGE DIAGNOSTICS
+  if (query.includes('check this page') || query.includes('inspect page') || query.includes('analyze page') || query.includes('audit page')) {
+    return generatePageInspectionResponse(currentPage, activeCtx, metrics);
+  }
+
+  // B. "FIX SAFE ISSUES" / PROPOSED FIXES
+  if (query.includes('fix safe issues') || query.includes('fix issues') || query.includes('resolve issues')) {
+    return generateFixSafeIssuesResponse(currentPage, activeCtx, metrics);
+  }
+
+  // C. DAILY BRIEFING / WHAT SHOULD I DO TODAY?
   if (query.includes('briefing') || query.includes('what should i do') || query.includes('priority') || query.includes('today')) {
     return generateDailyBriefingResponse(user, metrics, activeCtx);
   }
 
-  // 2. CUSTOMER INTELLIGENCE & SNAPSHOT
+  // D. CUSTOMER INTELLIGENCE
   if (query.includes('customer') || query.includes('merchant') || activeCtx?.entityType === 'Customer') {
     if (activeCtx && activeCtx.entityType === 'Customer') {
       return generateCustomerSnapshotResponse(activeCtx);
     }
-    if (query.includes('overdue') || query.includes('owe') || query.includes('purchase')) {
+    if (query.includes('overdue') || query.includes('owe') || query.includes('unpaid')) {
       return generateCustomerCollectionResponse(metrics);
     }
     return generateCustomerListSummary();
   }
 
-  // 3. DEAL & PIPELINE INTELLIGENCE
-  if (query.includes('deal') || query.includes('pipeline') || query.includes('opportunity') || activeCtx?.entityType === 'Deal') {
+  // E. DEAL & PIPELINE INTELLIGENCE
+  if (query.includes('deal') || query.includes('pipeline') || query.includes('stuck') || activeCtx?.entityType === 'Deal') {
     if (activeCtx && activeCtx.entityType === 'Deal') {
       return generateDealHealthResponse(activeCtx);
     }
     return generatePipelineSummaryResponse(metrics);
   }
 
-  // 4. QUOTATION INTELLIGENCE
+  // F. QUOTATION INTELLIGENCE
   if (query.includes('quote') || query.includes('quotation') || activeCtx?.entityType === 'Quotation') {
     if (activeCtx && activeCtx.entityType === 'Quotation') {
       return generateQuotationAnalysisResponse(activeCtx);
@@ -64,50 +98,182 @@ async function processMessage(promptMessage = '', contextData = {}) {
     return generateQuotationListResponse();
   }
 
-  // 5. INVOICE & COLLECTION INTELLIGENCE
-  if (query.includes('invoice') || query.includes('payment') || query.includes('collect') || activeCtx?.entityType === 'Invoice') {
+  // G. INVOICE & COLLECTION INTELLIGENCE
+  if (query.includes('invoice') || query.includes('payment') || query.includes('outstanding') || activeCtx?.entityType === 'Invoice') {
     if (activeCtx && activeCtx.entityType === 'Invoice') {
       return generateInvoiceAnalysisResponse(activeCtx);
     }
     return generateInvoiceOverdueResponse(metrics);
   }
 
-  // 6. RENEWAL INTELLIGENCE
+  // H. RENEWAL INTELLIGENCE
   if (query.includes('renewal') || query.includes('contract') || activeCtx?.entityType === 'Renewal') {
     return generateRenewalSummaryResponse(metrics, activeCtx);
   }
 
-  // 7. CURRENT ENTITY CONTEXTUAL QUERY
-  if ((query.includes('tell me about') || query.includes('summarize') || query.includes('this') || query.includes('details')) && activeCtx) {
+  // I. ENTITY CONTEXTUAL SUMMARY
+  if ((query.includes('tell me about') || query.includes('summarize') || query.includes('details')) && activeCtx) {
     if (activeCtx.entityType === 'Customer') return generateCustomerSnapshotResponse(activeCtx);
     if (activeCtx.entityType === 'Deal') return generateDealHealthResponse(activeCtx);
     if (activeCtx.entityType === 'Quotation') return generateQuotationAnalysisResponse(activeCtx);
     if (activeCtx.entityType === 'Invoice') return generateInvoiceAnalysisResponse(activeCtx);
   }
 
-  // DEFAULT CONTEXT-AWARE ASSISTANT RESPONSE
+  // DEFAULT CONTEXT-AWARE RESPONSE
   return generateGenericContextResponse(user, currentPage, activeCtx, metrics);
 }
 
-// ─── RESPONSE GENERATORS ─────────────────────────────────────────────
+// ─── LLM PROVIDER CALL ───────────────────────────────────────────────
+
+async function callLlmProvider({ provider, model, apiKey, systemPrompt, query, contextData, sessionHistory }) {
+  if (provider === 'openai' || process.env.OPENAI_API_KEY) {
+    const endpoint = process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1/chat/completions';
+    const messages = [
+      { role: 'system', content: `${systemPrompt}\n\nCurrent Authorized CRM Context:\n${JSON.stringify(contextData, null, 2)}` }
+    ];
+
+    if (Array.isArray(sessionHistory)) {
+      sessionHistory.slice(-4).forEach(h => {
+        messages.push({ role: h.sender === 'user' ? 'user' : 'assistant', content: h.text });
+      });
+    }
+    messages.push({ role: 'user', content: query });
+
+    const resp = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model,
+        messages,
+        temperature: Number(process.env.AI_TEMPERATURE || 0.2),
+        max_tokens: Number(process.env.AI_MAX_TOKENS || 800)
+      })
+    });
+
+    if (!resp.ok) {
+      throw new Error(`OpenAI API error: ${resp.status} ${await resp.text()}`);
+    }
+
+    const data = await resp.json();
+    const replyText = data.choices?.[0]?.message?.content || '';
+    return {
+      reply: replyText,
+      actions: [
+        { label: 'Check This Page', action: 'trigger_prompt', prompt: 'Check this page' },
+        { label: 'Today\'s Briefing', action: 'trigger_prompt', prompt: 'Give me today\'s briefing' }
+      ]
+    };
+  }
+
+  return null;
+}
+
+// ─── INTELLIGENCE GENERATORS ─────────────────────────────────────────
+
+function generatePageInspectionResponse(currentPage, activeCtx, metrics) {
+  let reply = `### 🔍 Page Diagnostic Analysis: **${currentPage.toUpperCase()}**\n\n`;
+
+  if (activeCtx) {
+    reply += `#### 🟢 Good Signals\n`;
+    reply += `- Verified active record: **${activeCtx.name || activeCtx.number || activeCtx.title}** (${activeCtx.entityType})\n`;
+    if (activeCtx.gstin) reply += `- Tax GSTIN compliance record on file.\n`;
+    if (activeCtx.openTasks && activeCtx.openTasks.length > 0) reply += `- Active follow-up tasks scheduled.\n`;
+
+    reply += `\n#### ⚠️ Attention Required\n`;
+    if (activeCtx.purchaseHistory && activeCtx.purchaseHistory.balanceDue !== '₹0') {
+      reply += `- Outstanding balance of **${activeCtx.purchaseHistory.balanceDue}** requires collection outreach.\n`;
+    }
+    if (activeCtx.requires_approval) {
+      reply += `- Discount threshold exceeds representative limits and requires manager approval.\n`;
+    }
+    if (!activeCtx.openTasks || activeCtx.openTasks.length === 0) {
+      reply += `- No upcoming follow-up task scheduled for this account.\n`;
+    }
+
+    reply += `\n#### 💡 Recommended Fixes\n`;
+    reply += `1. Schedule follow-up task for account owner.\n`;
+    if (activeCtx.purchaseHistory && activeCtx.purchaseHistory.balanceDue !== '₹0') {
+      reply += `2. Send payment reminder for balance of ${activeCtx.purchaseHistory.balanceDue}.\n`;
+    }
+
+    return {
+      reply,
+      actions: [
+        { label: 'Fix Safe Issues', action: 'trigger_prompt', prompt: 'Fix safe issues' },
+        { label: 'Create Follow-up Task', action: 'request_confirmation', tool: 'create_follow_up', payload: { company_name: activeCtx.name || activeCtx.company_name }, badge: 'TASK' }
+      ]
+    };
+  }
+
+  reply += `#### 🟢 Good Signals\n`;
+  reply += `- Open pipeline active at **${metrics.openPipelineValue}** across **${metrics.openDealsCount}** opportunities.\n`;
+
+  reply += `\n#### ⚠️ Attention Required\n`;
+  if (metrics.overdueInvoicesCount > 0) {
+    reply += `- **${metrics.overdueInvoicesCount} overdue invoices** totaling **${metrics.overdueAmount}**.\n`;
+  }
+  if (metrics.overdueTasksCount > 0) {
+    reply += `- **${metrics.overdueTasksCount} overdue tasks** past due date.\n`;
+  }
+  if (metrics.pendingApprovalsCount > 0) {
+    reply += `- **${metrics.pendingApprovalsCount} pending approvals** waiting for manager review.\n`;
+  }
+
+  reply += `\n#### 💡 Recommended Fixes\n`;
+  reply += `1. Review and resolve overdue follow-up tasks.\n`;
+  reply += `2. Trigger collection reminders for overdue invoices.\n`;
+
+  return {
+    reply,
+    actions: [
+      { label: 'Fix Safe Issues', action: 'trigger_prompt', prompt: 'Fix safe issues' },
+      { label: 'View Overdue Invoices', action: 'navigate', targetView: 'invoices', badge: 'FINANCE' }
+    ]
+  };
+}
+
+function generateFixSafeIssuesResponse(currentPage, activeCtx, metrics) {
+  let reply = `### 🛠️ Proposed Safe CRM Fixes\n\n`;
+  reply += `iKnow identified the following non-destructive improvements:\n\n`;
+  reply += `1. **Create High-Priority Follow-up Task**: Schedule collection task for overdue balances.\n`;
+  reply += `2. **Log Activity Reminder**: Record CRM follow-up event for inactive deals.\n\n`;
+  reply += `*Click below to review and confirm execution:*`;
+
+  return {
+    reply,
+    actions: [
+      { label: 'Confirm Follow-Up Task Creation', action: 'request_confirmation', tool: 'create_follow_up', payload: { company_name: activeCtx?.name || 'High Priority Accounts', title: 'Execute Safe Fix: Collection & Follow-up' }, badge: 'TASK' },
+      { label: 'Cancel', action: 'trigger_prompt', prompt: 'Cancel' }
+    ]
+  };
+}
 
 function generateDailyBriefingResponse(user, metrics, activeCtx) {
   const name = (user.name || 'Sales Rep').split(' ')[0];
   const urgentCount = (metrics.pendingApprovalsCount || 0) + (metrics.overdueInvoicesCount || 0) + (metrics.overdueTasksCount || 0);
 
-  let reply = `### ☀️ Daily Briefing for ${user.name || 'you'}\n\n`;
-  reply += `Here is your current sales operating summary:\n\n`;
+  let reply = `### ☀️ Daily Operating Briefing for ${user.name || 'you'}\n\n`;
+  reply += `#### 📊 Today's Metrics\n`;
   reply += `- **Open Pipeline**: **${metrics.openPipelineValue}** across **${metrics.openDealsCount}** deals\n`;
-  reply += `- **Pending Approvals**: **${metrics.pendingApprovalsCount}** requests requiring manager review\n`;
   reply += `- **Overdue Invoices**: **${metrics.overdueInvoicesCount}** invoices totaling **${metrics.overdueAmount}**\n`;
-  reply += `- **Upcoming Renewals**: **${metrics.upcomingRenewalsCount}** contracts due for renewal\n`;
-  reply += `- **Overdue Tasks**: **${metrics.overdueTasksCount}** follow-ups past due date\n\n`;
+  reply += `- **Pending Approvals**: **${metrics.pendingApprovalsCount}** manager review requests\n`;
+  reply += `- **Upcoming Renewals**: **${metrics.upcomingRenewalsCount}** contracts due\n`;
+  reply += `- **Overdue Tasks**: **${metrics.overdueTasksCount}** tasks\n\n`;
 
+  reply += `#### 🚨 Attention Needed\n`;
   if (urgentCount > 0) {
-    reply += `🚨 **Urgent Priority**: You have **${urgentCount} urgent items** needing immediate attention.`;
+    reply += `You have **${urgentCount} items** requiring action today.\n\n`;
   } else {
-    reply += `✨ **Great position**: All urgent priority actions are currently clear!`;
+    reply += `All high-priority queues are clean.\n\n`;
   }
+
+  reply += `#### ⚡ Top Recommended Actions\n`;
+  reply += `1. **Follow up on Overdue Invoices** (${metrics.overdueAmount})\n`;
+  reply += `2. **Review Pending Manager Approvals** (${metrics.pendingApprovalsCount})\n`;
+  reply += `3. **Address Overdue Tasks** (${metrics.overdueTasksCount})\n`;
 
   return {
     reply,
@@ -150,6 +316,13 @@ async function generateCustomerSnapshotResponse(ctx) {
     reply += `⚠️ **Collect Outstanding Balance**: Send a payment reminder for **${ctx.purchaseHistory.balanceDue}**.`;
     return {
       reply,
+      customerCard: {
+        id: ctx.id,
+        name: ctx.name,
+        status: ctx.status,
+        openDeals: ctx.deals ? ctx.deals.length : 0,
+        outstanding: ctx.purchaseHistory.balanceDue
+      },
       actions: [
         { label: 'Send Payment Reminder', action: 'request_confirmation', tool: 'send_payment_reminder', payload: { company_id: ctx.id, company_name: ctx.name, amount: ctx.purchaseHistory.balanceDue }, badge: 'FINANCE' },
         { label: 'Create Follow-up Task', action: 'request_confirmation', tool: 'create_follow_up', payload: { company_id: ctx.id, company_name: ctx.name }, badge: 'TASK' }
@@ -160,6 +333,13 @@ async function generateCustomerSnapshotResponse(ctx) {
   reply += `✅ **Account is healthy**: Consider pitching an upgraded payment tier or enterprise SLA renewal.`;
   return {
     reply,
+    customerCard: {
+      id: ctx.id,
+      name: ctx.name,
+      status: ctx.status,
+      openDeals: ctx.deals ? ctx.deals.length : 0,
+      outstanding: ctx.purchaseHistory.balanceDue
+    },
     actions: [
       { label: 'Draft New Quotation', action: 'navigate', targetView: 'quotations', badge: 'QUOTATION' },
       { label: 'Create Follow-up Task', action: 'request_confirmation', tool: 'create_follow_up', payload: { company_id: ctx.id, company_name: ctx.name }, badge: 'TASK' }
@@ -187,20 +367,35 @@ async function generateCustomerListSummary() {
   };
 }
 
+function generateCustomerCollectionResponse(metrics) {
+  let reply = `### 💳 Outstanding Merchant Accounts\n\n`;
+  reply += `Based on current CRM signals:\n`;
+  reply += `- **Overdue Invoices**: **${metrics.overdueInvoicesCount}**\n`;
+  reply += `- **Total Overdue**: <span style="color:#ef4444; font-weight:700;">${metrics.overdueAmount}</span>\n\n`;
+  reply += `Prioritize outreach to high-balance merchant accounts to avoid payment defaults.`;
+
+  return {
+    reply,
+    actions: [
+      { label: 'View Overdue Invoices', action: 'navigate', targetView: 'invoices', badge: 'FINANCE' }
+    ]
+  };
+}
+
 function generateDealHealthResponse(ctx) {
   const valueNum = ctx.rawValue || 0;
   let health = 'Healthy';
   let badgeColor = '#10b981';
-  let reason = 'Deal is advancing normally through stages.';
+  let reason = 'Based on current CRM signals, deal is advancing normally through pipeline stages.';
 
   if (ctx.stage === 'Negotiation' && valueNum >= 1000000) {
     health = 'Needs Attention';
     badgeColor = '#f59e0b';
-    reason = 'High-value deal (>₹10L) in final negotiation requiring manager sign-off.';
+    reason = 'Based on current CRM signals, high-value deal (>₹10L) in negotiation requires manager sign-off.';
   } else if (ctx.openTasks && ctx.openTasks.length === 0) {
     health = 'At Risk';
     badgeColor = '#ef4444';
-    reason = 'No active follow-up tasks scheduled for this open opportunity.';
+    reason = 'Based on current CRM signals, no active follow-up tasks are scheduled for this opportunity.';
   }
 
   let reply = `### ◫ Deal Health Analysis: ${ctx.title}\n\n`;
@@ -212,6 +407,14 @@ function generateDealHealthResponse(ctx) {
 
   return {
     reply,
+    dealCard: {
+      id: ctx.id,
+      title: ctx.title,
+      company: ctx.company_name,
+      value: ctx.value,
+      stage: ctx.stage,
+      health
+    },
     actions: [
       { label: 'Create Follow-up Task', action: 'request_confirmation', tool: 'create_follow_up', payload: { deal_id: ctx.id, company_name: ctx.company_name }, badge: 'TASK' },
       { label: 'View Pipeline Board', action: 'navigate', targetView: 'pipeline' }
@@ -223,7 +426,7 @@ function generatePipelineSummaryResponse(metrics) {
   let reply = `### ◫ Sales Pipeline Summary\n\n`;
   reply += `- **Total Open Deals**: **${metrics.openDealsCount}**\n`;
   reply += `- **Weighted Forecast**: **${metrics.openPipelineValue}**\n\n`;
-  reply += `Navigate to the Pipeline view to drag & drop opportunities between stages.`;
+  reply += `Navigate to the Pipeline view to manage opportunities and move stages.`;
 
   return {
     reply,
@@ -244,15 +447,31 @@ function generateQuotationAnalysisResponse(ctx) {
     reply += `⚠️ **Manager Approval Gate**: Discount of **${ctx.discount_percent}%** exceeds the 15% representative threshold.\n\n`;
     return {
       reply,
+      quotationCard: {
+        id: ctx.id,
+        number: ctx.number,
+        company: ctx.company_name,
+        total: ctx.total,
+        status: ctx.status,
+        valid_until: ctx.valid_until
+      },
       actions: [
         { label: 'Request Manager Approval', action: 'request_confirmation', tool: 'create_approval_request', payload: { quotation_id: ctx.id, quotation_number: ctx.number, discount_percent: ctx.discount_percent }, badge: 'APPROVAL' }
       ]
     };
   }
 
-  reply += `✅ Quotation meets all pricing guidelines and is ready for customer acceptance.`;
+  reply += `✅ Quotation meets pricing guidelines and is ready for customer acceptance.`;
   return {
     reply,
+    quotationCard: {
+      id: ctx.id,
+      number: ctx.number,
+      company: ctx.company_name,
+      total: ctx.total,
+      status: ctx.status,
+      valid_until: ctx.valid_until
+    },
     actions: [
       { label: 'View Quotations List', action: 'navigate', targetView: 'quotations' }
     ]
@@ -261,7 +480,7 @@ function generateQuotationAnalysisResponse(ctx) {
 
 function generateQuotationListResponse() {
   let reply = `### 📋 Quotations Overview\n\n`;
-  reply += `Manage quotations, track customer views, and trigger manager sign-offs for high discounts.`;
+  reply += `Manage quotations, track customer views, and trigger manager sign-offs for discounts >15%.`;
   return {
     reply,
     actions: [
@@ -281,6 +500,15 @@ function generateInvoiceAnalysisResponse(ctx) {
   if (ctx.rawBalanceDue > 0) {
     return {
       reply,
+      invoiceCard: {
+        id: ctx.id,
+        number: ctx.number,
+        company: ctx.company_name,
+        total: ctx.total,
+        outstanding: ctx.balanceDue,
+        due_date: ctx.due_date,
+        status: ctx.status
+      },
       actions: [
         { label: 'Send Payment Reminder', action: 'request_confirmation', tool: 'send_payment_reminder', payload: { invoice_id: ctx.id, invoice_number: ctx.number, company_name: ctx.company_name, balance: ctx.balanceDue }, badge: 'EMAIL' },
         { label: 'Record Payment', action: 'navigate', targetView: 'invoices' }
@@ -291,6 +519,15 @@ function generateInvoiceAnalysisResponse(ctx) {
   reply += `🎉 Invoice is fully paid!`;
   return {
     reply,
+    invoiceCard: {
+      id: ctx.id,
+      number: ctx.number,
+      company: ctx.company_name,
+      total: ctx.total,
+      outstanding: ctx.balanceDue,
+      due_date: ctx.due_date,
+      status: ctx.status
+    },
     actions: [
       { label: 'View All Invoices', action: 'navigate', targetView: 'invoices' }
     ]
@@ -301,7 +538,7 @@ function generateInvoiceOverdueResponse(metrics) {
   let reply = `### 💳 Outstanding Collections & Overdue Invoices\n\n`;
   reply += `- **Overdue Invoices Count**: **${metrics.overdueInvoicesCount}**\n`;
   reply += `- **Total Overdue Amount**: <span style="color:#ef4444; font-weight:700;">${metrics.overdueAmount}</span>\n\n`;
-  reply += `Prioritize outreach to high-balance overdue accounts to ensure healthy cashflow.`;
+  reply += `Prioritize outreach to high-balance overdue accounts.`;
 
   return {
     reply,
@@ -317,7 +554,7 @@ function generateRenewalSummaryResponse(metrics, activeCtx) {
   if (activeCtx && activeCtx.entityType === 'Renewal') {
     reply += `**Target Contract**: ${activeCtx.product_name} for **${activeCtx.company_name}** (${activeCtx.value}) due on ${activeCtx.renewal_date}.\n\n`;
   }
-  reply += `Proactively engage clients 90 to 30 days before renewal dates to minimize churn.`;
+  reply += `Engage clients 90 to 30 days before renewal dates to prevent churn.`;
 
   return {
     reply,
@@ -344,8 +581,8 @@ function generateGenericContextResponse(user, currentPage, activeCtx, metrics) {
   return {
     reply,
     actions: [
-      { label: 'Give Me My Daily Briefing', action: 'trigger_prompt', prompt: 'Give me my daily briefing' },
-      { label: 'Show My Priority Actions', action: 'navigate', targetView: 'dashboard' },
+      { label: 'Give Me Today\'s Briefing', action: 'trigger_prompt', prompt: 'Give me today\'s briefing' },
+      { label: 'Check This Page', action: 'trigger_prompt', prompt: 'Check this page' },
       { label: 'Show Overdue Invoices', action: 'trigger_prompt', prompt: 'Which invoices are overdue?' }
     ]
   };

@@ -5335,6 +5335,8 @@ function updateIkNowContext(page, entityType = null, entityId = null, entityName
   }
 }
 
+let iKnowSessionHistory = [];
+
 async function sendIkNowMessage(promptText) {
   const text = (promptText || el('iKnowInputText')?.value || '').trim();
   if (!text) return;
@@ -5350,6 +5352,9 @@ async function sendIkNowMessage(promptText) {
     userRow.innerHTML = `<div class="iknow-msg-bubble">${escapeHTML(text)}</div>`;
     streamEl.appendChild(userRow);
 
+    // Track user message in session history
+    iKnowSessionHistory.push({ sender: 'user', text });
+
     // Clear input
     if (el('iKnowInputText')) el('iKnowInputText').value = '';
 
@@ -5361,7 +5366,7 @@ async function sendIkNowMessage(promptText) {
     const typingRow = document.createElement('div');
     typingRow.className = 'iknow-msg-row ai-row iknow-typing-row';
     typingRow.innerHTML = `
-      <div class="iknow-avatar">🤖</div>
+      <div class="iknow-avatar">IK</div>
       <div class="iknow-msg-bubble" style="color: #64748b; font-style: italic;">
         iKnow is analyzing CRM context... ⏳
       </div>
@@ -5370,19 +5375,24 @@ async function sendIkNowMessage(promptText) {
     if (msgContainer) msgContainer.scrollTop = msgContainer.scrollHeight;
 
     try {
-      // 3. API Request to /api/ai/chat
+      // 3. API Request to /api/ai/chat with history
       const res = await apiRequest('/api/ai/chat', {
         method: 'POST',
         body: JSON.stringify({
           message: text,
           current_page: iKnowContext.page,
           entity_type: iKnowContext.entityType,
-          entity_id: iKnowContext.entityId
+          entity_id: iKnowContext.entityId,
+          history: iKnowSessionHistory
         })
       });
 
       // Remove typing row
       typingRow.remove();
+
+      if (res.reply) {
+        iKnowSessionHistory.push({ sender: 'ai', text: res.reply });
+      }
 
       // 4. Render AI Response Bubble
       const aiRow = document.createElement('div');
@@ -5390,7 +5400,6 @@ async function sendIkNowMessage(promptText) {
 
       let formattedHtml = '';
       if (res.reply) {
-        // Simple Markdown parsing for headers, bold, linebreaks, lists
         let raw = res.reply
           .replace(/### (.*?)\n/g, '<h3>$1</h3>')
           .replace(/#### (.*?)\n/g, '<h4>$1</h4>')
@@ -5402,33 +5411,74 @@ async function sendIkNowMessage(promptText) {
         formattedHtml = 'I processed your request.';
       }
 
+      // Render Entity Card if present
+      let cardHtml = '';
+      if (res.customerCard) {
+        cardHtml = `
+          <div class="iknow-entity-card" style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:10px; margin-top:8px;">
+            <div style="font-weight:700; color:#0f172a;">🏢 ${escapeHTML(res.customerCard.name)}</div>
+            <div style="font-size:12px; color:#475569; margin:4px 0;">Status: <code>${escapeHTML(res.customerCard.status)}</code> | Open Deals: ${res.customerCard.openDeals}</div>
+            <div style="font-size:12px; color:#ef4444; font-weight:700;">Outstanding: ${escapeHTML(res.customerCard.outstanding)}</div>
+            <button type="button" class="button button-secondary button-sm" style="margin-top:6px; font-size:11px; padding:3px 8px;" data-target-view="customers">Open Customer Profile →</button>
+          </div>
+        `;
+      } else if (res.dealCard) {
+        cardHtml = `
+          <div class="iknow-entity-card" style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:10px; margin-top:8px;">
+            <div style="font-weight:700; color:#0f172a;">◫ ${escapeHTML(res.dealCard.title)}</div>
+            <div style="font-size:12px; color:#475569; margin:4px 0;">Account: ${escapeHTML(res.dealCard.company)} | Value: <strong>${escapeHTML(res.dealCard.value)}</strong></div>
+            <div style="font-size:12px; color:#475569;">Stage: <code>${escapeHTML(res.dealCard.stage)}</code> | Health: <strong>${escapeHTML(res.dealCard.health)}</strong></div>
+            <button type="button" class="button button-secondary button-sm" style="margin-top:6px; font-size:11px; padding:3px 8px;" data-target-view="pipeline">Open Deal Pipeline →</button>
+          </div>
+        `;
+      } else if (res.quotationCard) {
+        cardHtml = `
+          <div class="iknow-entity-card" style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:10px; margin-top:8px;">
+            <div style="font-weight:700; color:#0f172a;">📋 ${escapeHTML(res.quotationCard.number)}</div>
+            <div style="font-size:12px; color:#475569; margin:4px 0;">Client: ${escapeHTML(res.quotationCard.company)} | Total: <strong>${escapeHTML(res.quotationCard.total)}</strong></div>
+            <div style="font-size:12px; color:#475569;">Status: <code>${escapeHTML(res.quotationCard.status)}</code></div>
+            <button type="button" class="button button-secondary button-sm" style="margin-top:6px; font-size:11px; padding:3px 8px;" data-target-view="quotations">Open Quotation →</button>
+          </div>
+        `;
+      } else if (res.invoiceCard) {
+        cardHtml = `
+          <div class="iknow-entity-card" style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:10px; margin-top:8px;">
+            <div style="font-weight:700; color:#0f172a;">🧾 ${escapeHTML(res.invoiceCard.number)}</div>
+            <div style="font-size:12px; color:#475569; margin:4px 0;">Billed To: ${escapeHTML(res.invoiceCard.company)} | Total: <strong>${escapeHTML(res.invoiceCard.total)}</strong></div>
+            <div style="font-size:12px; color:#ef4444; font-weight:700;">Outstanding Balance: ${escapeHTML(res.invoiceCard.outstanding)}</div>
+            <button type="button" class="button button-secondary button-sm" style="margin-top:6px; font-size:11px; padding:3px 8px;" data-target-view="invoices">Open Invoice →</button>
+          </div>
+        `;
+      }
+
       // Render Action Buttons if present
       let actionsHtml = '';
       if (res.actions && Array.isArray(res.actions) && res.actions.length > 0) {
-        actionsHtml = `<div class="iknow-actions-grid">` + res.actions.map(act => {
+        actionsHtml = `<div class="iknow-actions-grid" style="margin-top:8px; display:flex; flex-direction:column; gap:6px;">` + res.actions.map(act => {
           if (act.action === 'request_confirmation') {
             return `
-              <div class="iknow-confirmation-card">
-                <strong>⚠️ Confirmation Required: ${escapeHTML(act.label)}</strong>
+              <div class="iknow-confirmation-card" style="background:#fffbe6; border:1px solid #ffe58f; padding:8px; border-radius:6px; margin-top:4px;">
+                <strong style="font-size:12px; color:#713f12;">⚠️ Confirmation Required: ${escapeHTML(act.label)}</strong>
                 <span style="font-size: 11px; color: #713f12; display: block; margin-top: 2px;">Would you like iKnow to execute this CRM action?</span>
-                <div class="iknow-confirm-buttons">
-                  <button type="button" class="iknow-confirm-btn" data-tool="${act.tool}" data-payload='${JSON.stringify(act.payload || {})}'>Yes, Execute Action</button>
-                  <button type="button" class="iknow-cancel-btn">Cancel</button>
+                <div class="iknow-confirm-buttons" style="display:flex; gap:6px; margin-top:6px;">
+                  <button type="button" class="iknow-confirm-btn button button-primary button-sm" style="font-size:11px; padding:3px 8px;" data-tool="${act.tool}" data-payload='${JSON.stringify(act.payload || {})}'>Yes, Confirm Action</button>
+                  <button type="button" class="iknow-cancel-btn button button-quiet button-sm" style="font-size:11px; padding:3px 8px;">Cancel</button>
                 </div>
               </div>
             `;
           }
           if (act.action === 'trigger_prompt') {
-            return `<button type="button" class="iknow-action-btn" data-trigger-prompt="${escapeHTML(act.prompt)}"><span>${escapeHTML(act.label)}</span> →</button>`;
+            return `<button type="button" class="iknow-action-btn button button-secondary button-sm" style="font-size:11px; justify-content:space-between;" data-trigger-prompt="${escapeHTML(act.prompt)}"><span>${escapeHTML(act.label)}</span> →</button>`;
           }
-          return `<button type="button" class="iknow-action-btn" data-target-view="${act.targetView || 'dashboard'}"><span>${escapeHTML(act.label)}</span> →</button>`;
+          return `<button type="button" class="iknow-action-btn button button-secondary button-sm" style="font-size:11px; justify-content:space-between;" data-target-view="${act.targetView || 'dashboard'}"><span>${escapeHTML(act.label)}</span> →</button>`;
         }).join('') + `</div>`;
       }
 
       aiRow.innerHTML = `
-        <div class="iknow-avatar">🤖</div>
+        <div class="iknow-avatar">IK</div>
         <div class="iknow-msg-bubble">
           ${formattedHtml}
+          ${cardHtml}
           ${actionsHtml}
         </div>
       `;
