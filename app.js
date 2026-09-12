@@ -1184,9 +1184,34 @@ const displayDate = value => value ? new Date(`${value}T00:00:00`).toLocaleDateS
 
 // ─── VIEW MANAGEMENT ───────────────────────────────────────────────
 
-function openView(view) {
+function syncUrlState(view, params = {}) {
+  try {
+    const url = new URL(window.location.href);
+    url.searchParams.set('view', view);
+    Object.keys(params).forEach(k => {
+      if (params[k]) url.searchParams.set(k, params[k]);
+      else url.searchParams.delete(k);
+    });
+    window.history.pushState({ view, params }, '', url.pathname + url.search);
+  } catch (e) {}
+}
+
+function restoreUrlState() {
+  try {
+    const url = new URL(window.location.href);
+    const view = url.searchParams.get('view') || 'dashboard';
+    if (typeof openView === 'function') {
+      openView(view, false);
+    }
+  } catch (e) {}
+}
+
+window.addEventListener('popstate', restoreUrlState);
+
+function openView(view, pushState = true) {
   const targetView = (view === 'companies') ? 'customers' : view;
   state.activeView = targetView;
+  if (pushState) syncUrlState(targetView);
   if (typeof updateIkNowContext === 'function') updateIkNowContext(targetView);
   document.querySelectorAll('.view').forEach(node => node.classList.toggle('active', node.id === `${targetView}-view`));
   document.querySelectorAll('.nav-link[data-view]').forEach(node => node.classList.toggle('active', node.dataset.view === view || node.dataset.view === targetView));
@@ -4016,9 +4041,45 @@ document.addEventListener('keydown', e => {
   }
 });
 
+let activeSearchResultIndex = -1;
+
+el('globalSearchInput')?.addEventListener('keydown', e => {
+  const container = el('globalSearchResultsList');
+  if (!container) return;
+  const items = container.querySelectorAll('.search-result-item');
+  if (!items.length) return;
+
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    activeSearchResultIndex = (activeSearchResultIndex + 1) % items.length;
+    highlightSearchResult(items, activeSearchResultIndex);
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    activeSearchResultIndex = (activeSearchResultIndex - 1 + items.length) % items.length;
+    highlightSearchResult(items, activeSearchResultIndex);
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    if (activeSearchResultIndex >= 0 && items[activeSearchResultIndex]) {
+      items[activeSearchResultIndex].click();
+    }
+  }
+});
+
+function highlightSearchResult(items, selectedIndex) {
+  items.forEach((item, idx) => {
+    if (idx === selectedIndex) {
+      item.style.background = 'rgba(79, 70, 229, 0.12)';
+      item.scrollIntoView({ block: 'nearest' });
+    } else {
+      item.style.background = '';
+    }
+  });
+}
+
 let searchDebounceTimer;
 el('globalSearchInput')?.addEventListener('input', e => {
   clearTimeout(searchDebounceTimer);
+  activeSearchResultIndex = -1;
   const q = e.target.value.trim();
   const resultsContainer = el('globalSearchResultsList');
   if (!resultsContainer) return;

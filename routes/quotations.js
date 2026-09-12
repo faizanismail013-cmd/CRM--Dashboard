@@ -17,7 +17,7 @@ function generateQuotationNumber() {
   return `QTN-${year}-${seq}`;
 }
 
-// Helper: Recalculate totals
+// Helper: Recalculate totals (5-Stage GST Precision)
 function calculateTotals(items, discountPercent = 0, taxPercent = 18) {
   const subtotal = items.reduce((sum, item) => {
     const lineTotal = (item.quantity || 1) * (item.unit_price || 0);
@@ -25,12 +25,13 @@ function calculateTotals(items, discountPercent = 0, taxPercent = 18) {
     return sum + (lineTotal - lineDiscount);
   }, 0);
 
-  const discountAmount = subtotal * (discountPercent / 100);
-  const afterDiscount = subtotal - discountAmount;
-  const taxAmount = afterDiscount * (taxPercent / 100);
-  const total = Math.round(afterDiscount + taxAmount);
+  const roundedSubtotal = Math.round(subtotal);
+  const discountAmount = Math.round(roundedSubtotal * (discountPercent / 100));
+  const taxableValue = Math.max(0, roundedSubtotal - discountAmount);
+  const taxAmount = Math.round(taxableValue * (taxPercent / 100));
+  const total = taxableValue + taxAmount;
 
-  return { subtotal: Math.round(subtotal), total };
+  return { subtotal: roundedSubtotal, discount_amount: discountAmount, taxable_value: taxableValue, tax_amount: taxAmount, total };
 }
 
 // ─── List Quotations ────────────────────────────────────────────────
