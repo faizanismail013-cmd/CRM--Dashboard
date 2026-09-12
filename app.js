@@ -5527,10 +5527,16 @@ document.addEventListener('DOMContentLoaded', () => {
       if (panel) panel.style.display = 'none';
     });
   }
+  if (el('iKnowHomeBtn')) {
+    el('iKnowHomeBtn').addEventListener('click', () => {
+      sendIkNowMessage('home');
+    });
+  }
   if (el('iKnowClearBtn')) {
     el('iKnowClearBtn').addEventListener('click', () => {
+      iKnowSessionHistory = [];
       if (el('iKnowMessageStream')) el('iKnowMessageStream').innerHTML = '';
-      if (el('iKnowWelcomeCard')) el('iKnowWelcomeCard').style.display = 'block';
+      sendIkNowMessage('home');
     });
   }
 

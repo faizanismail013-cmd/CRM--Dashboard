@@ -56,6 +56,11 @@ async function processMessage(promptMessage = '', contextData = {}, sessionHisto
 
   // 2. SMART CRM INTELLIGENCE ENGINE (Deterministic Fallback & NLU)
 
+  // 0. HOME / WELCOME / MAIN MENU INTENT
+  if (['home', 'hom', 'menu', 'start', 'welcome', 'reset', 'hi', 'hello', 'help'].includes(query)) {
+    return generateHomeWelcomeResponse(user, currentPage, metrics);
+  }
+
   // A. "CHECK THIS PAGE" / PAGE DIAGNOSTICS
   if (query.includes('check this page') || query.includes('inspect page') || query.includes('analyze page') || query.includes('audit page')) {
     return generatePageInspectionResponse(currentPage, activeCtx, metrics);
@@ -172,6 +177,28 @@ async function callLlmProvider({ provider, model, apiKey, systemPrompt, query, c
 }
 
 // ─── INTELLIGENCE GENERATORS ─────────────────────────────────────────
+
+function generateHomeWelcomeResponse(user, currentPage, metrics) {
+  const pageName = (currentPage || 'dashboard').toUpperCase();
+  let reply = `### 🏠 iKnow Home — SmartPay CRM Copilot\n\n`;
+  reply += `Welcome back, **${user.name || 'User'}**! I am your SmartPay CRM AI Sales Copilot.\n\n`;
+  reply += `Current operating metrics for **${pageName}**:\n`;
+  reply += `- **Open Pipeline**: **${metrics.openPipelineValue}** across **${metrics.openDealsCount}** deals\n`;
+  reply += `- **Overdue Invoices**: **${metrics.overdueAmount}** (${metrics.overdueInvoicesCount} invoices overdue)\n`;
+  reply += `- **Pending Approvals**: **${metrics.pendingApprovalsCount}** requests requiring manager review\n`;
+  reply += `- **Upcoming Renewals**: **${metrics.upcomingRenewalsCount}** contracts due\n\n`;
+  reply += `Choose a quick action below or type any question:`;
+
+  return {
+    reply,
+    actions: [
+      { label: '☀️ Today\'s Briefing', action: 'trigger_prompt', prompt: 'Give me today\'s briefing' },
+      { label: '🔍 Check This Page', action: 'trigger_prompt', prompt: 'Check this page' },
+      { label: '💳 Overdue Invoices', action: 'trigger_prompt', prompt: 'Which invoices are overdue?' },
+      { label: '⚡ Priority Actions', action: 'navigate', targetView: 'dashboard' }
+    ]
+  };
+}
 
 function generatePageInspectionResponse(currentPage, activeCtx, metrics) {
   let reply = `### 🔍 Page Diagnostic Analysis: **${currentPage.toUpperCase()}**\n\n`;
