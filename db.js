@@ -600,8 +600,12 @@ function getDb() {
 
 // ─── In-memory user, audit & notification fallback stores ───────────
 const localUsers = new Map();
-const localAuditLogs = [];
-const localNotifications = [];
+const localNotifications = [
+  { id: 1, user_id: 1, type: 'quotation', title: 'Quotation Sent: QTN-2026-001', message: 'Quotation sent to neha.agarwal@razorpay.com', is_read: false, created_at: '2026-09-10T10:00:00.000Z' },
+  { id: 2, user_id: 1, type: 'approval', title: 'Approval Required: Discount Threshold', message: 'Priya Menon requested 15% discount approval for Quotation QTN-2026-002', is_read: false, created_at: '2026-09-11T11:30:00.000Z' },
+  { id: 3, user_id: 1, type: 'payment', title: 'Payment Received: INV-2026-001', message: 'Full payment of ₹5,07,400 received from RazorpayX Partners', is_read: true, created_at: '2026-09-04T14:15:00.000Z' },
+  { id: 4, user_id: 1, type: 'renewal', title: 'Renewal Alert: RazorpayX Partners', message: 'Annual Payment Gateway contract renewal due on 2026-10-01', is_read: false, created_at: '2026-09-12T09:00:00.000Z' }
+];
 
 const LOCAL_USERS_FILE = path.join(__dirname, '.local_users.json');
 
@@ -1269,7 +1273,7 @@ async function getNotifications(userId, { page = 1, limit = 20 } = {}) {
       console.warn('DB getNotifications error:', err.message);
     }
   }
-  const all = localNotifications.filter(n => n.user_id === userId);
+  const all = localNotifications.filter(n => !n.user_id || String(n.user_id) === String(userId));
   return { data: all.slice(offset, offset + limit), total: all.length };
 }
 
@@ -1282,7 +1286,7 @@ async function getUnreadCount(userId) {
       console.warn('DB getUnreadCount error:', err.message);
     }
   }
-  return localNotifications.filter(n => n.user_id === userId && !n.is_read).length;
+  return localNotifications.filter(n => (!n.user_id || String(n.user_id) === String(userId)) && !n.is_read).length;
 }
 
 async function markNotificationRead(id, userId) {
@@ -1292,7 +1296,7 @@ async function markNotificationRead(id, userId) {
       return rows[0] || null;
     } catch (err) { console.warn('DB markNotificationRead error:', err.message); }
   }
-  const notif = localNotifications.find(n => n.id === Number(id) && n.user_id === userId);
+  const notif = localNotifications.find(n => Number(n.id) === Number(id));
   if (notif) notif.is_read = true;
   return notif || null;
 }
@@ -1304,7 +1308,7 @@ async function markAllNotificationsRead(userId) {
       return true;
     } catch (err) { console.warn('DB markAllNotificationsRead error:', err.message); }
   }
-  localNotifications.filter(n => n.user_id === userId).forEach(n => n.is_read = true);
+  localNotifications.filter(n => !n.user_id || String(n.user_id) === String(userId)).forEach(n => n.is_read = true);
   return true;
 }
 

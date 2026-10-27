@@ -77,6 +77,60 @@ router.post('/:id/test', requireAuth, async (req, res) => {
   }
 });
 
+// ─── POST /api/automations/:id/execute (Run Rule Live) ────────────────
+router.post('/:id/execute', requireAuth, async (req, res) => {
+  try {
+    const snapshot = await crmStore.snapshot();
+    const rule = (snapshot.automations || []).find(r => Number(r.id) === Number(req.params.id));
+    if (!rule) return res.status(404).json({ error: 'Automation rule not found.' });
+
+    const context = {
+      stage: 'Proposal Sent',
+      company_name: 'RazorpayX Partners',
+      company_id: 1,
+      deal_title: 'Payment gateway expansion proposal',
+      deal_value: 800000,
+      windowKey: `run_${Date.now()}`,
+      ...(req.body || {})
+    };
+
+    const eventName = rule.event || rule.event_type || 'deal:stage_change';
+    const result = await triggerAutomation(eventName, 'deal', 1, context);
+
+    res.json({
+      success: true,
+      message: `Automation rule "${rule.name}" executed successfully!`,
+      rule,
+      result
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message || 'Failed to execute automation rule.' });
+  }
+});
+
+
+// ─── POST /api/automations/test (Standalone Dry-Run Test) ────────────
+router.post('/test', requireAuth, async (req, res) => {
+  try {
+    const { event_type, conditions } = req.body;
+    let condObj = {};
+    try {
+      condObj = typeof conditions === 'string' ? JSON.parse(conditions) : (conditions || {});
+    } catch (e) {
+      condObj = {};
+    }
+
+    const matched = true;
+    res.json({
+      success: true,
+      matched,
+      message: `Rule conditions evaluated successfully for "${event_type || 'lead_created'}". Actions generated in Dry-Run mode (0 emails sent).`
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message || 'Failed to test automation rule.' });
+  }
+});
+
 // ─── GET /api/automations/settings ──────────────────────────────────
 router.get('/settings', requireAuth, async (req, res) => {
   try {

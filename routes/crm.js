@@ -15,44 +15,62 @@ const { createAuditLog, createNotification } = require('../db');
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 
-const crmResources = new Set(['companies', 'contacts', 'deals', 'tasks', 'activities', 'letters']);
+const crmResources = new Set(['companies', 'customers', 'contacts', 'deals', 'tasks', 'activities', 'letters', 'leads']);
 
 const allowedFields = {
-  companies: ['name', 'initial', 'logo', 'industry', 'owner', 'status', 'deals', 'activity', 'created', 'tags', 'source'],
-  contacts: ['name', 'initials', 'title', 'email', 'phone', 'primary'],
-  deals: ['title', 'company', 'value', 'stage', 'probability', 'owner', 'due', 'month', 'tag'],
+  companies: [
+    'name', 'initial', 'logo', 'industry', 'owner', 'status', 'customer_status', 'customer_type',
+    'gst_number', 'pan_number', 'website', 'phone', 'alternate_phone', 'email', 'alternate_email',
+    'billing_address', 'shipping_address', 'city', 'state', 'country', 'pin_code', 'notes',
+    'deals', 'activity', 'created', 'tags', 'source'
+  ],
+  customers: [
+    'name', 'initial', 'logo', 'industry', 'owner', 'status', 'customer_status', 'customer_type',
+    'gst_number', 'pan_number', 'website', 'phone', 'alternate_phone', 'email', 'alternate_email',
+    'billing_address', 'shipping_address', 'city', 'state', 'country', 'pin_code', 'notes',
+    'deals', 'activity', 'created', 'tags', 'source'
+  ],
+  contacts: ['name', 'initials', 'title', 'email', 'phone', 'primary', 'company_id', 'company_name', 'department', 'contact_role'],
+  deals: ['title', 'company', 'company_id', 'contact_id', 'value', 'stage', 'probability', 'owner', 'due', 'month', 'tag', 'deal_type'],
   tasks: ['title', 'company', 'due', 'bucket', 'priority', 'done', 'assignee'],
   activities: ['type', 'icon', 'text', 'time'],
-  letters: ['type', 'employeeName', 'recipientEmail', 'subject', 'createdAt', 'status', 'error_message', 'letter_data', 'sent_at']
+  letters: ['type', 'employeeName', 'recipientEmail', 'subject', 'createdAt', 'status', 'error_message', 'letter_data', 'sent_at'],
+  leads: ['name', 'company', 'contact_name', 'email', 'phone', 'source', 'industry', 'status', 'score', 'expected_value', 'next_followup', 'owner', 'notes']
 };
 
 const searchableFields = {
-  companies: ['name', 'industry', 'owner', 'status'],
+  companies: ['name', 'industry', 'owner', 'status', 'customer_id', 'gst_number', 'phone', 'email'],
+  customers: ['name', 'industry', 'owner', 'status', 'customer_id', 'gst_number', 'phone', 'email'],
   contacts: ['name', 'title', 'email', 'phone'],
   deals: ['title', 'company', 'owner', 'stage'],
   tasks: ['title', 'company', 'assignee'],
   activities: ['text', 'type'],
-  letters: ['employeeName', 'recipientEmail', 'subject', 'status']
+  letters: ['employeeName', 'recipientEmail', 'subject', 'status'],
+  leads: ['name', 'company', 'contact_name', 'email', 'phone', 'source', 'status', 'owner']
 };
 
 const sortableFields = {
   companies: ['name', 'industry', 'owner', 'status', 'deals', 'created', 'created_at', 'id'],
+  customers: ['name', 'industry', 'owner', 'status', 'deals', 'created', 'created_at', 'id'],
   contacts: ['name', 'title', 'email', 'created_at', 'id'],
   deals: ['title', 'company', 'value', 'stage', 'probability', 'owner', 'due', 'created_at', 'id'],
   tasks: ['title', 'company', 'due', 'priority', 'bucket', 'created_at', 'id'],
+  leads: ['name', 'company', 'score', 'expected_value', 'created_at', 'id'],
   activities: ['type', 'time', 'created_at', 'id'],
   letters: ['type', 'employeeName', 'createdAt', 'created_at', 'id', 'status']
 };
 
 function pickResourceFields(resource, body) {
-  return allowedFields[resource].reduce((result, field) => {
+  const targetResource = resource === 'customers' ? 'companies' : resource;
+  const fields = allowedFields[targetResource] || [];
+  return fields.reduce((result, field) => {
     if (Object.hasOwn(body, field)) result[field] = body[field];
     return result;
   }, {});
 }
 
 function validateRecord(resource, record) {
-  if (resource === 'companies' && !String(record.name || '').trim()) return 'Company name is required.';
+  if (['companies', 'customers'].includes(resource) && !String(record.name || '').trim()) return 'Company name is required.';
   if (resource === 'contacts' && (!String(record.name || '').trim() || !/^\S+@\S+\.\S+$/.test(record.email || ''))) return 'A contact name and valid email are required.';
   if (resource === 'deals' && (!String(record.title || '').trim() || !String(record.company || '').trim() || !Number.isFinite(Number(record.value)) || Number(record.value) < 0)) return 'Deal title, company, and a valid value are required.';
   if (resource === 'tasks' && !String(record.title || '').trim()) return 'Task title is required.';
@@ -65,10 +83,10 @@ function enrichRecord(resource, record, req) {
   const userName = req.user?.name || req.session?.user?.name || 'Unassigned';
   const userId = req.user?.id || req.session?.user?.id;
 
-  if (resource === 'companies') Object.assign(record, {
+  if (['companies', 'customers'].includes(resource)) Object.assign(record, {
     user_id: userId, initial: record.name?.trim()[0]?.toUpperCase(), logo: record.logo || 'logo-blue',
     owner: record.owner || userName, status: String(record.status || 'lead').toLowerCase(),
-    deals: 0, activity: 'Just now', created: Date.now(), tags: Array.isArray(record.tags) ? record.tags : []
+    deals: record.deals || 0, activity: 'Just now', created: record.created || Date.now(), tags: Array.isArray(record.tags) ? record.tags : []
   });
   if (resource === 'contacts') Object.assign(record, {
     user_id: userId, initials: record.initials || record.name?.split(' ').map(p => p[0]).join('').slice(0, 2),
@@ -269,7 +287,7 @@ router.post('/:resource', requireAuth, async (req, res, next) => {
 
 // ─── Update ─────────────────────────────────────────────────────────
 
-router.patch('/:resource/:id', requireAuth, async (req, res, next) => {
+const updateHandler = async (req, res, next) => {
   const { resource, id } = req.params;
   if (!crmResources.has(resource)) return res.status(404).json({ error: 'Unknown CRM resource.' });
 
@@ -307,7 +325,11 @@ router.patch('/:resource/:id', requireAuth, async (req, res, next) => {
     broadcast('crm:updated', { resource, record: updated });
     res.json(updated);
   } catch (storeError) { next(storeError); }
-});
+};
+
+router.patch('/:resource/:id', requireAuth, updateHandler);
+router.put('/:resource/:id', requireAuth, updateHandler);
+
 
 // ─── Delete ─────────────────────────────────────────────────────────
 

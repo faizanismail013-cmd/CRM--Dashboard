@@ -12,6 +12,8 @@ const el = id => document.getElementById(id);
 const initials = name => (name || '').trim().split(/\s+/).filter(Boolean).map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'U';
 const escapeHTML = value => String(value ?? '').replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[char]);
 const escapeHtml = escapeHTML;
+const getInitials = initials;
+
 
 function updateUserUI(user) {
   if (!user) return;
@@ -58,25 +60,9 @@ function updateDashboardHeader() {
   const dateEl = el('dashboardDate');
   if (dateEl) dateEl.textContent = formattedDate;
 
-  // 2. Time-Based Greeting:
-  // 05:00 to 11:59 -> "Good morning,"
-  // 12:00 to 16:59 -> "Good afternoon,"
-  // 17:00 to 21:59 -> "Good evening,"
-  // 22:00 to 04:59 -> "Good night,"
-  const hour = now.getHours();
-  let greeting = 'Good morning,';
-  if (hour >= 5 && hour < 12) {
-    greeting = 'Good morning,';
-  } else if (hour >= 12 && hour < 17) {
-    greeting = 'Good afternoon,';
-  } else if (hour >= 17 && hour < 22) {
-    greeting = 'Good evening,';
-  } else {
-    greeting = 'Good night,';
-  }
-
+  // 2. Greeting:
   const prefixEl = el('dashboardGreetingPrefix');
-  if (prefixEl) prefixEl.textContent = greeting;
+  if (prefixEl) prefixEl.textContent = 'Welcome,';
 
   if (currentUser && el('dashboardUserName')) {
     const firstName = (currentUser.name || 'User').trim().split(/\s+/)[0] || 'User';
@@ -88,7 +74,17 @@ function updateDashboardHeader() {
 updateDashboardHeader();
 setInterval(updateDashboardHeader, 30000);
 
-async function apiRequest(url, options = {}) {
+async function apiRequest(url, methodOrOptions = {}, data = null) {
+  let options = {};
+  if (typeof methodOrOptions === 'string') {
+    options = {
+      method: methodOrOptions,
+      body: data !== null && data !== undefined ? JSON.stringify(data) : undefined
+    };
+  } else {
+    options = methodOrOptions || {};
+  }
+
   let response;
   try {
     response = await fetch(url, {
@@ -1249,6 +1245,8 @@ function openView(view, pushState = true) {
     renderInvoices();
   } else if (targetView === 'purchase_orders') {
     renderPurchaseOrders();
+  } else if (targetView === 'payments') {
+    renderPayments();
   } else if (targetView === 'dashboard') {
     renderEnhancedDashboard();
   } else if (targetView === 'notifications') {
@@ -1578,8 +1576,9 @@ function renderCompany360(companyName = 'RazorpayX Partners') {
         <td><b>₹${((Number(r.value) || 0) / 100000).toFixed(1)}L</b></td>
         <td>${r.renewal_date || '—'}</td>
         <td><span class="status-pill status-${(r.status || 'upcoming').toLowerCase()}">${escapeHTML(r.status || 'Upcoming')}</span></td>
+        <td><button type="button" class="button button-secondary button-sm" data-send-renewal="${r.id}">✉ Reminder</button></td>
       </tr>
-    `).join('') || '<tr><td colspan="4" class="empty-state">No contract renewals scheduled.</td></tr>';
+    `).join('') || '<tr><td colspan="5" class="empty-state">No contract renewals scheduled.</td></tr>';
   }
 
   // 9. Unified Timeline
@@ -2843,8 +2842,8 @@ function renderLeads() {
         <td>${escapeHTML(l.owner || 'Aarav Sharma')}</td>
         <td>
           <div class="table-actions">
-            ${isConverted ? `<span class="badge badge-success">✓ Converted</span>` : `<button type="button" class="button button-primary button-sm convert-lead-btn" data-lead-id="${l.id}">⚡ Convert</button>`}
-            <button type="button" class="text-button edit-lead-btn" data-lead-id="${l.id}">Edit</button>
+            ${isConverted ? `<span class="badge badge-success">✓ Converted</span>` : `<button type="button" class="button button-primary button-sm convert-lead-btn" data-open-modal="leadConvertModal" data-lead-id="${l.id}" onclick="event.stopPropagation(); if (window.openConvertLeadModal) window.openConvertLeadModal('${l.id}')">⚡ Convert</button>`}
+            <button type="button" class="text-button edit-lead-btn" data-open-modal="leadModal" data-lead-id="${l.id}" onclick="event.stopPropagation(); if (window.openEditLeadModal) window.openEditLeadModal('${l.id}')">Edit</button>
           </div>
         </td>
       </tr>
@@ -2864,9 +2863,64 @@ function renderRenewals() {
       <td>${r.renewal_date || '—'}</td>
       <td><span class="status-pill ${r.status ? r.status.toLowerCase() : 'upcoming'}">${escapeHTML(r.status || 'Upcoming')}</span></td>
       <td>${escapeHTML(r.owner || 'Aarav Sharma')}</td>
-      <td><button type="button" class="text-button edit-renewal-btn" data-renewal-id="${r.id}">Edit</button></td>
+      <td>
+        <div style="display:flex; gap:6px; align-items:center;">
+          <button type="button" class="button button-secondary button-sm" data-send-renewal="${r.id}">✉ Reminder</button>
+          <button type="button" class="text-button edit-renewal-btn" data-renewal-id="${r.id}">Edit</button>
+        </div>
+      </td>
     </tr>
   `).join('') || '<tr><td colspan="7" class="empty-state">No contract renewals scheduled.</td></tr>';
+}
+
+
+function renderPayments() {
+  const tbody = el('paymentTableBody');
+  if (!tbody) return;
+
+  const search = (el('paymentSearch')?.value || '').toLowerCase();
+  const methodFilter = el('paymentMethodFilter')?.value || 'all';
+
+  const list = state.payments || [];
+  const filtered = list.filter(p => {
+    const inv = (state.invoices || []).find(i => Number(i.id) === Number(p.invoice_id));
+    const comp = (state.companies || []).find(c => Number(c.id) === Number(p.company_id || inv?.company_id));
+    const compName = comp ? comp.name : (p.company_name || 'Customer');
+    const matchesMethod = methodFilter === 'all' || (p.payment_method || '').toLowerCase() === methodFilter.toLowerCase();
+    const matchesSearch = `${p.payment_number || ''} ${p.reference_number || ''} ${compName} ${p.notes || ''}`.toLowerCase().includes(search);
+    return matchesMethod && matchesSearch;
+  });
+
+  const totalCollected = (state.payments || []).reduce((s, p) => s + (Number(p.amount) || 0), 0);
+  const totalInvoiced = (state.invoices || []).reduce((s, i) => s + (Number(i.total) || 0), 0);
+  const outstanding = Math.max(0, totalInvoiced - totalCollected);
+  const rate = totalInvoiced > 0 ? Math.round((totalCollected / totalInvoiced) * 100) : 0;
+
+  if (el('paymentTotalCollected')) el('paymentTotalCollected').textContent = money(totalCollected);
+  if (el('paymentOutstandingTotal')) el('paymentOutstandingTotal').textContent = money(outstanding);
+  if (el('paymentSettlementRate')) el('paymentSettlementRate').textContent = `${rate}%`;
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" class="empty-state">No payments found. Click "+ Record Payment" to log a customer payment settlement.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(p => {
+    const inv = (state.invoices || []).find(i => Number(i.id) === Number(p.invoice_id));
+    const comp = (state.companies || []).find(c => Number(c.id) === Number(p.company_id || inv?.company_id));
+    return `
+      <tr>
+        <td><strong>${escapeHTML(p.payment_number || `PAY-${p.id}`)}</strong></td>
+        <td><code>${escapeHTML(inv ? inv.invoice_number : '—')}</code></td>
+        <td><strong>${escapeHTML(comp ? comp.name : (p.company_name || 'Customer'))}</strong></td>
+        <td><strong style="color: #10b981;">${money(p.amount)}</strong></td>
+        <td>${p.payment_date ? displayDate(p.payment_date) : '—'}</td>
+        <td><span class="status-pill status-active">${escapeHTML((p.payment_method || 'bank_transfer').replace(/_/g, ' ').toUpperCase())}</span></td>
+        <td><code>${escapeHTML(p.reference_number || '—')}</code></td>
+        <td>${escapeHTML(p.notes || '—')}</td>
+      </tr>
+    `;
+  }).join('');
 }
 
 function renderAutomations() {
@@ -2912,7 +2966,8 @@ function renderAutomations() {
           </div>
         </div>
         <div style="margin-top: 12px; display: flex; gap: 8px; justify-content: flex-end;">
-          <button type="button" class="button button-quiet button-sm test-rule-btn" data-auto-id="${a.id}">🧪 Test Rule</button>
+          <button type="button" class="button button-primary button-sm run-rule-btn" data-auto-id="${a.id}">▶ Run Rule</button>
+          <button type="button" class="button button-secondary button-sm test-rule-btn" data-auto-id="${a.id}">🧪 Test Rule</button>
           <button type="button" class="button button-quiet button-sm edit-auto-btn" data-auto-id="${a.id}">Edit</button>
         </div>
       </div>
@@ -3102,7 +3157,19 @@ function renderAll() {
 
 // ─── MODALS ─────────────────────────────────────────────────────────
 
-function showModal(id) { el('modalLayer').classList.add('open'); el('modalLayer').setAttribute('aria-hidden','false'); document.querySelectorAll('.modal').forEach(m=>m.classList.toggle('active',m.id===id)); const first=el(id).querySelector('input,select,textarea,button'); if(first) setTimeout(()=>first.focus(),30); }
+function showModal(id) {
+  const modalLayer = el('modalLayer');
+  if (modalLayer) {
+    modalLayer.classList.add('open');
+    modalLayer.setAttribute('aria-hidden', 'false');
+  }
+  const modalEl = el(id);
+  if (modalEl) {
+    document.querySelectorAll('.modal').forEach(m => m.classList.toggle('active', m.id === id));
+    const first = modalEl.querySelector('input,select,textarea,button');
+    if (first) setTimeout(() => first.focus(), 30);
+  }
+}
 function closeModal() { el('modalLayer').classList.remove('open'); el('modalLayer').setAttribute('aria-hidden','true'); document.querySelectorAll('.modal').forEach(m=>m.classList.remove('active')); }
 let toastTimer; function showToast(message) { const node=el('toast'); node.textContent=message; node.classList.add('visible'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>node.classList.remove('visible'),3600); }
 
@@ -3115,6 +3182,15 @@ document.addEventListener('click', async event => {
   const modalButton = event.target.closest('[data-open-modal]');
   if (modalButton) {
     const modalId = modalButton.dataset.openModal;
+    if (modalId === 'leadModal') {
+      const leadId = modalButton.dataset.leadId;
+      if (leadId) openEditLeadModal(leadId);
+      else openCreateLeadModal();
+    }
+    if (modalId === 'leadConvertModal') {
+      const leadId = modalButton.dataset.leadId;
+      if (leadId) openConvertLeadModal(leadId);
+    }
     if (modalId === 'quotationModal') initQuotationModal();
     if (modalId === 'invoiceModal') initInvoiceModal();
     if (modalId === 'poModal') initPoModal();
@@ -3162,9 +3238,33 @@ document.addEventListener('click', async event => {
   if(event.target.closest('#mobileMenu')) { el('sidebar').classList.toggle('open'); return; }
   if(event.target.closest('#addStage')) { const name=prompt('New stage name'); if(name){state.stages.splice(-1,0,{name,probability:50,color:'#50a8c6'});renderAll();showToast(`${name} stage added.`)} return; }
   if(event.target.closest('#addTag')) { const name=prompt('New tag name'); if(name){el('tagSettingsList').insertAdjacentHTML('beforeend',`<div class="tag-setting" style="--tag-color:#50a8c6"><i></i>${name}<button aria-label="Remove ${name}">×</button></div>`);showToast(`${name} tag created.`)} return; }
+  if (event.target.closest('#leadExportBtn')) {
+    exportCsv('leads');
+    return;
+  }
+  if (event.target.closest('#leadImportBtn')) {
+    if (el('leadCsvFileInput')) el('leadCsvFileInput').click();
+    return;
+  }
+  if (event.target.closest('#createLeadBtn, #emptyCreateLeadBtn')) {
+    openCreateLeadModal();
+    return;
+  }
+  const convertLeadBtn = event.target.closest('.convert-lead-btn');
+  if (convertLeadBtn) {
+    openConvertLeadModal(convertLeadBtn.dataset.leadId);
+    return;
+  }
+  const editLeadBtn = event.target.closest('.edit-lead-btn');
+  if (editLeadBtn) {
+    openEditLeadModal(editLeadBtn.dataset.leadId);
+    return;
+  }
+
   const exportButton=event.target.closest('.export-data,#exportReport'); if(exportButton){ exportCsv(exportButton.dataset.type || 'report'); return; }
 
   // Follow-up tab switch
+
   const followupTab = event.target.closest('[data-followup-tab]');
   if (followupTab) {
     state.followupTab = followupTab.dataset.followupTab;
@@ -3387,21 +3487,24 @@ document.addEventListener('click', async event => {
   const sendQuotationBtn = event.target.closest('[data-send-quotation]');
   if (sendQuotationBtn) {
     const qtnId = Number(sendQuotationBtn.dataset.sendQuotation);
-    const origText = sendQuotationBtn.textContent;
-    sendQuotationBtn.textContent = 'Sending...';
-    sendQuotationBtn.disabled = true;
-    try {
-      await sendQuotationEmailRequest(qtnId);
-      showToast('Quotation sent to client successfully! ✉✨');
-      const q = state.quotations.find(item => item.id === qtnId);
-      if (q) q.status = 'sent';
-      renderQuotations();
-    } catch (e) {
-      showToast(e.message || 'Quotation email sent.');
-    } finally {
-      sendQuotationBtn.textContent = origText;
-      sendQuotationBtn.disabled = false;
+    const q = state.quotations.find(item => item.id === qtnId);
+    if (!q) return;
+
+    const comp = state.companies.find(c => c.id === q.company_id);
+    const contact = state.contacts.find(cnt => cnt.id === q.contact_id);
+    const recipientEmail = (contact?.email || comp?.email || '').trim();
+
+    if (!recipientEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipientEmail)) {
+      showToast('No valid customer email is configured. Please edit the customer or contact details first.');
+      return;
     }
+
+    if (el('sendQuoteId')) el('sendQuoteId').value = q.id;
+    if (el('sendQuoteTo')) el('sendQuoteTo').value = recipientEmail;
+    if (el('sendQuoteCc')) el('sendQuoteCc').value = '';
+    if (el('sendQuoteSubject')) el('sendQuoteSubject').value = `SmartPay Quotation ${q.quotation_number || ''} — ${comp?.name || 'Customer'}`;
+    if (el('sendQuotePdfName')) el('sendQuotePdfName').textContent = `Quotation_${q.quotation_number || 'DOC'}.pdf`;
+    showModal('sendQuoteEmailModal');
     return;
   }
 
@@ -3419,20 +3522,92 @@ document.addEventListener('click', async event => {
   if (sendInvoiceBtn) {
     const invId = Number(sendInvoiceBtn.dataset.sendInvoice);
     const inv = state.invoices.find(i => i.id === invId);
-    const origText = sendInvoiceBtn.textContent;
-    sendInvoiceBtn.textContent = 'Sending...';
-    sendInvoiceBtn.disabled = true;
-    try {
-      await sendInvoiceEmailRequest(invId);
-      showToast(`Invoice ${inv?.invoice_number || ''} sent to client! ✉✨`);
-      if (inv && inv.status === 'draft') inv.status = 'sent';
-      renderInvoices();
-    } catch (e) {
-      showToast(e.message || 'Invoice sent to customer.');
-    } finally {
-      sendInvoiceBtn.textContent = origText;
-      sendInvoiceBtn.disabled = false;
+    if (!inv) return;
+
+    const comp = state.companies.find(c => c.id === inv.company_id);
+    const contact = state.contacts.find(cnt => cnt.id === inv.contact_id);
+    const recipientEmail = (contact?.email || comp?.email || '').trim();
+
+    if (!recipientEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipientEmail)) {
+      showToast('No valid customer email is configured. Please edit the customer or contact details first.');
+      return;
     }
+
+    if (el('sendInvoiceId')) el('sendInvoiceId').value = inv.id;
+    if (el('sendInvoiceTo')) el('sendInvoiceTo').value = recipientEmail;
+    if (el('sendInvoiceCc')) el('sendInvoiceCc').value = '';
+    if (el('sendInvoiceSubject')) el('sendInvoiceSubject').value = `Tax Invoice ${inv.invoice_number || ''} — ${comp?.name || 'Customer'}`;
+    if (el('sendInvoicePdfName')) el('sendInvoicePdfName').textContent = `Tax_Invoice_${inv.invoice_number || 'DOC'}.pdf`;
+    showModal('sendInvoiceEmailModal');
+    return;
+  }
+
+  // Edit PO
+  const editPoBtn = event.target.closest('[data-edit-po]');
+  if (editPoBtn) {
+    const poId = Number(editPoBtn.dataset.editPo);
+    const po = state.purchase_orders.find(p => p.id === poId);
+    if (!po) return;
+
+    state.editingPoId = po.id;
+    if (el('poModalTitle')) el('poModalTitle').textContent = `Edit Purchase Order: ${po.po_number || `PO-${po.id}`}`;
+    if (el('poNumber')) el('poNumber').value = po.po_number || '';
+    if (el('poCompany')) el('poCompany').value = po.company_id || '';
+    if (el('poQuotation')) el('poQuotation').value = po.quotation_id || '';
+    if (el('poDeal')) el('poDeal').value = po.deal_id || '';
+    if (el('poAmount')) el('poAmount').value = po.amount || '';
+    if (el('poStatus')) el('poStatus').value = po.status || 'received';
+    if (el('poIssueDate')) el('poIssueDate').value = po.issue_date || '';
+    if (el('poDeliveryDate')) el('poDeliveryDate').value = po.delivery_date || '';
+    if (el('poNotes')) el('poNotes').value = po.notes || '';
+    showModal('poModal');
+    return;
+  }
+
+  // Send Renewal Reminder Email
+  const sendRenewalBtn = event.target.closest('[data-send-renewal]');
+  if (sendRenewalBtn) {
+    const renId = Number(sendRenewalBtn.dataset.sendRenewal);
+    const ren = (state.renewals || []).find(r => r.id === renId);
+    if (!ren) return;
+
+    const comp = (state.companies || []).find(c => c.id === ren.company_id || c.name === ren.company_name);
+    const contact = (state.contacts || []).find(cnt => cnt.company_id === ren.company_id || cnt.company_name === ren.company_name);
+    const recipientEmail = (contact?.email || comp?.email || '').trim();
+
+    if (!recipientEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipientEmail)) {
+      showToast('No valid customer email is configured for this renewal account. Please edit customer/contact details first.');
+      return;
+    }
+
+    if (el('sendRenewalId')) el('sendRenewalId').value = ren.id;
+    if (el('sendRenewalTo')) el('sendRenewalTo').value = recipientEmail;
+    if (el('sendRenewalCc')) el('sendRenewalCc').value = '';
+    if (el('sendRenewalSubject')) el('sendRenewalSubject').value = `Contract Renewal Reminder: ${ren.product_name || 'Service Contract'} (${ren.company_name || 'Customer'})`;
+    if (el('sendRenewalSummary')) el('sendRenewalSummary').textContent = `${ren.product_name || 'Contract'} — Due ${ren.renewal_date || 'Soon'}`;
+    if (el('sendRenewalBody')) el('sendRenewalBody').value = `Dear ${ren.company_name || 'Customer'},\n\nThis is a friendly reminder from SmartPay CRM regarding your upcoming contract renewal for ${ren.product_name || 'Service Contract'} scheduled on ${ren.renewal_date || 'the upcoming due date'}.\n\nPlease let us know if you need any adjustments or support.\n\nBest regards,\nSmartPay Sales & Support Team`;
+
+    showModal('sendRenewalModal');
+    return;
+  }
+
+  // Edit Renewal
+
+  const editRenBtn = event.target.closest('.edit-renewal-btn');
+  if (editRenBtn) {
+    const renId = Number(editRenBtn.dataset.renewalId);
+    const ren = (state.renewals || []).find(r => r.id === renId);
+    if (!ren) return;
+
+    if (el('renewalId')) el('renewalId').value = ren.id;
+    if (el('renewalCompanyName')) el('renewalCompanyName').value = ren.company_name || '';
+    if (el('renewalProductName')) el('renewalProductName').value = ren.product_name || '';
+    if (el('renewalValue')) el('renewalValue').value = ren.value || 0;
+    if (el('renewalDate')) el('renewalDate').value = ren.renewal_date || '';
+    if (el('renewalStatus')) el('renewalStatus').value = ren.status || 'Upcoming';
+    if (el('renewalOwner')) el('renewalOwner').value = ren.owner || 'Aarav Sharma';
+    if (el('renewalNotes')) el('renewalNotes').value = ren.notes || '';
+    showModal('renewalModal');
     return;
   }
 
@@ -3912,64 +4087,360 @@ document.querySelectorAll('.form-modal').forEach(form => form.addEventListener('
       const delivery_date = data.get('deliveryDate') || null;
       const notes = data.get('notes') || '';
 
-      const created = await createPoRecord({
-        po_number,
-        company_id,
-        quotation_id,
-        deal_id,
-        amount,
-        status,
-        issue_date,
-        delivery_date,
-        notes
-      });
+      const payload = { po_number, company_id, quotation_id, deal_id, amount, status, issue_date, delivery_date, notes };
 
-      const company = state.companies.find(c => c.id === company_id);
-      state.purchase_orders.unshift({
-        ...created,
-        company_name: company ? company.name : '—'
-      });
+      if (state.editingPoId) {
+        const updated = await apiRequest(`/api/purchase-orders/${state.editingPoId}`, { method: 'PUT', body: JSON.stringify(payload) });
+        const company = state.companies.find(c => c.id === company_id);
+        const idx = state.purchase_orders.findIndex(p => p.id === state.editingPoId);
+        if (idx !== -1) state.purchase_orders[idx] = { ...state.purchase_orders[idx], ...updated, company_name: company ? company.name : '—' };
+        state.editingPoId = null;
+        showToast('Purchase Order updated successfully! 📦');
+      } else {
+        const created = await createPoRecord(payload);
+        const company = state.companies.find(c => c.id === company_id);
+        state.purchase_orders.unshift({ ...created, company_name: company ? company.name : '—' });
+        showToast(`Purchase Order ${created.po_number || ''} logged! 📦`);
+      }
+      closeModal();
       renderPurchaseOrders();
-      showToast(`Purchase Order ${created.po_number || ''} logged! 📦`);
+      return;
+    }
+    if (form.id === 'sendQuoteEmailModal') {
+      const id = Number(el('sendQuoteId').value);
+      const to = el('sendQuoteTo').value.trim();
+      const cc = el('sendQuoteCc').value.trim();
+      const subject = el('sendQuoteSubject').value.trim();
+
+      const res = await apiRequest(`/api/quotations/${id}/send`, {
+        method: 'POST',
+        body: JSON.stringify({ to, cc, subject })
+      });
+      const q = state.quotations.find(item => item.id === id);
+      if (q) q.status = 'sent';
+      closeModal();
+      renderQuotations();
+      showToast(res.message || `Quotation sent to ${to}! ✉✨`);
+      return;
+    }
+    if (form.id === 'sendInvoiceEmailModal') {
+      const id = Number(el('sendInvoiceId').value);
+      const to = el('sendInvoiceTo').value.trim();
+      const cc = el('sendInvoiceCc').value.trim();
+      const subject = el('sendInvoiceSubject').value.trim();
+
+      const res = await apiRequest(`/api/invoices/${id}/send`, {
+        method: 'POST',
+        body: JSON.stringify({ to, cc, subject })
+      });
+      const inv = state.invoices.find(item => item.id === id);
+      if (inv) inv.status = 'sent';
+      closeModal();
+      renderInvoices();
+      showToast(res.message || `Invoice sent to ${to}! ✉✨`);
+      return;
+    }
+    if (form.id === 'sendRenewalModal') {
+      const id = Number(el('sendRenewalId').value);
+      const to = el('sendRenewalTo').value.trim();
+      const cc = el('sendRenewalCc').value.trim();
+      const subject = el('sendRenewalSubject').value.trim();
+      const body = el('sendRenewalBody') ? el('sendRenewalBody').value.trim() : '';
+
+      const res = await apiRequest(`/api/renewals/${id}/send-reminder`, {
+        method: 'POST',
+        body: JSON.stringify({ to, cc, subject, body })
+      });
+      const ren = (state.renewals || []).find(item => item.id === id);
+      if (ren) ren.last_reminder_sent_at = new Date().toISOString();
+      closeModal();
+      renderRenewals();
+      showToast(res.message || `Renewal reminder email sent to ${to}! 🔔✉`);
+      return;
+    }
+    if (form.id === 'renewalModal') {
+
+      const id = el('renewalId').value ? Number(el('renewalId').value) : null;
+      const company_name = String(el('renewalCompanyName').value).trim();
+      const product_name = String(el('renewalProductName').value).trim();
+      const value = Number(el('renewalValue').value) || 0;
+      const renewal_date = el('renewalDate').value;
+      const status = el('renewalStatus').value;
+      const owner = el('renewalOwner').value;
+      const notes = String(el('renewalNotes').value).trim();
+
+      const payload = { company_name, product_name, value, renewal_date, status, owner, notes };
+
+      if (id) {
+        const updated = await apiRequest(`/api/renewals/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
+        const idx = state.renewals.findIndex(r => r.id === id);
+        if (idx !== -1) state.renewals[idx] = { ...state.renewals[idx], ...updated };
+        showToast(`Renewal for ${company_name} updated!`);
+      } else {
+        const created = await apiRequest('/api/renewals', { method: 'POST', body: JSON.stringify(payload) });
+        state.renewals.unshift(created);
+        showToast(`Renewal for ${company_name} created!`);
+      }
+      closeModal();
+      renderRenewals();
+      return;
     }
     if (form.id === 'leadModal') {
-      const name = String(data.get('name')).trim();
+      const editId = el('editLeadId')?.value;
+      const name = String(data.get('name') || '').trim();
       const company = String(data.get('company') || '').trim();
+      const contact_name = String(data.get('contact_name') || '').trim();
+      const title = String(data.get('title') || '').trim();
       const email = String(data.get('email') || '').trim();
       const phone = String(data.get('phone') || '').trim();
       const source = data.get('source') || 'Inbound';
       const industry = data.get('industry') || 'General';
       const status = data.get('status') || 'New';
+      const lead_score = Number(data.get('lead_score')) || 50;
       const expected_value = Number(data.get('expected_value')) || 0;
       const next_followup = data.get('next_followup') || null;
       const owner = data.get('owner') || 'Aarav Sharma';
       const notes = data.get('notes') || '';
 
-      const created = await apiRequest('/api/leads', 'POST', {
-        name, company, email, phone, source, industry, status, expected_value, next_followup, owner, notes
-      });
-      state.leads.unshift(created);
-      renderLeads();
-      showToast(`Lead "${name}" created! ⚡`);
+      const errEl = el('leadModalErrorMsg');
+      const submitBtn = el('leadModalSubmitBtn');
+
+      // Validation
+      if (!name) {
+        if (errEl) { errEl.textContent = 'Lead Name is required.'; errEl.style.display = 'block'; }
+        return;
+      }
+      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        if (errEl) { errEl.textContent = 'Please enter a valid email address.'; errEl.style.display = 'block'; }
+        return;
+      }
+      if (phone && !/^[\d\s\+\-\(\)]{7,20}$/.test(phone)) {
+        if (errEl) { errEl.textContent = 'Please enter a valid phone number.'; errEl.style.display = 'block'; }
+        return;
+      }
+      if (errEl) errEl.style.display = 'none';
+
+      if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Saving...'; }
+
+      const payload = { name, company, contact_name, title, email, phone, source, industry, status, lead_score, expected_value, next_followup, owner, notes };
+
+      try {
+        if (editId) {
+          const updated = await apiRequest(`/api/leads/${editId}`, 'PUT', payload);
+          const idx = (state.leads || []).findIndex(l => String(l.id) === String(editId));
+          if (idx !== -1) {
+            state.leads[idx] = { ...state.leads[idx], ...updated };
+          }
+          renderLeads();
+          showToast('Lead updated successfully.');
+        } else {
+          const created = await apiRequest('/api/leads', 'POST', payload);
+          state.leads.unshift(created);
+          renderLeads();
+          showToast('Lead created successfully.');
+        }
+        closeModal();
+      } catch (err) {
+        console.error('Save lead error:', err.message);
+        showToast('Unable to update lead. Please try again.');
+        if (errEl) { errEl.textContent = 'Unable to update lead. Please try again.'; errEl.style.display = 'block'; }
+      } finally {
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = editId ? 'Save Changes' : 'Save Lead'; }
+      }
+      return;
     }
+
     if (form.id === 'leadConvertModal') {
-      const leadId = Number(el('convertLeadId').value);
-      const company_name = String(el('convertCompanyName').value).trim();
-      const email = String(el('convertContactEmail').value).trim();
-      const deal_title = String(el('convertDealTitle').value).trim();
-      const deal_value = Number(el('convertDealValue').value) || 0;
+      const leadId = el('convertLeadId')?.value;
+      const create_company = el('convertCreateCompany')?.checked !== false;
+      const create_contact = el('convertCreateContact')?.checked !== false;
+      const create_deal = el('convertCreateDeal')?.checked !== false;
 
-      await apiRequest(`/api/leads/${leadId}/convert`, 'POST', {
-        company_name, email, deal_title, deal_value
-      });
+      const company_name = String(el('convertCompanyName')?.value || '').trim();
+      const contact_email = String(el('convertContactEmail')?.value || '').trim();
+      const deal_title = String(el('convertDealTitle')?.value || '').trim();
+      const deal_value = Number(el('convertDealValue')?.value) || 0;
+      const deal_stage = el('convertDealStage')?.value || 'Qualified';
+      const close_date = el('convertCloseDate')?.value || '';
 
-      const lead = state.leads.find(l => l.id === leadId);
-      if (lead) lead.status = 'Converted';
+      const errEl = el('convertErrorMsg');
+      const submitBtn = el('convertSubmitBtn');
 
-      await loadCRMData();
-      renderAll();
-      showToast(`Lead successfully converted to Customer 360! 🎯`);
+      // Validation
+      if (create_company && !company_name) {
+        if (errEl) { errEl.textContent = 'Account / Company Name is required when Create Account is selected.'; errEl.style.display = 'block'; }
+        return;
+      }
+      if (create_deal && !deal_title) {
+        if (errEl) { errEl.textContent = 'Deal / Opportunity Title is required when Create Deal is selected.'; errEl.style.display = 'block'; }
+        return;
+      }
+      if (create_deal && (!deal_value || deal_value <= 0)) {
+        if (errEl) { errEl.textContent = 'Deal Value must be a valid positive number.'; errEl.style.display = 'block'; }
+        return;
+      }
+      if (errEl) errEl.style.display = 'none';
+
+      if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Converting...'; }
+
+      try {
+        const res = await apiRequest(`/api/leads/${leadId}/convert`, 'POST', {
+          create_company,
+          create_contact,
+          create_deal,
+          company_name,
+          contact_email,
+          deal_title,
+          deal_value,
+          deal_stage,
+          close_date
+        });
+
+        const lead = (state.leads || []).find(l => String(l.id) === String(leadId));
+        if (lead) lead.status = 'Converted';
+
+        await loadCRMData();
+        renderAll();
+        closeModal();
+        showToast('Lead converted successfully.');
+      } catch (err) {
+        console.error('Convert lead error:', err.message);
+        showToast('Unable to convert lead. Please try again.');
+        if (errEl) { errEl.textContent = err.message || 'Unable to convert lead. Please try again.'; errEl.style.display = 'block'; }
+      } finally {
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = '⚡ Convert Lead'; }
+      }
+      return;
     }
+
+function openCreateLeadModal() {
+  if (el('leadModalTitle')) el('leadModalTitle').textContent = 'Create New Lead';
+  if (el('editLeadId')) el('editLeadId').value = '';
+  if (el('leadName')) el('leadName').value = '';
+  if (el('leadCompany')) el('leadCompany').value = '';
+  if (el('leadContactName')) el('leadContactName').value = '';
+  if (el('leadTitle')) el('leadTitle').value = '';
+  if (el('leadEmail')) el('leadEmail').value = '';
+  if (el('leadPhone')) el('leadPhone').value = '';
+  if (el('leadSource')) el('leadSource').value = 'Inbound';
+  if (el('leadIndustry')) el('leadIndustry').value = 'General';
+  if (el('leadStatus')) el('leadStatus').value = 'New';
+  if (el('leadScore')) el('leadScore').value = '';
+  if (el('leadExpectedValue')) el('leadExpectedValue').value = '';
+  if (el('leadNextFollowup')) el('leadNextFollowup').value = '';
+  if (el('leadOwner')) el('leadOwner').value = 'Aarav Sharma';
+  if (el('leadNotes')) el('leadNotes').value = '';
+
+  const errEl = el('leadModalErrorMsg');
+  if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
+
+  const submitBtn = el('leadModalSubmitBtn');
+  if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Save Lead'; }
+
+  showModal('leadModal');
+}
+
+function openEditLeadModal(leadId) {
+  const targetId = String(leadId);
+  const lead = (state.leads || []).find(l => String(l.id) === targetId);
+  if (!lead) {
+    showToast('Lead record not found.');
+    return;
+  }
+
+  if (el('leadModalTitle')) el('leadModalTitle').textContent = 'Edit Lead Profile';
+  if (el('editLeadId')) el('editLeadId').value = lead.id;
+  if (el('leadName')) el('leadName').value = lead.name || '';
+  if (el('leadCompany')) el('leadCompany').value = lead.company || '';
+  if (el('leadContactName')) el('leadContactName').value = lead.contact_name || '';
+  if (el('leadTitle')) el('leadTitle').value = lead.title || '';
+  if (el('leadEmail')) el('leadEmail').value = lead.email || '';
+  if (el('leadPhone')) el('leadPhone').value = lead.phone || '';
+  if (el('leadSource')) el('leadSource').value = lead.source || 'Inbound';
+  if (el('leadIndustry')) el('leadIndustry').value = lead.industry || 'General';
+  if (el('leadStatus')) el('leadStatus').value = lead.status || 'New';
+  if (el('leadScore')) el('leadScore').value = lead.lead_score || 50;
+  if (el('leadExpectedValue')) el('leadExpectedValue').value = lead.expected_value || '';
+  if (el('leadNextFollowup')) el('leadNextFollowup').value = lead.next_followup || '';
+  if (el('leadOwner')) el('leadOwner').value = lead.owner || 'Aarav Sharma';
+  if (el('leadNotes')) el('leadNotes').value = lead.notes || '';
+
+  const errEl = el('leadModalErrorMsg');
+  if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
+
+  const submitBtn = el('leadModalSubmitBtn');
+  if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Save Changes'; }
+
+  showModal('leadModal');
+}
+
+function openConvertLeadModal(leadId) {
+  const targetId = String(leadId);
+  const lead = (state.leads || []).find(l => String(l.id) === targetId);
+  if (!lead) {
+    showToast('Lead record not found.');
+    return;
+  }
+
+  if (lead.status === 'Converted') {
+    showToast('This lead has already been converted.');
+    return;
+  }
+
+  if (el('convertLeadId')) el('convertLeadId').value = lead.id;
+  if (el('summaryLeadName')) el('summaryLeadName').textContent = lead.name || '—';
+  if (el('summaryLeadCompany')) el('summaryLeadCompany').textContent = lead.company || lead.name || '—';
+  if (el('summaryLeadEmail')) el('summaryLeadEmail').textContent = lead.email || '—';
+  if (el('summaryLeadPhone')) el('summaryLeadPhone').textContent = lead.phone || '—';
+  if (el('summaryLeadSource')) el('summaryLeadSource').textContent = lead.source || 'Inbound';
+  if (el('summaryLeadStatus')) el('summaryLeadStatus').textContent = lead.status || 'New';
+  if (el('summaryLeadOwner')) el('summaryLeadOwner').textContent = lead.owner || 'Aarav Sharma';
+
+  // Checkboxes
+  if (el('convertCreateContact')) el('convertCreateContact').checked = true;
+  if (el('convertCreateCompany')) el('convertCreateCompany').checked = true;
+  if (el('convertCreateDeal')) el('convertCreateDeal').checked = true;
+
+  if (el('convertCompanyLabel')) el('convertCompanyLabel').style.display = 'block';
+  if (el('convertContactLabel')) el('convertContactLabel').style.display = 'block';
+  if (el('convertDealSection')) el('convertDealSection').style.display = 'grid';
+
+  if (el('convertCompanyName')) el('convertCompanyName').value = lead.company || lead.name || '';
+  if (el('convertContactEmail')) el('convertContactEmail').value = lead.email || '';
+  if (el('convertDealTitle')) el('convertDealTitle').value = `${lead.company || lead.name} — Core Account Deal`;
+  if (el('convertDealValue')) el('convertDealValue').value = lead.expected_value || 450000;
+  if (el('convertDealStage')) el('convertDealStage').value = 'Qualified';
+
+  const in14Days = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  if (el('convertCloseDate')) el('convertCloseDate').value = in14Days;
+
+  const errEl = el('convertErrorMsg');
+  if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
+
+  const submitBtn = el('convertSubmitBtn');
+  if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = '⚡ Convert Lead'; }
+
+  showModal('leadConvertModal');
+}
+
+window.openCreateLeadModal = openCreateLeadModal;
+window.openEditLeadModal = openEditLeadModal;
+window.openConvertLeadModal = openConvertLeadModal;
+
+document.addEventListener('change', event => {
+  if (event.target && event.target.id === 'convertCreateDeal') {
+    const section = el('convertDealSection');
+    if (section) section.style.display = event.target.checked ? 'grid' : 'none';
+  }
+  if (event.target && event.target.id === 'convertCreateCompany') {
+    const label = el('convertCompanyLabel');
+    if (label) label.style.display = event.target.checked ? 'block' : 'none';
+  }
+  if (event.target && event.target.id === 'convertCreateContact') {
+    const label = el('convertContactLabel');
+    if (label) label.style.display = event.target.checked ? 'block' : 'none';
+  }
+});
     if (form.id === 'automationModal') {
       const name = String(data.get('name')).trim();
       const event_type = data.get('event');
@@ -4112,7 +4583,54 @@ el('globalSearchInput')?.addEventListener('input', e => {
   }, 250);
 });
 
-function exportCsv(type) { const rows=type==='companies'?[['Name','Industry','Owner','Status'],...state.companies.map(c=>[c.name,c.industry,c.owner,c.status])]:type==='contacts'?[['Name','Email','Phone'],...state.contacts.map(c=>[c.name,c.email,c.phone])]:type==='deals'?[['Title','Company','Value','Stage','Probability'],...state.deals.map(d=>[d.title,d.company,d.value,d.stage,d.probability])]:[['Rep','Won value','Deals won'],['Aarav Sharma','720000','3'],['Priya Menon','480000','2'],['Kunal Shah','220000','1']]; const csv=rows.map(r=>r.map(v=>`"${String(v).replaceAll('"','""')}"`).join(',')).join('\n'); const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=`smartpay-${type}-export.csv`;a.click();URL.revokeObjectURL(a.href);showToast(`${type[0].toUpperCase()+type.slice(1)} CSV download started.`); }
+function exportCsv(type) {
+  const rows = type === 'companies'
+    ? [['Name','Industry','Owner','Status'],...(state.companies || []).map(c=>[c.name,c.industry,c.owner,c.status])]
+    : type === 'contacts'
+    ? [['Name','Email','Phone'],...(state.contacts || []).map(c=>[c.name,c.email,c.phone])]
+    : type === 'deals'
+    ? [['Title','Company','Value','Stage','Probability'],...(state.deals || []).map(d=>[d.title,d.company,d.value,d.stage,d.probability])]
+    : type === 'leads'
+    ? [['Name','Company','Contact Name','Email','Phone','Source','Industry','Status','Expected Value','Owner'],...(state.leads || []).map(l=>[l.name,l.company,l.contact_name,l.email,l.phone,l.source,l.industry,l.status,l.expected_value,l.owner])]
+    : [['Rep','Won value','Deals won'],['Aarav Sharma','720000','3'],['Priya Menon','480000','2'],['Kunal Shah','220000','1']];
+  const csv = rows.map(r=>r.map(v=>`"${String(v ?? '').replaceAll('"','""')}"`).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download = `smartpay-${type}-export.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showToast(`${type[0].toUpperCase()+type.slice(1)} CSV download started.`);
+}
+
+document.addEventListener('change', async (e) => {
+  if (e.target && e.target.id === 'leadCsvFileInput') {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      showToast('Importing prospects from CSV...');
+      const res = await fetch('/api/crm/import/leads', {
+        method: 'POST',
+        credentials: 'same-origin',
+        body: formData
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to import CSV');
+
+      showToast(`Successfully imported ${data.count || data.imported || 'prospects'} from CSV! 📥`);
+      await loadCRMData();
+      renderLeads();
+    } catch (err) {
+      showToast(`CSV Import Error: ${err.message}`);
+    } finally {
+      e.target.value = '';
+    }
+  }
+});
+
 
 // ═══════════════════════════════════════════════════════════════════
 // LETTERS GENERATOR
@@ -4392,16 +4910,47 @@ function renderLettersHistory() {
   const tbody = el('lettersHistoryTableBody');
   if (!tbody) return;
 
-  const letters = state.letters || [];
-  if (letters.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" class="table-empty">No letters generated or sent yet. Select a letter type above to create one.</td></tr>';
+  const allLetters = state.letters || [];
+
+  // 1. Update Metrics Stat Cards
+  const totalLetters = allLetters.length;
+  const sentLetters = allLetters.filter(l => l.status === 'sent');
+  const deliveryRate = totalLetters > 0 ? Math.round((sentLetters.length / totalLetters) * 100) : 100;
+  const offerApptCount = allLetters.filter(l => l.type === 'offer' || l.type === 'appointment').length;
+  const otherCount = allLetters.filter(l => l.type === 'resignation' || l.type === 'termination' || l.type === 'experience').length;
+
+  if (el('letterStatTotal')) el('letterStatTotal').textContent = totalLetters;
+  if (el('letterStatRate')) el('letterStatRate').textContent = `${deliveryRate}%`;
+  if (el('letterStatDelivered')) el('letterStatDelivered').textContent = `${sentLetters.length} delivered`;
+  if (el('letterStatOffers')) el('letterStatOffers').textContent = offerApptCount;
+  if (el('letterStatOthers')) el('letterStatOthers').textContent = otherCount;
+
+  // 2. Client-side Search & Filter
+  const searchQuery = (el('lettersSearchInput')?.value || '').toLowerCase().trim();
+  const typeFilter = el('lettersTypeFilter')?.value || 'all';
+  const statusFilter = el('lettersStatusFilter')?.value || 'all';
+
+  const filteredLetters = allLetters.filter(letter => {
+    if (typeFilter !== 'all' && (letter.type || 'offer') !== typeFilter) return false;
+    if (statusFilter !== 'all' && (letter.status || 'sent') !== statusFilter) return false;
+    if (searchQuery) {
+      const emp = (letter.employeeName || '').toLowerCase();
+      const email = (letter.recipientEmail || '').toLowerCase();
+      const subj = (letter.subject || '').toLowerCase();
+      if (!emp.includes(searchQuery) && !email.includes(searchQuery) && !subj.includes(searchQuery)) return false;
+    }
+    return true;
+  });
+
+  if (filteredLetters.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" class="table-empty">No matching letters found in history.</td></tr>';
     return;
   }
 
-  tbody.innerHTML = letters.map(letter => {
+  tbody.innerHTML = filteredLetters.map(letter => {
     const isSent = letter.status === 'sent';
     const statusBadge = isSent
-      ? `<span class="badge-sent">✓ Sent</span>`
+      ? `<span class="badge-sent">✓ Delivered</span>`
       : `<span class="badge-failed" title="${(letter.error_message || 'Delivery failed').replace(/"/g, '&quot;')}">✕ Failed</span>`;
     
     const type = letter.type || 'offer';
@@ -4416,18 +4965,142 @@ function renderLettersHistory() {
         <td><strong>${escapeHTML(letter.employeeName || 'Recipient')}</strong></td>
         <td>${typeBadge}</td>
         <td>${escapeHTML(letter.recipientEmail || '—')}</td>
-        <td style="max-width:240px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHTML(letter.subject || '')}">${escapeHTML(letter.subject || '—')}</td>
+        <td style="max-width:220px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHTML(letter.subject || '')}">${escapeHTML(letter.subject || '—')}</td>
         <td><small class="muted">${formattedDate}</small></td>
         <td>${statusBadge}</td>
+        <td style="text-align: right; white-space: nowrap;">
+          <button type="button" class="button button-quiet" style="padding: 4px 8px; font-size: 12px;" data-view-letter="${letter.id}">👁 View</button>
+          <button type="button" class="button button-secondary" style="padding: 4px 8px; font-size: 12px; margin-left: 4px;" data-download-letter-pdf="${letter.id}">📥 PDF</button>
+          <button type="button" class="button button-primary" style="padding: 4px 8px; font-size: 12px; margin-left: 4px;" data-resend-letter="${letter.id}">✉ Resend</button>
+        </td>
       </tr>
     `;
   }).join('');
 }
 
-// Wire refresh button
-const refreshLettersBtn = el('refreshLettersBtn');
-if (refreshLettersBtn) {
-  refreshLettersBtn.addEventListener('click', loadLettersHistory);
+let currentActiveViewLetter = null;
+
+function viewSentLetter(letterId) {
+  const letter = (state.letters || []).find(l => String(l.id) === String(letterId));
+  if (!letter) {
+    showToast('Letter record not found.');
+    return;
+  }
+  currentActiveViewLetter = letter;
+
+  let letterData = {};
+  if (letter.letter_data) {
+    try {
+      letterData = typeof letter.letter_data === 'string' ? JSON.parse(letter.letter_data) : letter.letter_data;
+    } catch (e) {
+      letterData = {};
+    }
+  }
+
+  const type = letter.type || 'offer';
+  const typeTitle = letterTemplates[type]?.title || 'Official Letter';
+  const empName = letter.employeeName || letterData.employeeName || 'Candidate';
+
+  if (el('viewLetterTitle')) el('viewLetterTitle').textContent = `${typeTitle} — ${empName}`;
+  if (el('viewLetterSubtitle')) el('viewLetterSubtitle').textContent = `Audit trail record #${letter.id}`;
+  if (el('viewLetterRecipient')) el('viewLetterRecipient').textContent = empName;
+  if (el('viewLetterEmail')) el('viewLetterEmail').textContent = letter.recipientEmail || letterData.recipientEmail || '—';
+  if (el('viewLetterSubject')) el('viewLetterSubject').textContent = letter.subject || '—';
+  if (el('viewLetterDate')) el('viewLetterDate').textContent = letter.created_at || letter.createdAt ? new Date(letter.created_at || letter.createdAt).toLocaleString('en-IN') : 'Just now';
+  if (el('viewLetterStatus')) {
+    el('viewLetterStatus').innerHTML = letter.status === 'sent'
+      ? `<span style="color: #10b981; font-weight: 600;">✓ Delivered / Sent</span>`
+      : `<span style="color: #ef4444; font-weight: 600;">✕ Delivery Failed (${escapeHTML(letter.error_message || '')})</span>`;
+  }
+
+  // Generate HTML preview
+  const previewHtml = generateLetterHTML(type, { ...letterData, employeeName: empName });
+  if (el('viewLetterContent')) el('viewLetterContent').innerHTML = previewHtml;
+
+  showModal('viewLetterModal');
+}
+
+function downloadSentLetterPdf(letterId) {
+  const url = `/api/crm/letters/${letterId}/pdf`;
+  window.open(url, '_blank');
+}
+
+function resendSentLetter(letterId) {
+  const letter = (state.letters || []).find(l => String(l.id) === String(letterId));
+  if (!letter) return;
+
+  closeModal();
+  openView('letters');
+
+  let letterData = {};
+  if (letter.letter_data) {
+    try {
+      letterData = typeof letter.letter_data === 'string' ? JSON.parse(letter.letter_data) : letter.letter_data;
+    } catch (e) {
+      letterData = {};
+    }
+  }
+
+  const type = letter.type || 'offer';
+  openLetterGenerator(type);
+
+  // Fill generator form fields with stored data
+  Object.keys(letterData).forEach(key => {
+    const field = el(`letter_${key}`);
+    if (field) field.value = letterData[key];
+  });
+  if (el('letter_employeeName')) el('letter_employeeName').value = letter.employeeName || letterData.employeeName || '';
+  if (el('letter_recipientEmail')) el('letter_recipientEmail').value = letter.recipientEmail || letterData.recipientEmail || '';
+
+  updateLetterPreview();
+
+  // Prefill email modal
+  if (el('letterRecipientEmail')) el('letterRecipientEmail').value = letter.recipientEmail || letterData.recipientEmail || '';
+  if (el('letterEmailSubject')) el('letterEmailSubject').value = letter.subject || '';
+
+  showModal('letterEmailModal');
+}
+
+// Wire refresh and filter controls
+if (el('refreshLettersBtn')) el('refreshLettersBtn').addEventListener('click', loadLettersHistory);
+if (el('lettersSearchInput')) el('lettersSearchInput').addEventListener('input', renderLettersHistory);
+if (el('lettersTypeFilter')) el('lettersTypeFilter').addEventListener('change', renderLettersHistory);
+if (el('lettersStatusFilter')) el('lettersStatusFilter').addEventListener('change', renderLettersHistory);
+
+// Event delegation for table action buttons
+const lettersTable = el('lettersHistoryTable');
+if (lettersTable) {
+  lettersTable.addEventListener('click', e => {
+    const viewBtn = e.target.closest('[data-view-letter]');
+    if (viewBtn) {
+      viewSentLetter(viewBtn.dataset.viewLetter);
+      return;
+    }
+
+    const pdfBtn = e.target.closest('[data-download-letter-pdf]');
+    if (pdfBtn) {
+      downloadSentLetterPdf(pdfBtn.dataset.downloadLetterPdf);
+      return;
+    }
+
+    const resendBtn = e.target.closest('[data-resend-letter]');
+    if (resendBtn) {
+      resendSentLetter(resendBtn.dataset.resendLetter);
+      return;
+    }
+  });
+}
+
+// Modal action button listeners
+if (el('viewLetterDownloadBtn')) {
+  el('viewLetterDownloadBtn').addEventListener('click', () => {
+    if (currentActiveViewLetter) downloadSentLetterPdf(currentActiveViewLetter.id);
+  });
+}
+if (el('viewLetterResendBtn')) {
+  el('viewLetterResendBtn').addEventListener('click', () => {
+    if (currentActiveViewLetter) resendSentLetter(currentActiveViewLetter.id);
+  });
 }
 
 async function sendLetterEmail(formData) {
@@ -5337,6 +6010,71 @@ document.addEventListener('click', async e => {
       }
     }
   }
+
+  // Test Automation Rule
+  const testAutoBtn = e.target.closest('.test-rule-btn');
+  if (testAutoBtn) {
+    const id = testAutoBtn.dataset.autoId;
+    const rule = (state.automations || []).find(a => Number(a.id) === Number(id));
+    try {
+      showToast(`Running dry-run simulation for "${rule ? rule.name : 'rule'}"...`);
+      const res = await apiRequest(`/api/automations/${id}/test`, { method: 'POST', body: JSON.stringify({}) });
+      if (res.is_match) {
+        showToast(`✅ Test Simulation MATCHED for "${res.rule_name || 'Rule'}"! Actions: ${JSON.stringify(res.actions_would_execute)} 🧪`);
+      } else {
+        showToast(`❌ Test Simulation completed: Conditions did not match.`);
+      }
+    } catch (err) {
+      showToast(`Test error: ${err.message}`);
+    }
+    return;
+  }
+
+  // Execute Automation Rule Live
+  const runAutoBtn = e.target.closest('.run-rule-btn');
+  if (runAutoBtn) {
+    const id = runAutoBtn.dataset.autoId;
+    const rule = (state.automations || []).find(a => Number(a.id) === Number(id));
+    try {
+      showToast(`Executing automation "${rule ? rule.name : 'rule'}" live...`);
+      const res = await apiRequest(`/api/automations/${id}/execute`, { method: 'POST', body: JSON.stringify({}) });
+      showToast(res.message || `Automation executed successfully! 🚀`);
+      await loadCRMData();
+      renderAll();
+    } catch (err) {
+      showToast(`Execution error: ${err.message}`);
+    }
+    return;
+  }
+
+  // Edit Automation Rule
+  const editAutoBtn = e.target.closest('.edit-auto-btn');
+  if (editAutoBtn) {
+    const id = Number(editAutoBtn.dataset.autoId);
+    const rule = (state.automations || []).find(a => Number(a.id) === Number(id));
+    if (rule) {
+      state.editingAutomationId = rule.id;
+      if (el('automationModalTitle')) el('automationModalTitle').textContent = `Edit Automation Rule: ${rule.name}`;
+      if (el('autoRuleId')) el('autoRuleId').value = rule.id;
+      if (el('autoRuleName')) el('autoRuleName').value = rule.name || '';
+      if (el('autoDescription')) el('autoDescription').value = rule.description || '';
+      if (el('autoEvent')) el('autoEvent').value = rule.event || rule.event_type || 'lead_created';
+      if (el('autoActionType')) el('autoActionType').value = rule.action_type || 'create_task';
+
+      let condObj = {};
+      try {
+        condObj = typeof rule.condition_json === 'string' ? JSON.parse(rule.condition_json) : (rule.condition_json || {});
+      } catch (e) { condObj = {}; }
+
+      const firstKey = Object.keys(condObj)[0] || 'amount';
+      if (el('autoCondField')) el('autoCondField').value = firstKey;
+      if (el('autoCondVal')) el('autoCondVal').value = condObj[firstKey] !== undefined ? condObj[firstKey] : '';
+
+      showModal('automationModal');
+    }
+    return;
+  }
+
 
   // Mark single notification read
   const markReadBtn = e.target.closest('.mark-single-read-btn');

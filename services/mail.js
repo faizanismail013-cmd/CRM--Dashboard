@@ -81,7 +81,7 @@ function isValidEmail(email) {
  * @param {string} [options.filename] - Filename for attachment
  * @returns {Promise<{success: boolean, messageId: string, provider: string}>}
  */
-async function sendLetterEmail({ to, subject, html, text, pdfBuffer, filename = 'HR_Document.pdf' }) {
+async function sendLetterEmail({ to, cc, subject, html, text, pdfBuffer, filename = 'HR_Document.pdf' }) {
   if (!isValidEmail(to)) {
     throw new Error(`Invalid recipient email address: "${to}". Please enter a valid email.`);
   }
@@ -102,6 +102,11 @@ async function sendLetterEmail({ to, subject, html, text, pdfBuffer, filename = 
       html,
       text: text || html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
     };
+
+    // Add CC if provided and valid
+    if (cc && typeof cc === 'string' && cc.trim() && isValidEmail(cc.trim())) {
+      mailOptions.cc = cc.trim();
+    }
 
     if (pdfBuffer && Buffer.isBuffer(pdfBuffer)) {
       mailOptions.attachments = [
@@ -130,6 +135,11 @@ async function sendLetterEmail({ to, subject, html, text, pdfBuffer, filename = 
       subject: subject.trim(),
       html
     };
+
+    // Add CC if provided and valid
+    if (cc && typeof cc === 'string' && cc.trim() && isValidEmail(cc.trim())) {
+      emailData.cc = [cc.trim()];
+    }
 
     if (pdfBuffer && Buffer.isBuffer(pdfBuffer)) {
       emailData.attachments = [

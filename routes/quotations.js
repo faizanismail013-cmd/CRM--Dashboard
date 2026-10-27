@@ -8,6 +8,7 @@ const router = express.Router();
 const { requireAuth, rbacFilter } = require('../middleware/auth');
 const crmStore = require('../crm-store');
 const { triggerAutomation, getAutomationSettings } = require('../services/automationService');
+const { sendLetterEmail, isValidEmail } = require('../services/mail');
 
 // Helper: Generate unique quotation number
 function generateQuotationNumber() {
@@ -341,4 +342,138 @@ router.delete('/:id', requireAuth, async (req, res, next) => {
   } catch (error) { next(error); }
 });
 
+// ─── Send Quotation Email ───────────────────────────────────────────
+router.post('/:id/send', requireAuth, async (req, res, next) => {
+  try {
+    const quotation = await crmStore.findById('quotations', req.params.id);
+    if (!quotation) return res.status(404).json({ error: 'Quotation not found' });
+
+    const snapshot = await crmStore.snapshot();
+    const company = (snapshot.companies || []).find(c => Number(c.id) === Number(quotation.company_id));
+    const contact = (snapshot.contacts || []).find(cnt => Number(cnt.id) === Number(quotation.contact_id));
+
+    const recipientEmail = (req.body.to || contact?.email || company?.email || '').trim();
+    if (!recipientEmail || (typeof isValidEmail === 'function' && !isValidEmail(recipientEmail))) {
+      return res.status(400).json({ error: 'No valid customer email is configured.' });
+    }
+
+    // Get quotation line items
+    const allItems = await crmStore.list('quotation_items');
+    const items = allItems.filter(i => Number(i.quotation_id) === Number(quotation.id));
+
+    const itemsHtml = items.length > 0
+      ? items.map(item => `
+        <tr style="border-bottom: 1px solid #f1f5f9;">
+          <td style="padding: 10px; font-size: 13px;">
+            <strong>${item.product_name || 'Item'}</strong>
+            ${item.description ? `<br><small style="color: #64748b;">${item.description}</small>` : ''}
+          </td>
+          <td style="padding: 10px; text-align: center; font-size: 13px;">${item.quantity || 1}</td>
+          <td style="padding: 10px; text-align: right; font-size: 13px;">₹${Number(item.unit_price || 0).toLocaleString('en-IN')}</td>
+          <td style="padding: 10px; text-align: right; font-size: 13px;"><strong>₹${Number(item.amount || 0).toLocaleString('en-IN')}</strong></td>
+        </tr>
+      `).join('')
+      : `<tr><td colspan="4" style="padding: 12px; text-align: center; color: #64748b;">Quotation details: ${quotation.notes || 'Standard Commercial Proposal'}</td></tr>`;
+
+    const subject = req.body.subject || `Commercial Quotation ${quotation.quotation_number} — SmartPay Technologies`;
+
+    const emailHtml = `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; color: #1e293b; background: #ffffff;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #3b82f6; padding-bottom: 16px; margin-bottom: 24px;">
+          <div>
+            <h1 style="margin: 0; color: #1e40af; font-size: 24px; font-weight: 800; letter-spacing: -0.5px;">SmartPay</h1>
+            <p style="margin: 2px 0 0 0; color: #64748b; font-size: 12px;">SmartPay Technologies Pvt Ltd</p>
+          </div>
+          <div style="text-align: right;">
+            <span style="background: #dbeafe; color: #1e40af; font-weight: 700; padding: 4px 12px; border-radius: 9999px; font-size: 12px;">QUOTATION</span>
+            <p style="margin: 6px 0 0 0; font-weight: 700; font-size: 14px;">${quotation.quotation_number}</p>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; margin-bottom: 24px; font-size: 13px;">
+          <div>
+            <strong style="color: #64748b; text-transform: uppercase; font-size: 11px;">Prepared For:</strong><br>
+            <strong style="font-size: 15px; color: #0f172a;">${company?.name || 'Valued Customer'}</strong><br>
+            Attn: ${contact?.name || 'Procurement Team'}<br>
+            ${company?.billing_address || company?.address || ''}
+          </div>
+          <div style="text-align: right;">
+            <strong>Valid Until:</strong> ${quotation.valid_until || '—'}<br>
+            <strong>Payment Terms:</strong> ${quotation.terms || 'Net 30 days'}
+          </div>
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px;">
+          <thead>
+            <tr style="background: #f8fafc;">
+              <th style="padding: 10px; text-align: left; font-size: 12px; color: #64748b;">ITEM / SERVICE</th>
+              <th style="padding: 10px; text-align: center; font-size: 12px; color: #64748b;">QTY</th>
+              <th style="padding: 10px; text-align: right; font-size: 12px; color: #64748b;">UNIT PRICE</th>
+              <th style="padding: 10px; text-align: right; font-size: 12px; color: #64748b;">AMOUNT</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${itemsHtml}
+          </tbody>
+        </table>
+
+        <div style="text-align: right; margin-bottom: 24px; font-size: 14px;">
+          <p style="margin: 4px 0;">Subtotal: <strong>₹${Number(quotation.subtotal || 0).toLocaleString('en-IN')}</strong></p>
+          ${quotation.discount_percent ? `<p style="margin: 4px 0; color: #16a34a;">Discount (${quotation.discount_percent}%): <strong>-₹${Math.round((quotation.subtotal || 0) * (quotation.discount_percent / 100)).toLocaleString('en-IN')}</strong></p>` : ''}
+          <p style="margin: 4px 0;">GST (18%): <strong>₹${Math.round(((quotation.subtotal || 0) * (1 - (quotation.discount_percent || 0)/100)) * 0.18).toLocaleString('en-IN')}</strong></p>
+          <p style="font-size: 18px; font-weight: 800; color: #0f172a; margin: 12px 0 0 0; padding-top: 8px; border-top: 1px solid #e2e8f0;">Total Amount: ₹${Number(quotation.total || 0).toLocaleString('en-IN')}</p>
+        </div>
+
+        ${quotation.notes ? `<div style="background: #f8fafc; border-radius: 8px; padding: 12px; margin-bottom: 20px; font-size: 13px; color: #475569;"><strong>Notes / Scope:</strong> ${quotation.notes}</div>` : ''}
+
+        <p style="font-size: 12px; color: #94a3b8; text-align: center;">Thank you for considering SmartPay Technologies. Contact sales@smartpay.in for queries.</p>
+      </div>
+    `;
+
+    // Dispatch real email via SMTP / Resend
+    let sendResult;
+    try {
+      sendResult = await sendLetterEmail({
+        to: recipientEmail,
+        subject,
+        html: emailHtml
+      });
+    } catch (mailErr) {
+      console.error('⚠️  Failed to send real quotation email:', mailErr.message);
+      return res.status(500).json({ error: `Failed to send email: ${mailErr.message}` });
+    }
+
+    const updated = await crmStore.update('quotations', req.params.id, { status: 'sent', updated_at: new Date().toISOString() });
+
+    const userId = req.user?.id || 1;
+    await crmStore.create('activities', {
+      type: 'quotation',
+      icon: '✉',
+      text: `<strong>Quotation ${quotation.quotation_number}</strong> emailed to <strong>${recipientEmail}</strong> (${sendResult?.provider || 'email'})`,
+      time: 'Just now',
+      user_id: userId
+    });
+
+    await crmStore.create('communications', {
+      type: 'email',
+      recipient: recipientEmail,
+      cc: req.body.cc || '',
+      subject,
+      body_html: emailHtml,
+      status: 'sent',
+      entity_type: 'quotation',
+      entity_id: quotation.id,
+      user_id: userId,
+      created_at: new Date().toISOString()
+    });
+
+    res.json({
+      success: true,
+      message: `Quotation ${quotation.quotation_number} sent successfully to ${recipientEmail}`,
+      quotation: updated
+    });
+  } catch (error) { next(error); }
+});
+
 module.exports = router;
+

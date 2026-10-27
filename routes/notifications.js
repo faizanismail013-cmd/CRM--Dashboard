@@ -41,15 +41,17 @@ router.get('/unread-count', requireAuth, async (req, res, next) => {
   } catch (error) { next(error); }
 });
 
-// Mark single notification as read
-router.patch('/:id/read', requireAuth, async (req, res, next) => {
+// Mark single notification as read (supports both PUT and PATCH)
+const markReadHandler = async (req, res, next) => {
   try {
-    const userId = req.user?.id || req.session?.user?.id;
+    const userId = req.user?.id || req.session?.user?.id || 1;
     const notif = await markNotificationRead(req.params.id, userId);
     if (!notif) return res.status(404).json({ error: 'Notification not found.' });
     res.json(notif);
   } catch (error) { next(error); }
-});
+};
+router.patch('/:id/read', requireAuth, markReadHandler);
+router.put('/:id/read', requireAuth, markReadHandler);
 
 // Mark all as read
 router.post('/mark-all-read', requireAuth, async (req, res, next) => {

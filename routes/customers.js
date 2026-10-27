@@ -299,7 +299,7 @@ router.put('/:id', requireAuth, async (req, res, next) => {
 
     const allowed = [
       'name', 'industry', 'owner', 'status', 'customer_status', 'customer_type',
-      'gst_number', 'pan_number', 'website', 'phone', 'alternate_phone', 'alternate_email',
+      'gst_number', 'pan_number', 'website', 'phone', 'alternate_phone', 'email', 'alternate_email',
       'billing_address', 'shipping_address', 'city', 'state', 'country', 'pin_code', 'notes'
     ];
 

@@ -62,14 +62,13 @@ router.post('/', requireAuth, async (req, res) => {
 
     // Notify approver
     try {
-      await createNotification(1, {
-        type: 'approval',
-        title: `Approval Required: ${type}`,
-        message: `${req.user?.name || 'Sales Rep'} requested approval for ${entity_type} #${entity_id}`,
-        priority: 'high',
-        entity_type,
-        entity_id
-      });
+      await createNotification(
+        1,
+        'approval',
+        `Approval Required: ${type}`,
+        `${req.user?.name || 'Sales Rep'} requested approval for ${entity_type} #${entity_id}`,
+        { priority: 'high', entity_type, entity_id }
+      );
     } catch (e) {}
 
     res.status(201).json(app);
@@ -119,14 +118,13 @@ router.put('/:id/decide', requireAuth, async (req, res) => {
 
     // Notify requester
     try {
-      await createNotification(approval.requested_by || 1, {
-        type: 'approval',
-        title: `Approval ${decision}: ${approval.type}`,
-        message: `Your request for ${approval.entity_type} #${approval.entity_id} was ${decision.toLowerCase()} by ${req.user?.name || 'Manager'}.`,
-        priority: decision === 'Approved' ? 'normal' : 'high',
-        entity_type: approval.entity_type,
-        entity_id: approval.entity_id
-      });
+      await createNotification(
+        approval.requested_by || 1,
+        'approval',
+        `Approval ${decision}: ${approval.type}`,
+        `Your request for ${approval.entity_type} #${approval.entity_id} was ${decision.toLowerCase()} by ${req.user?.name || 'Manager'}.`,
+        { priority: decision === 'Approved' ? 'normal' : 'high', entity_type: approval.entity_type, entity_id: approval.entity_id }
+      );
       await createAuditLog(req.user?.id || 1, `Approval ${decision}`, 'approval', approval.id, { decision, comments }, req.ip);
     } catch (e) {}
 

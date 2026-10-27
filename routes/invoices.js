@@ -8,6 +8,7 @@ const router = express.Router();
 const { requireAuth } = require('../middleware/auth');
 const crmStore = require('../crm-store');
 const { sendLetterEmail, isValidEmail } = require('../services/mail');
+const { triggerAutomation } = require('../services/automationService');
 
 // Helper: Generate unique invoice number
 function generateInvoiceNumber() {
@@ -316,8 +317,8 @@ router.post('/:id/payments', requireAuth, async (req, res, next) => {
       amount: paymentAmount,
       payment_date: payment_date || todayStr,
       payment_method,
-      reference_number: reference_number.trim(),
-      notes: notes.trim(),
+      reference_number: String(reference_number || '').trim(),
+      notes: String(notes || '').trim(),
       user_id: userId
     });
 
@@ -343,13 +344,13 @@ router.post('/:id/payments', requireAuth, async (req, res, next) => {
     await crmStore.create('activities', {
       type: 'payment',
       icon: '💰',
-      text: `<strong>Payment of ₹${(paymentAmount / 100000).toFixed(1)}L received</strong> for Invoice ${invoice.invoice_number} via ${payment_method.toUpperCase()}`,
+      text: `<strong>Payment of ₹${(paymentAmount / 100000).toFixed(1)}L received</strong> for Invoice ${invoice.invoice_number} via ${String(payment_method || 'bank_transfer').toUpperCase()}`,
       time: 'Just now',
       user_id: userId
     });
 
     // Trigger automation event
-    triggerAutomation('payment_recorded', {
+    triggerAutomation('payment_recorded', 'payment', payment.id, {
       payment_id: payment.id,
       payment_number: payment.payment_number,
       invoice_id: invoice.id,
@@ -357,7 +358,7 @@ router.post('/:id/payments', requireAuth, async (req, res, next) => {
       amount: paymentAmount,
       new_status: newStatus,
       company_id: invoice.company_id
-    }, req.user).catch(err => console.error('Automation error (payment_recorded):', err));
+    }).catch(err => console.error('Automation error (payment_recorded):', err));
 
     res.status(201).json({
       success: true,
@@ -384,6 +385,9 @@ router.post('/:id/send', requireAuth, async (req, res, next) => {
     if (!recipientEmail || !isValidEmail(recipientEmail)) {
       return res.status(400).json({ error: 'Valid recipient email is required' });
     }
+
+    const ccEmail = (req.body.cc || '').trim() || undefined;
+    const emailSubject = (req.body.subject || '').trim() || `Tax Invoice ${invoice.invoice_number} from SmartPay Technologies`;
 
     const allItems = await crmStore.list('invoice_items');
     const items = allItems.filter(i => Number(i.invoice_id) === Number(req.params.id));
@@ -455,11 +459,20 @@ router.post('/:id/send', requireAuth, async (req, res, next) => {
       </div>
     `;
 
-    const sendResult = await sendLetterEmail({
-      to: recipientEmail,
-      subject: `Tax Invoice ${invoice.invoice_number} from SmartPay Technologies`,
-      html: emailHtml
-    });
+    let sendResult;
+    try {
+      sendResult = await sendLetterEmail({
+        to: recipientEmail,
+        cc: ccEmail,
+        subject: emailSubject,
+        html: emailHtml
+      });
+    } catch (mailErr) {
+      console.error('Invoice email send failed:', mailErr.message);
+      return res.status(502).json({
+        error: `Email delivery failed: ${mailErr.message}. Please check your SMTP or Resend configuration.`
+      });
+    }
 
     // Update status to 'sent' if it was 'draft'
     if (invoice.status === 'draft') {
@@ -471,7 +484,7 @@ router.post('/:id/send', requireAuth, async (req, res, next) => {
     await crmStore.create('activities', {
       type: 'email',
       icon: '✉',
-      text: `<strong>Sent Invoice ${invoice.invoice_number}</strong> to ${recipientEmail}`,
+      text: `<strong>Sent Invoice ${invoice.invoice_number}</strong> to ${recipientEmail}${ccEmail ? ` (CC: ${ccEmail})` : ''}`,
       time: 'Just now',
       user_id: userId
     });

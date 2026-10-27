@@ -69,7 +69,7 @@ router.get('/', requireAuth, async (req, res) => {
 // ─── GET /api/leads/:id (Lead Detail) ────────────────────────────────
 router.get('/:id', requireAuth, async (req, res) => {
   try {
-    const lead = await crmStore.getById('leads', req.params.id);
+    const lead = await crmStore.findById('leads', req.params.id);
     if (!lead) return res.status(404).json({ error: 'Lead not found.' });
     res.json(lead);
   } catch (error) {
@@ -182,16 +182,25 @@ router.post('/bulk', requireAuth, async (req, res) => {
 router.post('/:id/convert', requireAuth, async (req, res) => {
   try {
     const leadId = req.params.id;
-    const lead = await crmStore.getById('leads', leadId);
+    const lead = await crmStore.findById('leads', leadId);
     if (!lead) return res.status(404).json({ error: 'Lead not found.' });
+
+    // Prevent Duplicate Conversion
+    if (lead.status === 'Converted') {
+      return res.status(400).json({ error: 'This lead has already been converted.' });
+    }
 
     const snapshot = await crmStore.snapshot();
     const companyName = String(req.body.company_name || lead.company || lead.name).trim();
-    const contactEmail = String(req.body.contact_email || lead.email || '').trim().toLowerCase();
+    const contactEmail = String(req.body.contact_email || req.body.email || lead.email || '').trim().toLowerCase();
+
+    const createCompany = req.body.create_company !== false;
+    const createContact = req.body.create_contact !== false;
+    const createDeal = req.body.create_deal !== false;
 
     // 1. Check or Create Company
     let existingCompany = (snapshot.companies || []).find(c => (c.name || '').toLowerCase() === companyName.toLowerCase());
-    if (!existingCompany) {
+    if (createCompany && !existingCompany) {
       existingCompany = await crmStore.create('companies', {
         name: companyName,
         industry: lead.industry || 'General',
@@ -212,43 +221,48 @@ router.post('/:id/convert', requireAuth, async (req, res) => {
       ? (snapshot.contacts || []).find(c => (c.email || '').toLowerCase() === contactEmail)
       : null;
 
-    if (!existingContact) {
+    if (createContact && !existingContact) {
       existingContact = await crmStore.create('contacts', {
         name: lead.contact_name || lead.name,
-        title: 'Lead Contact',
+        title: lead.title || 'Lead Contact',
         email: lead.email || '',
         phone: lead.phone || '',
-        company_id: existingCompany.id,
-        company_name: existingCompany.name,
+        company_id: existingCompany ? existingCompany.id : null,
+        company_name: existingCompany ? existingCompany.name : companyName,
         primary: true,
         created_at: new Date().toISOString()
       });
     }
 
-    // 3. Create Deal
-    const dealTitle = String(req.body.deal_title || `${companyName} Opportunity`).trim();
-    const dealValue = Number(req.body.deal_value || lead.expected_value || 500000);
+    // 3. Create Deal if requested
+    let newDeal = null;
+    if (createDeal) {
+      const dealTitle = String(req.body.deal_title || `${companyName} Opportunity`).trim();
+      const dealValue = Number(req.body.deal_value || lead.expected_value || 450000);
+      const dealStage = String(req.body.deal_stage || 'Qualified');
+      const dueText = req.body.close_date ? `Due ${req.body.close_date}` : 'In 14 days';
 
-    const newDeal = await crmStore.create('deals', {
-      title: dealTitle,
-      company: existingCompany.name,
-      company_id: existingCompany.id,
-      contact_id: existingContact.id,
-      value: dealValue,
-      stage: 'Qualified',
-      probability: 25,
-      owner: lead.owner || 'Aarav Sharma',
-      due: 'In 14 days',
-      month: new Date().toLocaleString('en-US', { month: 'long' }),
-      tag: 'converted lead',
-      deal_type: 'new_business',
-      created_at: new Date().toISOString()
-    });
+      newDeal = await crmStore.create('deals', {
+        title: dealTitle,
+        company: existingCompany ? existingCompany.name : companyName,
+        company_id: existingCompany ? existingCompany.id : null,
+        contact_id: existingContact ? existingContact.id : null,
+        value: dealValue,
+        stage: dealStage,
+        probability: dealStage === 'Won' ? 100 : (dealStage === 'Proposal' ? 60 : 25),
+        owner: lead.owner || 'Aarav Sharma',
+        due: dueText,
+        month: new Date().toLocaleString('en-US', { month: 'long' }),
+        tag: 'converted lead',
+        deal_type: 'new_business',
+        created_at: new Date().toISOString()
+      });
+    }
 
-    // 4. Create Initial Follow-up Task
+    // 4. Create Follow-up Task
     const newTask = await crmStore.create('tasks', {
       title: `Initial discovery call with ${lead.contact_name || lead.name}`,
-      company: existingCompany.name,
+      company: existingCompany ? existingCompany.name : companyName,
       due: 'Today · 3:00 PM',
       bucket: 'today',
       priority: 'high',
@@ -257,11 +271,11 @@ router.post('/:id/convert', requireAuth, async (req, res) => {
     });
 
     // 5. Update Lead Status to Converted
-    await crmStore.update('leads', leadId, {
+    const updatedLead = await crmStore.update('leads', leadId, {
       status: 'Converted',
-      converted_company_id: existingCompany.id,
-      converted_contact_id: existingContact.id,
-      converted_deal_id: newDeal.id,
+      converted_company_id: existingCompany ? existingCompany.id : null,
+      converted_contact_id: existingContact ? existingContact.id : null,
+      converted_deal_id: newDeal ? newDeal.id : null,
       updated_at: new Date().toISOString()
     });
 
@@ -269,13 +283,14 @@ router.post('/:id/convert', requireAuth, async (req, res) => {
     await crmStore.create('activities', {
       type: 'deal',
       icon: '⚡',
-      text: `<strong>Converted Lead: ${lead.name}</strong> into Company (${existingCompany.name}) and Deal (${newDeal.title}) valued at ₹${(dealValue / 100000).toFixed(1)}L`,
+      text: `<strong>Converted Lead: ${lead.name}</strong> into Company (${companyName})${newDeal ? ` and Deal (${newDeal.title})` : ''}`,
       time: 'Just now'
     });
 
     res.json({
       success: true,
-      message: `Lead ${lead.name} converted successfully into Customer 360 workspace!`,
+      message: 'Lead converted successfully.',
+      lead: updatedLead,
       converted: {
         company: existingCompany,
         contact: existingContact,

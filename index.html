@@ -454,7 +454,7 @@
 
         <section class="view active" id="dashboard-view">
           <div class="page-heading">
-            <div><p class="eyebrow" id="dashboardDate">MONDAY, 1 SEPTEMBER</p><h1><span id="dashboardGreetingPrefix">Good morning,</span> <span id="dashboardUserName" class="clickable-username" data-view-go="profile" title="View your profile">Aarav</span> <span>✨</span></h1><p>Here's how your book of business is moving today.</p></div>
+            <div><p class="eyebrow" id="dashboardDate">MONDAY, 1 SEPTEMBER</p><h1><span id="dashboardGreetingPrefix">Welcome,</span> <span id="dashboardUserName" class="clickable-username" data-view-go="profile" title="View your profile">Aarav</span> <span>✨</span></h1><p>Here's how your book of business is moving today.</p></div>
             <div class="heading-actions">
               <select class="button button-quiet" id="dateFilter">
                 <option value="this_month">This month</option>
@@ -737,6 +737,68 @@
           </article>
         </section>
 
+        <section class="view" id="payments-view">
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">Financial Ledger &amp; Collections</p>
+              <h1>Payments</h1>
+              <p>Track settled invoices, payment methods, UTR reference numbers, and outstanding customer balances.</p>
+            </div>
+            <div class="heading-actions">
+              <button type="button" class="button button-primary" data-open-modal="paymentModal">+ Record Payment</button>
+            </div>
+          </div>
+          <div class="metrics-grid">
+            <article class="metric-card">
+              <span class="metric-label">Total Collections</span>
+              <strong class="metric-value" id="paymentTotalCollected">₹0</strong>
+              <span class="metric-trend positive">From settled invoices</span>
+            </article>
+            <article class="metric-card">
+              <span class="metric-label">Outstanding Receivables</span>
+              <strong class="metric-value" id="paymentOutstandingTotal" style="color: #ef4444;">₹0</strong>
+              <span class="metric-trend neutral">Across unpaid/partial invoices</span>
+            </article>
+            <article class="metric-card">
+              <span class="metric-label">Settlement Rate</span>
+              <strong class="metric-value" id="paymentSettlementRate">0%</strong>
+              <span class="metric-trend positive">Invoice collection efficiency</span>
+            </article>
+          </div>
+          <div class="toolbar panel-lite">
+            <div class="filter-search">
+              <span>⌕</span>
+              <input id="paymentSearch" type="search" placeholder="Search payments by UTR, invoice, customer name...">
+            </div>
+            <select id="paymentMethodFilter" aria-label="Filter by payment method">
+              <option value="all">All Payment Methods</option>
+              <option value="bank_transfer">Bank Transfer (NEFT/RTGS)</option>
+              <option value="upi">UPI</option>
+              <option value="card">Credit / Debit Card</option>
+              <option value="cheque">Cheque</option>
+            </select>
+          </div>
+          <article class="panel">
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Payment #</th>
+                    <th>Invoice #</th>
+                    <th>Customer</th>
+                    <th>Amount Paid</th>
+                    <th>Payment Date</th>
+                    <th>Method</th>
+                    <th>Reference / UTR #</th>
+                    <th>Notes</th>
+                  </tr>
+                </thead>
+                <tbody id="paymentTableBody"></tbody>
+              </table>
+            </div>
+          </article>
+        </section>
+
         <section class="view" id="customers-view">
           <div class="page-heading">
             <div>
@@ -838,8 +900,9 @@
             </div>
             <div class="heading-actions">
               <button type="button" class="button button-quiet" id="leadImportBtn">📥 Import CSV</button>
+              <input type="file" id="leadCsvFileInput" accept=".csv" style="display:none">
               <button type="button" class="button button-quiet" id="leadExportBtn">📤 Export CSV</button>
-              <button type="button" class="button button-primary" id="createLeadBtn">+ Create Lead</button>
+              <button type="button" class="button button-primary" id="createLeadBtn" data-open-modal="leadModal" onclick="openCreateLeadModal()">+ Create Lead</button>
             </div>
           </div>
 
@@ -1202,13 +1265,56 @@
           <div class="panel letters-history-panel" id="lettersHistoryPanel">
             <div class="panel-heading">
               <div>
-                <h2>Sent Letters &amp; Status</h2>
-                <p>Real-time delivery audit trail for generated offer and HR letters with PDF attachments</p>
+                <h2>Sent Letters &amp; Status Audit Log</h2>
+                <p>Real-time delivery tracking, document preview, and PDF downloads for generated HR letters</p>
               </div>
               <div class="panel-actions">
                 <button type="button" class="button button-quiet" id="refreshLettersBtn">↻ Refresh</button>
               </div>
             </div>
+
+            <!-- Stats Bar -->
+            <div class="metrics-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 20px;">
+              <div class="metric-card">
+                <span class="metric-label">Total Dispatched</span>
+                <div class="metric-value" id="letterStatTotal">0</div>
+                <small class="muted">All generated letters</small>
+              </div>
+              <div class="metric-card">
+                <span class="metric-label">Delivery Success</span>
+                <div class="metric-value" id="letterStatRate">100%</div>
+                <small class="muted" id="letterStatDelivered">0 delivered</small>
+              </div>
+              <div class="metric-card">
+                <span class="metric-label">Offer &amp; Appointment</span>
+                <div class="metric-value" id="letterStatOffers">0</div>
+                <small class="muted">Recruitment letters</small>
+              </div>
+              <div class="metric-card">
+                <span class="metric-label">HR Notices</span>
+                <div class="metric-value" id="letterStatOthers">0</div>
+                <small class="muted">Resignation / Termination</small>
+              </div>
+            </div>
+
+            <!-- Filter & Search Controls -->
+            <div class="filter-bar" style="display: flex; gap: 12px; margin-bottom: 16px; align-items: center; flex-wrap: wrap;">
+              <input type="text" id="lettersSearchInput" placeholder="🔍 Search recipient, email, or subject..." style="flex: 1; min-width: 220px; padding: 8px 12px; border: 1px solid var(--border-light, #cbd5e1); border-radius: 6px;">
+              <select id="lettersTypeFilter" style="padding: 8px 12px; border: 1px solid var(--border-light, #cbd5e1); border-radius: 6px;">
+                <option value="all">All Document Types</option>
+                <option value="offer">Offer Letter</option>
+                <option value="appointment">Appointment Letter</option>
+                <option value="resignation">Resignation Letter</option>
+                <option value="termination">Termination Notice</option>
+                <option value="experience">Experience Certificate</option>
+              </select>
+              <select id="lettersStatusFilter" style="padding: 8px 12px; border: 1px solid var(--border-light, #cbd5e1); border-radius: 6px;">
+                <option value="all">All Delivery Statuses</option>
+                <option value="sent">✓ Delivered / Sent</option>
+                <option value="failed">✕ Failed</option>
+              </select>
+            </div>
+
             <div class="table-wrap">
               <table class="data-table" id="lettersHistoryTable">
                 <thead>
@@ -1219,11 +1325,12 @@
                     <th>Subject</th>
                     <th>Date &amp; Time</th>
                     <th>Delivery Status</th>
+                    <th style="text-align: right;">Actions</th>
                   </tr>
                 </thead>
                 <tbody id="lettersHistoryTableBody">
                   <tr>
-                    <td colspan="6" class="table-empty">No letters sent yet. Select a letter type above to create and email one.</td>
+                    <td colspan="7" class="table-empty">No letters sent yet. Select a letter type above to create and email one.</td>
                   </tr>
                 </tbody>
               </table>
@@ -1873,20 +1980,27 @@
     <div class="modal-layer" id="modalLayer">
       <div class="modal" id="createModal" role="dialog" aria-modal="true" aria-labelledby="createTitle"><button type="button" class="modal-close" data-close-modal aria-label="Close">×</button><p class="eyebrow">Quick create</p><h2 id="createTitle">What would you like to add?</h2><p class="modal-intro">Create records without leaving your current workspace.</p><div class="quick-create"><button type="button" data-open-modal="companyModal">▣ <span><b>Company</b><small>Create a merchant account</small></span>→</button><button type="button" data-open-modal="dealModal">◫ <span><b>Deal</b><small>Add an opportunity</small></span>→</button><button type="button" data-open-modal="quotationModal">📋 <span><b>Quotation</b><small>Draft pricing quote</small></span>→</button><button type="button" data-open-modal="invoiceModal">🧾 <span><b>Invoice</b><small>Generate tax invoice</small></span>→</button><button type="button" data-open-modal="poModal">📦 <span><b>Purchase Order</b><small>Log client PO</small></span>→</button><button type="button" data-open-modal="taskModal">✓ <span><b>Task</b><small>Schedule a follow-up</small></span>→</button><button type="button" data-open-modal="activityModal">◌ <span><b>Activity</b><small>Log a touchpoint</small></span>→</button></div></div>
       <!-- Lead Modal -->
-      <form class="modal form-modal" id="leadModal">
+      <form class="modal form-modal" id="leadModal" style="max-width: 650px; width: 90%;">
         <button type="button" class="modal-close" data-close-modal aria-label="Close">×</button>
-        <p class="eyebrow">Prospecting</p>
+        <p class="eyebrow">Prospect Management</p>
         <h2 id="leadModalTitle">Create Lead</h2>
+        <input type="hidden" id="editLeadId" name="editLeadId">
         <div class="form-grid">
           <label class="span-2">Lead Name <input type="text" id="leadName" name="name" required placeholder="e.g. Siddharth Rao"></label>
           <label>Company Name <input type="text" id="leadCompany" name="company" placeholder="e.g. Orbit D2C Retail"></label>
           <label>Contact Person <input type="text" id="leadContactName" name="contact_name" placeholder="e.g. Siddharth Rao"></label>
+          <label>Job Title <input type="text" id="leadTitle" name="title" placeholder="VP of Operations"></label>
           <label>Email Address <input type="email" id="leadEmail" name="email" placeholder="siddharth@orbitd2c.com"></label>
           <label>Phone Number <input type="tel" id="leadPhone" name="phone" placeholder="+91 98112 34567"></label>
-          <label>Source
+          <label>Lead Source
             <select id="leadSource" name="source">
-              <option value="Inbound">Inbound</option>
+              <option value="Website">Website</option>
               <option value="Referral">Referral</option>
+              <option value="Social Media">Social Media</option>
+              <option value="Advertisement">Advertisement</option>
+              <option value="Cold Call">Cold Call</option>
+              <option value="Email Campaign">Email Campaign</option>
+              <option value="Inbound" selected>Inbound</option>
               <option value="Outbound">Outbound</option>
               <option value="Event">Event</option>
               <option value="Other">Other</option>
@@ -1898,7 +2012,8 @@
               <option value="Fintech">Fintech</option>
               <option value="SaaS">SaaS</option>
               <option value="Healthcare">Healthcare</option>
-              <option value="General">General</option>
+              <option value="Manufacturing">Manufacturing</option>
+              <option value="General" selected>General</option>
             </select>
           </label>
           <label>Status
@@ -1906,12 +2021,15 @@
               <option value="New">New</option>
               <option value="Contacted">Contacted</option>
               <option value="Qualified">Qualified</option>
+              <option value="Unqualified">Unqualified</option>
               <option value="Proposal">Proposal</option>
               <option value="Negotiation">Negotiation</option>
+              <option value="Converted">Converted</option>
               <option value="Lost">Lost</option>
               <option value="Disqualified">Disqualified</option>
             </select>
           </label>
+          <label>Lead Score <input type="number" id="leadScore" name="lead_score" placeholder="75" min="0" max="100"></label>
           <label>Expected Value (₹) <input type="number" id="leadExpectedValue" name="expected_value" placeholder="450000"></label>
           <label>Next Follow-up Date <input type="date" id="leadNextFollowup" name="next_followup"></label>
           <label>Assigned Owner
@@ -1921,30 +2039,77 @@
               <option value="Kunal Shah">Kunal Shah</option>
             </select>
           </label>
-          <label class="span-2">Notes <textarea id="leadNotes" name="notes" placeholder="Prospect background, specific product interest, requirements..."></textarea></label>
+          <label class="span-2">Notes <textarea id="leadNotes" name="notes" rows="3" placeholder="Prospect background, specific product interest, requirements..."></textarea></label>
         </div>
-        <div class="modal-actions">
+        <div id="leadModalErrorMsg" style="color: #ef4444; font-size: 13px; margin-top: 10px; display: none;"></div>
+        <div class="modal-actions" style="margin-top: 16px;">
           <button type="button" class="button button-quiet" data-close-modal>Cancel</button>
-          <button type="submit" class="button button-primary">Save Lead</button>
+          <button type="submit" class="button button-primary" id="leadModalSubmitBtn">Save Changes</button>
         </div>
       </form>
 
       <!-- Convert Lead Modal -->
-      <form class="modal form-modal" id="leadConvertModal">
+      <form class="modal form-modal" id="leadConvertModal" style="max-width: 650px; width: 90%;">
         <button type="button" class="modal-close" data-close-modal aria-label="Close">×</button>
-        <p class="eyebrow">Convert Prospect</p>
-        <h2>Convert Lead to Customer 360</h2>
-        <p class="modal-intro">This will create a Company, primary Contact, active Deal opportunity, and initial Task in your CRM workspace.</p>
+        <p class="eyebrow">Prospect Conversion</p>
+        <h2>Convert Lead to Customer Account</h2>
+        <p class="modal-intro">Convert this qualified lead into active CRM entities.</p>
         <input type="hidden" id="convertLeadId">
-        <div class="form-grid">
-          <label class="span-2">Company Name <input type="text" id="convertCompanyName" required></label>
-          <label>Contact Email <input type="email" id="convertContactEmail"></label>
-          <label>Deal Opportunity Title <input type="text" id="convertDealTitle" required></label>
-          <label class="span-2">Deal Value (₹) <input type="number" id="convertDealValue" required></label>
+
+        <!-- Selected Lead Info Summary Card -->
+        <div class="panel-lite" style="padding: 14px; background: var(--bg-surface-elevated, #f8fafc); border: 1px solid var(--border-light, #e2e8f0); border-radius: 8px; margin-bottom: 16px;">
+          <h4 style="margin: 0 0 8px 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted, #64748b);">Lead Profile Summary</h4>
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; font-size: 13px;">
+            <div><strong>Lead Name:</strong> <span id="summaryLeadName">—</span></div>
+            <div><strong>Company:</strong> <span id="summaryLeadCompany">—</span></div>
+            <div><strong>Email:</strong> <span id="summaryLeadEmail">—</span></div>
+            <div><strong>Phone:</strong> <span id="summaryLeadPhone">—</span></div>
+            <div><strong>Source:</strong> <span id="summaryLeadSource">—</span></div>
+            <div><strong>Status:</strong> <span id="summaryLeadStatus">—</span></div>
+            <div class="span-2"><strong>Assigned Owner:</strong> <span id="summaryLeadOwner">—</span></div>
+          </div>
         </div>
-        <div class="modal-actions">
+
+        <!-- Conversion Target Checkboxes -->
+        <h4 style="margin: 0 0 10px 0; font-size: 14px;">Conversion Options</h4>
+        <div style="display: flex; gap: 16px; margin-bottom: 16px; flex-wrap: wrap;">
+          <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 14px;">
+            <input type="checkbox" id="convertCreateContact" checked> Create Contact
+          </label>
+          <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 14px;">
+            <input type="checkbox" id="convertCreateCompany" checked> Create Account / Company
+          </label>
+          <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 14px;">
+            <input type="checkbox" id="convertCreateDeal" checked> Create Deal / Opportunity
+          </label>
+        </div>
+
+        <div class="form-grid" id="convertFieldsGrid">
+          <label class="span-2" id="convertCompanyLabel">Account / Company Name <input type="text" id="convertCompanyName"></label>
+          <label class="span-2" id="convertContactLabel">Contact Email Address <input type="email" id="convertContactEmail"></label>
+
+          <!-- Deal Fields Container -->
+          <div class="span-2" id="convertDealSection" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; border-top: 1px solid var(--border-light, #e2e8f0); padding-top: 12px;">
+            <label class="span-2">Deal / Opportunity Title <input type="text" id="convertDealTitle" placeholder="e.g. Acme Corp — Core Account Deal"></label>
+            <label>Deal Value (₹) <input type="number" id="convertDealValue" placeholder="450000"></label>
+            <label>Deal Stage
+              <select id="convertDealStage">
+                <option value="Discovery">Discovery</option>
+                <option value="Qualified" selected>Qualified</option>
+                <option value="Proposal">Proposal</option>
+                <option value="Negotiation">Negotiation</option>
+                <option value="Won">Closed Won</option>
+              </select>
+            </label>
+            <label class="span-2">Expected Close Date <input type="date" id="convertCloseDate"></label>
+          </div>
+        </div>
+
+        <div id="convertErrorMsg" style="color: #ef4444; font-size: 13px; margin-top: 10px; display: none;"></div>
+
+        <div class="modal-actions" style="margin-top: 18px;">
           <button type="button" class="button button-quiet" data-close-modal>Cancel</button>
-          <button type="submit" class="button button-primary">⚡ Confirm Conversion</button>
+          <button type="submit" class="button button-primary" id="convertSubmitBtn">⚡ Convert Lead</button>
         </div>
       </form>
 
@@ -2503,6 +2668,125 @@
           <label class="span-2">Email Body <textarea id="tplBody" name="body_html" required rows="5" placeholder="Hello {{contact_name}},\n\nThank you for reaching out to {{company_name}}..."></textarea></label>
           <label class="span-2">Available Variables <input type="text" id="tplVars" name="variables" value="{{contact_name}}, {{company_name}}, {{deal_title}}, {{rep_name}}" readonly></label>
         </div>
+        <div class="modal-actions">
+          <button type="button" class="button button-quiet" data-close-modal>Cancel</button>
+          <button type="submit" class="button button-primary">Save Template</button>
+        </div>
+      </form>
+
+      <!-- Send Quotation Email Preview Modal -->
+      <form class="modal form-modal" id="sendQuoteEmailModal">
+        <button type="button" class="modal-close" data-close-modal aria-label="Close">×</button>
+        <p class="eyebrow">Outbound Quotation Email</p>
+        <h2>Send Quotation via Email</h2>
+        <p class="modal-intro">Review recipient email and message details before sending quotation PDF.</p>
+        <input type="hidden" id="sendQuoteId">
+        <div class="form-grid">
+          <label class="span-2">Recipient Email (To) <input type="email" id="sendQuoteTo" required placeholder="customer@example.com"></label>
+          <label class="span-2">CC Email (Optional) <input type="email" id="sendQuoteCc" placeholder="finance@example.com"></label>
+          <label class="span-2">Subject Line <input type="text" id="sendQuoteSubject" required placeholder="SmartPay Quotation QTN-2026-001"></label>
+          <div class="span-2" style="background: var(--bg-surface-elevated, #f8fafc); padding: 12px; border-radius: 8px; border: 1px solid var(--border-light, #e2e8f0); display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 20px;">📄</span>
+            <div>
+              <strong id="sendQuotePdfName">Quotation_QTN-2026-001.pdf</strong>
+              <p style="margin: 2px 0 0 0; font-size: 12px; color: var(--text-secondary, #64748b);">Official Tax-Compliant Commercial Quotation PDF (Attached)</p>
+            </div>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="button button-quiet" data-close-modal>Cancel</button>
+          <button type="submit" class="button button-primary">✉ Confirm &amp; Send Quotation</button>
+        </div>
+      </form>
+
+      <!-- Send Invoice Email Preview Modal -->
+      <form class="modal form-modal" id="sendInvoiceEmailModal">
+        <button type="button" class="modal-close" data-close-modal aria-label="Close">×</button>
+        <p class="eyebrow">Outbound Invoice Email</p>
+        <h2>Send Tax Invoice via Email</h2>
+        <p class="modal-intro">Review recipient email and message details before dispatching invoice.</p>
+        <input type="hidden" id="sendInvoiceId">
+        <div class="form-grid">
+          <label class="span-2">Recipient Email (To) <input type="email" id="sendInvoiceTo" required placeholder="billing@customer.com"></label>
+          <label class="span-2">CC Email (Optional) <input type="text" id="sendInvoiceCc" placeholder="accounts@customer.com"></label>
+          <label class="span-2">Subject Line <input type="text" id="sendInvoiceSubject" required placeholder="Tax Invoice INV-2026-001 — SmartPay Technologies"></label>
+          <div class="span-2" style="background: var(--bg-surface-elevated, #f8fafc); padding: 12px; border-radius: 8px; border: 1px solid var(--border-light, #e2e8f0); display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 20px;">🧾</span>
+            <div>
+              <strong id="sendInvoicePdfName">Tax_Invoice_INV-2026-001.pdf</strong>
+              <p style="margin: 2px 0 0 0; font-size: 12px; color: var(--text-secondary, #64748b);">Verified Tax Invoice PDF Document (Attached)</p>
+            </div>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="button button-quiet" data-close-modal>Cancel</button>
+          <button type="submit" class="button button-primary">✉ Confirm &amp; Send Invoice</button>
+        </div>
+      </form>
+
+      <!-- Send Renewal Reminder Email Modal -->
+      <form class="modal form-modal" id="sendRenewalModal">
+        <button type="button" class="modal-close" data-close-modal aria-label="Close">×</button>
+        <p class="eyebrow">Outbound Renewal Reminder</p>
+        <h2>Send Contract Renewal Reminder</h2>
+        <p class="modal-intro">Send a contract renewal notice to the customer contact.</p>
+        <input type="hidden" id="sendRenewalId">
+        <div class="form-grid">
+          <label class="span-2">Recipient Email (To) <input type="email" id="sendRenewalTo" required placeholder="customer@example.com"></label>
+          <label class="span-2">CC Email (Optional) <input type="email" id="sendRenewalCc" placeholder="renewals@example.com"></label>
+          <label class="span-2">Subject Line <input type="text" id="sendRenewalSubject" required placeholder="Contract Renewal Reminder — SmartPay"></label>
+          <div class="span-2" style="background: var(--bg-surface-elevated, #f8fafc); padding: 12px; border-radius: 8px; border: 1px solid var(--border-light, #e2e8f0); display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 20px;">🔔</span>
+            <div>
+              <strong id="sendRenewalSummary">Service Contract Renewal Notice</strong>
+              <p style="margin: 2px 0 0 0; font-size: 12px; color: var(--text-secondary, #64748b);">Logs activity &amp; communication entry upon sending</p>
+            </div>
+          </div>
+          <label class="span-2">Reminder Message
+            <textarea id="sendRenewalBody" rows="4" style="width:100%; font-family:inherit; padding:8px; border:1px solid var(--border-light, #cbd5e1); border-radius:6px;"></textarea>
+          </label>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="button button-quiet" data-close-modal>Cancel</button>
+          <button type="submit" class="button button-primary">🔔 Send Renewal Reminder</button>
+        </div>
+      </form>
+
+      <!-- Renewal Management Modal -->
+
+      <form class="modal form-modal" id="renewalModal">
+        <button type="button" class="modal-close" data-close-modal aria-label="Close">×</button>
+        <p class="eyebrow">Contract Lifecycle</p>
+        <h2 id="renewalModalTitle">Edit Contract Renewal</h2>
+        <input type="hidden" id="renewalId">
+        <div class="form-grid">
+          <label class="span-2">Customer Company Name <input type="text" id="renewalCompanyName" required placeholder="e.g. RazorpayX Partners"></label>
+          <label>Product / Contract Name <input type="text" id="renewalProductName" required placeholder="e.g. Payment Gateway License"></label>
+          <label>Contract Value (₹) <input type="number" id="renewalValue" required placeholder="800000"></label>
+          <label>Renewal Date <input type="date" id="renewalDate" required></label>
+          <label>Status
+            <select id="renewalStatus">
+              <option value="Upcoming">Upcoming</option>
+              <option value="Renewed">Renewed</option>
+              <option value="Lapsed">Lapsed</option>
+              <option value="Cancelled">Cancelled</option>
+            </select>
+          </label>
+          <label>Account Owner
+            <select id="renewalOwner">
+              <option value="Aarav Sharma">Aarav Sharma</option>
+              <option value="Priya Menon">Priya Menon</option>
+              <option value="Kunal Shah">Kunal Shah</option>
+            </select>
+          </label>
+          <label class="span-2">Notes <textarea id="renewalNotes" placeholder="Renewal negotiation history, revised contract terms..."></textarea></label>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="button button-quiet" data-close-modal>Cancel</button>
+          <button type="submit" class="button button-primary">Save Renewal</button>
+        </div>
+      </form>
+
       <!-- Public Customer Quotation View Modal -->
       <div class="modal modal-wide" id="publicQuoteModal" role="dialog" aria-labelledby="pubQuoteTitle">
         <button type="button" class="modal-close" data-close-modal aria-label="Close">×</button>
@@ -2545,6 +2829,34 @@
             <button type="button" class="button button-primary" id="pubAcceptBtn" style="background: #10b981;">⚡ Accept Quotation</button>
           </div>
         </div>
+      <!-- View Sent Letter Modal -->
+      <div class="modal" id="viewLetterModal" style="max-width: 800px; width: 90%;">
+        <button type="button" class="modal-close" data-close-modal aria-label="Close">×</button>
+        <p class="eyebrow">Sent Letter Document</p>
+        <h2 id="viewLetterTitle">Letter Details</h2>
+        <p class="modal-intro" id="viewLetterSubtitle">Audit trail and document preview.</p>
+
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 16px; background: var(--bg-surface-elevated, #f8fafc); padding: 14px; border-radius: 8px; border: 1px solid var(--border-light, #e2e8f0);">
+          <div>
+            <p style="margin:0 0 4px 0;"><strong>Recipient:</strong> <span id="viewLetterRecipient">—</span></p>
+            <p style="margin:0 0 4px 0;"><strong>Email:</strong> <span id="viewLetterEmail">—</span></p>
+            <p style="margin:0;"><strong>Subject:</strong> <span id="viewLetterSubject">—</span></p>
+          </div>
+          <div>
+            <p style="margin:0 0 4px 0;"><strong>Sent At:</strong> <span id="viewLetterDate">—</span></p>
+            <p style="margin:0;"><strong>Status:</strong> <span id="viewLetterStatus">—</span></p>
+          </div>
+        </div>
+
+        <div class="letter-paper" style="max-height: 400px; overflow-y: auto; background: #fff; padding: 24px; border: 1px solid #cbd5e1; border-radius: 8px;">
+          <div id="viewLetterContent"></div>
+        </div>
+
+        <div class="modal-actions" style="margin-top: 16px;">
+          <button type="button" class="button button-quiet" data-close-modal>Close</button>
+          <button type="button" class="button button-secondary" id="viewLetterDownloadBtn">📥 Download Official PDF</button>
+          <button type="button" class="button button-primary" id="viewLetterResendBtn">✉ Resend Email</button>
+        </div>
       </div>
     </div>
     <div class="popover notification-popover" id="notificationPopover"><div class="popover-heading"><h3>Reminders</h3><span>4 unread</span></div><p><b>Overdue</b> · Send revised proposal to Urban Company</p><p><b>Due today</b> · Call Neha at RazorpayX Partners</p><p><b>Due today</b> · Update discovery notes for Groww Wealth</p><button type="button" class="text-button" data-view-go="tasks">Open tasks →</button></div>
@@ -2553,6 +2865,6 @@
     <!-- Hidden print container for letter PDF -->
     <div id="printContainer" class="print-only"></div>
 
-    <script src="./app.js"></script>
+    <script src="./app.js?v=2.0.6"></script>
   </body>
 </html>

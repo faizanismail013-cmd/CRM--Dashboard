@@ -67,4 +67,29 @@ router.post('/preview', requireAuth, async (req, res) => {
   }
 });
 
+// ─── PUT /api/templates/:id (Update Template) ────────────────────────
+router.put('/:id', requireAuth, async (req, res) => {
+  try {
+    const updated = await crmStore.update('email_templates', req.params.id, {
+      ...req.body,
+      updated_at: new Date().toISOString()
+    });
+    if (!updated) return res.status(404).json({ error: 'Template not found.' });
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update template.' });
+  }
+});
+
+// ─── DELETE /api/templates/:id ───────────────────────────────────────
+router.delete('/:id', requireAuth, async (req, res) => {
+  try {
+    const deleted = await crmStore.remove('email_templates', req.params.id);
+    if (!deleted) return res.status(404).json({ error: 'Template not found.' });
+    res.json({ success: true, message: 'Template removed.' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete template.' });
+  }
+});
+
 module.exports = router;

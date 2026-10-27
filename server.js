@@ -402,14 +402,51 @@ app.post('/api/send-letter', requireAuth, async (req, res) => {
   }
 });
 
+app.get('/api/crm/letters/:id/pdf', requireAuth, async (req, res) => {
+  try {
+    const letter = await crmStore.findById('letters', req.params.id);
+    if (!letter) return res.status(404).json({ error: 'Letter not found' });
+
+    let letterData = {};
+    if (letter.letter_data) {
+      try {
+        letterData = typeof letter.letter_data === 'string' ? JSON.parse(letter.letter_data) : letter.letter_data;
+      } catch (e) {
+        letterData = {};
+      }
+    }
+
+    const type = letter.type || 'offer';
+    const employeeName = letter.employeeName || letterData.employeeName || 'Employee';
+    const pdfBuffer = await generateLetterPDF(type, {
+      ...letterData,
+      employeeName,
+      recipientEmail: letter.recipientEmail || letterData.recipientEmail
+    });
+
+    const typeLabel = type.charAt(0).toUpperCase() + type.slice(1);
+    const safeName = employeeName.replace(/[^a-zA-Z0-9_-]/g, '_') || 'Employee';
+    const filename = `${typeLabel}_Letter_${safeName}.pdf`;
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(pdfBuffer);
+  } catch (error) {
+    console.error('Failed to generate letter PDF:', error.message);
+    res.status(500).json({ error: 'Failed to generate PDF: ' + error.message });
+  }
+});
+
 // ─── Static Files ───────────────────────────────────────────────────
 app.use(express.static(path.join(__dirname)));
 
 // ─── Global Error Handler ───────────────────────────────────────────
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err.message);
+  const isApiRoute = req.originalUrl?.startsWith('/api/');
+  const safeMessage = isApiRoute ? (err.message || 'Internal server error') : 'Internal server error';
   res.status(err.status || 500).json({
-    error: process.env.NODE_ENV === 'production' ? 'Internal server error' : err.message
+    error: safeMessage
   });
 });
 

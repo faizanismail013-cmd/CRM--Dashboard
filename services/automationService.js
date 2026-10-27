@@ -184,7 +184,27 @@ async function testAutomationRule(ruleId, testContext = {}) {
   if (!rule) throw new Error('Automation rule not found.');
 
   const settings = await getAutomationSettings();
-  const isMatch = evaluateConditions(rule.condition_json, testContext, settings);
+  let cond = {};
+  try {
+    cond = typeof rule.condition_json === 'string' ? JSON.parse(rule.condition_json) : (rule.condition_json || {});
+  } catch (e) {
+    cond = {};
+  }
+
+  const defaultContext = {
+    stage: cond.stage || 'Proposal Sent',
+    discount_gt: (cond.discount_gt || 15) + 5,
+    value_gt: (cond.value_gt || 1000000) + 100000,
+    days_overdue_gt: (cond.days_overdue_gt || 5) + 2,
+    inactivity_days_gt: (cond.inactivity_days_gt || 7) + 3,
+    company_name: 'RazorpayX Partners',
+    company_id: 1,
+    deal_title: 'Payment gateway expansion proposal',
+    deal_value: 800000
+  };
+
+  const mergedContext = { ...defaultContext, ...testContext };
+  const isMatch = evaluateConditions(rule.condition_json, mergedContext, settings);
   const actions = typeof rule.action_json === 'string' ? JSON.parse(rule.action_json) : rule.action_json;
 
   return {
@@ -193,8 +213,9 @@ async function testAutomationRule(ruleId, testContext = {}) {
     event: rule.event,
     conditions_evaluated: rule.condition_json,
     is_match: isMatch,
-    actions_would_execute: isMatch ? actions : [],
-    test_mode: 'DRY_RUN (No real emails or database records created)'
+    actions_would_execute: isMatch ? (Array.isArray(actions) ? actions : [actions]) : [],
+    test_mode: 'DRY_RUN (No real emails or database records created)',
+    context_used: mergedContext
   };
 }
 

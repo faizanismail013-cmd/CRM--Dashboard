@@ -103,4 +103,18 @@ router.post('/bootstrap', requireAuth, async (req, res, next) => {
   } catch (error) { next(error); }
 });
 
+// Seed Demo Data
+router.post('/seed-demo', requireAuth, async (req, res, next) => {
+  try {
+    const crmStore = require('../crm-store');
+    if (typeof crmStore.seedDemoData === 'function') {
+      await crmStore.seedDemoData();
+    }
+    try {
+      await createAuditLog(req.user?.id || 1, 'seed_demo', 'system', null, { action: 'seeded demo data' }, req.ip);
+    } catch (e) {}
+    res.json({ success: true, message: 'Demo business data successfully seeded into CRM store.' });
+  } catch (error) { next(error); }
+});
+
 module.exports = router;

@@ -168,13 +168,23 @@ const data = {
   ],
   approvals: [
     { id: 1, type: 'Discount Threshold', entity_type: 'quotation', entity_id: 2, requester_name: 'Priya Menon', approver_name: 'Aarav Sharma', status: 'Pending', old_value: '0%', new_value: '15%', comments: 'Discount requested for strategic Q3 sign-off', created_at: '2026-09-11' }
-  ]
+  ],
+  notifications: [
+    { id: 1, user_id: 1, type: 'quotation', title: 'Quotation Sent: QTN-2026-001', message: 'Quotation sent to neha.agarwal@razorpay.com', is_read: false, created_at: '2026-09-10T10:00:00.000Z' },
+    { id: 2, user_id: 1, type: 'approval', title: 'Approval Required: Discount Threshold', message: 'Priya Menon requested 15% discount approval for Quotation QTN-2026-002', is_read: false, created_at: '2026-09-11T11:30:00.000Z' },
+    { id: 3, user_id: 1, type: 'payment', title: 'Payment Received: INV-2026-001', message: 'Full payment of ₹5,07,400 received from RazorpayX Partners', is_read: true, created_at: '2026-09-04T14:15:00.000Z' },
+    { id: 4, user_id: 1, type: 'renewal', title: 'Renewal Alert: RazorpayX Partners', message: 'Annual Payment Gateway contract renewal due on 2026-10-01', is_read: false, created_at: '2026-09-12T09:00:00.000Z' }
+  ],
+  quotation_versions: [],
+  automation_settings: { discount_approval_percent: 15 }
 };
 
-const nextId = collection => Math.max(0, ...data[collection].map(item => Number(item.id) || 0)) + 1;
+const resolveResource = name => (name === 'customers' ? 'companies' : name);
+const nextId = collection => Math.max(0, ...data[resolveResource(collection)].map(item => Number(item.id) || 0)) + 1;
 const resource = name => {
-  if (!Object.hasOwn(data, name)) throw new Error(`Unknown CRM resource: ${name}`);
-  return data[name];
+  const target = resolveResource(name);
+  if (!Object.hasOwn(data, target)) throw new Error(`Unknown CRM resource: ${name}`);
+  return data[target];
 };
 
 const { getDb } = require('./db');
@@ -202,11 +212,11 @@ async function snapshot() {
       products: data.products,
       quotations: data.quotations,
       quotation_items: data.quotation_items,
+      quotation_versions: data.quotation_versions,
       purchase_orders: data.purchase_orders,
       invoices: data.invoices,
       invoice_items: data.invoice_items,
       payments: data.payments,
-      teams: data.teams,
       teams: data.teams,
       commission_rules: data.commission_rules,
       commissions: data.commissions,
@@ -217,7 +227,9 @@ async function snapshot() {
       email_templates: data.email_templates,
       automations: data.automations,
       documents: data.documents,
-      approvals: data.approvals
+      approvals: data.approvals,
+      notifications: data.notifications,
+      automation_settings: data.automation_settings
     });
   }
 
@@ -412,7 +424,7 @@ async function listPaginated(name, { page = 1, limit = 25, sort = 'id', order = 
 async function findById(name, id) {
   const sql = getDb();
   if (!sql) {
-    const record = resource(name).find(item => Number(item.id) === Number(id));
+    const record = resource(name).find(item => String(item.id) === String(id) || Number(item.id) === Number(id));
     return record ? clone(record) : null;
   }
 
@@ -421,7 +433,7 @@ async function findById(name, id) {
     return rows[0] || null;
   } catch (err) {
     console.error('DB findById error:', err.message);
-    const record = resource(name).find(item => Number(item.id) === Number(id));
+    const record = resource(name).find(item => String(item.id) === String(id) || Number(item.id) === Number(id));
     return record ? clone(record) : null;
   }
 }
@@ -454,7 +466,7 @@ async function create(name, attributes) {
 async function update(name, id, attributes) {
   const sql = getDb();
   if (!sql) {
-    const record = resource(name).find(item => Number(item.id) === Number(id));
+    const record = resource(name).find(item => String(item.id) === String(id) || Number(item.id) === Number(id));
     if (!record) return null;
     Object.assign(record, attributes);
     updateCompanyDealCounts();
@@ -478,7 +490,7 @@ async function remove(name, id) {
   const sql = getDb();
   if (!sql) {
     const records = resource(name);
-    const index = records.findIndex(item => Number(item.id) === Number(id));
+    const index = records.findIndex(item => String(item.id) === String(id) || Number(item.id) === Number(id));
     if (index < 0) return false;
     records.splice(index, 1);
     updateCompanyDealCounts();
